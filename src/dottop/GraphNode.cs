@@ -1,11 +1,11 @@
-﻿using System.Reactive;
-using System.Reactive.Subjects;
+﻿using System.Collections.Concurrent;
+using R3;
 using Termina.Layout;
 using Termina.Rendering;
 using Termina.Terminal;
 using Timer = System.Timers.Timer;
 
-namespace btop;
+namespace dottop;
 
 public enum GraphStyle
 {
@@ -43,22 +43,22 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
     ];
 
     private readonly Subject<Unit> _invalidated = new();
-    private readonly Timer _timer;
-    private readonly Queue<double> _data = new();
-
+    private readonly ConcurrentQueue<double> _data = new();
+    private IDisposable? _timerSubscription;
+    private readonly TimeProvider _timeProvider;
+    private readonly int _intervalMs;
     private GraphStyle _style = GraphStyle.Blocks;
     private Color? _color;
     private double _minValue;
     private double _maxValue = 100;
 
-    public IObservable<Unit> Invalidated => _invalidated;
+    public Observable<Unit> Invalidated => _invalidated.AsObservable();
     public bool IsAnimating { get; private set; }
 
-    public GraphNode(int refreshMs = 100)
+    public GraphNode(int intervalMs = 80, TimeProvider? timeProvider = null)
     {
-        _timer = new Timer(refreshMs);
-        _timer.Elapsed += (_, _) => _invalidated.OnNext(Unit.Default);
-        _timer.AutoReset = true;
+        _intervalMs = intervalMs;
+        _timeProvider = timeProvider ?? TimeProvider.System;
         Start();
     }
 
@@ -67,14 +67,16 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
     public void Start()
     {
         if (IsAnimating) return;
+        _timerSubscription ??= Observable.Interval(TimeSpan.FromMilliseconds(_intervalMs), _timeProvider)
+            .Subscribe(_ => { _invalidated.OnNext(Unit.Default); });
         IsAnimating = true;
-        _timer.Start();
     }
 
     public void Stop()
     {
         if (!IsAnimating) return;
-        _timer.Stop();
+        _timerSubscription?.Dispose();
+        _timerSubscription = null;
         IsAnimating = false;
     }
 
@@ -99,22 +101,16 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         return this;
     }
 
-    /// <summary>Replace all data – thread-safe, rendered on next timer tick.</summary>
-    public void SetData(IEnumerable<double> values)
-    {
-        lock (_data)
-        {
-            _data.Clear();
-            foreach (var v in values)
-                _data.Enqueue(v);
-        }
-    }
-
-    /// <summary>Append a single value – thread-safe.</summary>
     public void Push(double value)
     {
         lock (_data)
+        {
             _data.Enqueue(value);
+            while (_data.Count > 300)
+            {
+                _data.TryDequeue(out _);
+            }
+        }
     }
 
     // ── Measure / Render ───────────────────────────────────────────────────
@@ -139,7 +135,10 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         {
             var maxPoints = _style == GraphStyle.Braille ? width * 2 : width;
             while (_data.Count > maxPoints)
-                _data.Dequeue();
+            {
+                _data.TryDequeue(out _);
+            }
+
             data = _data.ToArray();
         }
 
@@ -151,10 +150,10 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
         switch (_style)
         {
-            case GraphStyle.Blocks:  RenderColumns(ctx, data, width, height, BlockChars); break;
+            case GraphStyle.Blocks: RenderColumns(ctx, data, width, height, BlockChars); break;
             case GraphStyle.Outline: RenderOutline(ctx, data, width, height); break;
             case GraphStyle.Braille: RenderBraille(ctx, data, width, height); break;
-            case GraphStyle.Ascii:   RenderColumns(ctx, data, width, height, AsciiChars); break;
+            case GraphStyle.Ascii: RenderColumns(ctx, data, width, height, AsciiChars); break;
         }
 
         ctx.ResetColors();
@@ -178,14 +177,22 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
                 int charIdx;
                 if (filledRows >= row + 1)
+                {
                     charIdx = 8;
+                }
                 else if (filledRows > row)
+                {
                     charIdx = Math.Clamp((int)Math.Ceiling((filledRows - row) * 7.999), 1, 8);
+                }
                 else
+                {
                     charIdx = 0;
+                }
 
                 if (charIdx > 0 && _color.HasValue)
+                {
                     ctx.SetForeground(_color.Value);
+                }
 
                 ctx.WriteAt(x, y, chars[Math.Min(charIdx, chars.Length - 1)]);
                 ctx.ResetColors();
@@ -210,7 +217,9 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
                 {
                     var charIdx = Math.Clamp((int)Math.Ceiling((filledRows - row) * 7.999), 1, 8);
                     if (_color.HasValue)
+                    {
                         ctx.SetForeground(_color.Value);
+                    }
                     ctx.WriteAt(x, y, OutlineChars[charIdx]);
                     ctx.ResetColors();
                 }
@@ -246,7 +255,9 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
                 var c = BrailleChars[botFill][topFill];
 
                 if (c != '\u2800' && _color.HasValue)
+                {
                     ctx.SetForeground(_color.Value);
+                }
 
                 ctx.WriteAt(x, y, c);
                 ctx.ResetColors();
@@ -277,8 +288,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
     public override void Dispose()
     {
-        _timer.Stop();
-        _timer.Dispose();
         _invalidated.OnCompleted();
         _invalidated.Dispose();
         base.Dispose();

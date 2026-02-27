@@ -1,88 +1,91 @@
-﻿using System.Reactive.Linq;
+﻿using R3;
 using Termina.Extensions;
 using Termina.Layout;
 using Termina.Reactive;
 using Termina.Rendering;
 using Termina.Terminal;
 
-namespace btop;
+namespace dottop;
 
 public class DashboardPage : ReactivePage<DashboardViewModel>
 {
-    private GraphNode _cpuGraph = null!;
-    private GraphNode _ramGraph = null!;
-
     public override ILayoutNode BuildLayout()
     {
-        _cpuGraph = new GraphNode()
-            .WithStyle(GraphStyle.Blocks)
-            .WithColor(Color.BrightGreen)
-            .WithRange(0, 100);
-
-        _ramGraph = new GraphNode()
-            .WithStyle(GraphStyle.Braille)
-            .WithColor(Color.BrightBlue)
-            .WithRange(0, 100);
-
-        ViewModel.CpuHistoryChanged
-            .Subscribe(h => _cpuGraph.SetData(h))
-            .DisposeWith(Subscriptions);
-
-        ViewModel.RamHistoryChanged
-            .Subscribe(h => _ramGraph.SetData(h))
-            .DisposeWith(Subscriptions);
-
         return Layouts.Vertical()
             .WithChild(BuildTitleBar())
-            .WithChild(
-                Layouts.Horizontal()
-                    .WithChild(BuildCpuPanel())
-                    .WithSpacing(1)
-                    .WithChild(BuildRamPanel())
-                    .HeightPercent(50)
-                    .Fill())
+            .WithChild(Layouts.Horizontal()
+                .WithChild(BuildCpuPanel())
+                .WithSpacing(1)
+                .WithChild(BuildRamPanel())
+                .HeightPercent(50)
+                .Fill())
             .WithChild(
                 Layouts.Horizontal()
                     .WithChild(BuildDiskPanel())
                     .WithSpacing(1)
                     .WithChild(BuildNetworkPanel())
+                    .WithSpacing(1)
+                    .WithChild(BuildProcessPanel())
                     .Fill())
             .WithChild(BuildStatusBar());
     }
 
     private ILayoutNode BuildTitleBar()
     {
-        return new TextNode(" ⚡ btop.net")
+        return new TextNode(" ⚡ dottop")
+            .AlignCenter()
             .WithForeground(Color.BrightCyan)
-            .WithBackground(Color.DarkGray)
             .Height(1);
     }
 
     private ILayoutNode BuildCpuPanel()
     {
+        var cpuGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(Color.BrightGreen)
+            .WithRange(0, 100);
+
+        ViewModel.CpuUsage
+            .Subscribe(h => cpuGraph.Push(h))
+            .DisposeWith(Subscriptions);
+
         return new PanelNode()
             .WithTitle(" CPU ")
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightGreen)
             .WithContent(
-                Layouts.Vertical()
+                Layouts.Horizontal()
                     .WithChild(
-                        ViewModel.CpuNameChanged.CombineLatest(
-                            ViewModel.CpuUsageChanged,
-                            (name, usage) => Layouts.Horizontal()
-                                .WithChild(new TextNode($" {name}").WithForeground(Color.BrightGreen).Fill())
-                                .WithChild(new TextNode($"{usage:F1}% ").WithForeground(Color.BrightGreen).WidthFill())
-                        ).AsLayout().Height(1))
-                    .WithChild(
-                        ViewModel.CpuUsageChanged
-                            .Select(u => new TextNode($" {BuildBar(u, 30)}").WithForeground(Color.Green))
-                            .AsLayout().Height(1))
-                    .WithChild(_cpuGraph.Fill()))
-            .Fill();
+                        ViewModel.CpuCores
+                            .Select<List<double>, ILayoutNode>(cores =>
+                            {
+                                var layout = Layouts.Vertical();
+                                for (var i = 0; i < cores.Count; i++)
+                                {
+                                    layout.WithChild(
+                                        new TextNode($" C{i,-2} {BuildBar(cores[i], 10)} {cores[i],5:F0}%")
+                                            .WithForeground(Color.BrightGreen)
+                                            .Height(1));
+                                }
+
+                                return layout;
+                            }).AsLayout().Width(25).Height(4))
+                    .WithSpacing(1)
+                    .WithChild(Layouts.Vertical().WithChild(cpuGraph).Fill()));
     }
 
     private ILayoutNode BuildRamPanel()
     {
+        var ramGraph = new GraphNode()
+            .WithStyle(GraphStyle.Braille)
+            .WithColor(Color.BrightBlue)
+            .WithRange(0, 100);
+
+
+        ViewModel.RamUsed.CombineLatest(ViewModel.RamTotal, (used, total) => total > 0 ? (double)used / total * 100 : 0)
+            .Subscribe(h => ramGraph.Push(h))
+            .DisposeWith(Subscriptions);
+
         return new PanelNode()
             .WithTitle(" RAM ")
             .WithBorder(BorderStyle.Rounded)
@@ -90,8 +93,8 @@ public class DashboardPage : ReactivePage<DashboardViewModel>
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
-                        ViewModel.RamUsedChanged.CombineLatest(
-                            ViewModel.RamTotalChanged,
+                        ViewModel.RamUsed.CombineLatest<ulong, ulong, ILayoutNode>(
+                            ViewModel.RamTotal,
                             (used, total) =>
                             {
                                 var usedGb = used / 1024.0 / 1024 / 1024;
@@ -104,13 +107,13 @@ public class DashboardPage : ReactivePage<DashboardViewModel>
                                         .WidthFill());
                             }).AsLayout().Height(1))
                     .WithChild(
-                        ViewModel.RamUsedChanged.CombineLatest(ViewModel.RamTotalChanged,
+                        ViewModel.RamUsed.CombineLatest<ulong, ulong, ILayoutNode>(ViewModel.RamTotal,
                             (used, total) =>
                             {
                                 var pct = total > 0 ? (double)used / total * 100 : 0;
                                 return new TextNode($" {BuildBar(pct, 30)}").WithForeground(Color.Blue);
                             }).AsLayout().Height(1))
-                    .WithChild(_ramGraph.Fill())
+                    .WithChild(ramGraph.Fill())
                     .Fill())
             .Fill();
     }
@@ -122,7 +125,7 @@ public class DashboardPage : ReactivePage<DashboardViewModel>
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightYellow)
             .WithContent(
-                ViewModel.DisksChanged
+                ViewModel.Disks
                     .Select<List<DiskInfo>, ILayoutNode>(disks =>
                     {
                         if (disks.Count == 0)
@@ -131,15 +134,15 @@ public class DashboardPage : ReactivePage<DashboardViewModel>
                         }
 
                         var layout = Layouts.Vertical();
-                        foreach (var disk in disks.Take(5))
+                        foreach (var disk in disks)
                         {
-                            var name = CleanDiskName(disk.Name);
                             var usedGb = disk.Used / 1024.0 / 1024 / 1024;
                             var totalGb = disk.Total / 1024.0 / 1024 / 1024;
 
                             layout
                                 .WithChild(
-                                    new TextNode($" {name,-12} {usedGb:F0}/{totalGb:F0} GB  {disk.UsedPercent:F0}%")
+                                    new TextNode(
+                                            $" {disk.Name,-12} {usedGb:F0}/{totalGb:F0} GB  {disk.UsedPercent:F0}%")
                                         .WithForeground(Color.BrightYellow).Height(1))
                                 .WithChild(
                                     new TextNode($" {BuildBar(disk.UsedPercent, 34)}")
@@ -159,7 +162,7 @@ public class DashboardPage : ReactivePage<DashboardViewModel>
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightMagenta)
             .WithContent(
-                ViewModel.NetworksChanged
+                ViewModel.Networks
                     .Select<List<NetworkInfo>, ILayoutNode>(nets =>
                     {
                         if (nets.Count == 0)
@@ -185,10 +188,91 @@ public class DashboardPage : ReactivePage<DashboardViewModel>
             .Fill();
     }
 
+    private ILayoutNode BuildProcessPanel()
+    {
+        var layout = Layouts.Vertical();
+
+        var node = new ScrollableContainerNode()
+            .WithContent(layout)
+            .WithScrollbar(true);
+
+        ViewModel.ScrollEvent
+            .Subscribe(t =>
+            {
+                if (t is -1)
+                {
+                    node.ScrollDown();
+                }
+
+                if (t is 1)
+                {
+                    node.ScrollUp();
+                }
+            })
+            .DisposeWith(Subscriptions);
+
+        ViewModel.Processes.Subscribe(value =>
+        {
+            // if (value.Count == 0)
+            //     layout.
+            //
+            // for (var i = 0; i < value.Count; i++)
+            // {
+            //     if (i < list.Count)
+            //     {
+            //         var p = list[i];
+            //
+            //         _processRows[i].SetText(
+            //             $" {p.PId,5} {p.Name,-18} {p.WorkingSet64 / 1024 / 1024,6} MB");
+            //
+            //         _processRows[i].IsVisible = true;
+            //     }
+            //     else
+            //     {
+            //         _processRows[i].SetText("");
+            //         _processRows[i].IsVisible = false;
+            //     }
+            // }
+        });
+
+        return new PanelNode()
+            .WithTitle(" Processes ")
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Color.Cyan)
+            .WithContent(
+                ViewModel.Processes
+                    .Select<List<ProcessInfo>, ILayoutNode>(list =>
+                    {
+                        var content = Layouts.Vertical();
+
+                        if (list.Count == 0)
+                        {
+                            content.WithChild(
+                                new TextNode(" No processes found")
+                                    .WithForeground(Color.Gray)
+                                    .Height(1));
+                        }
+                        else
+                        {
+                            foreach (var p in list)
+                            {
+                                content.WithChild(
+                                    new TextNode($" {p.PId,5} {p.Name,-18} {p.WorkingSet64 / 1024 / 1024,6} MB")
+                                        .WithForeground(Color.Cyan)
+                                        .Height(1));
+                            }
+                        }
+
+                        return node.WithContent(content);
+                    })
+                    .AsLayout())
+            .Fill();
+    }
+
     private ILayoutNode BuildStatusBar()
     {
-        return ViewModel.StatusMessageChanged
-            .Select(msg => new TextNode($" {msg}")
+        return ViewModel.StatusMessage
+            .Select<string, ILayoutNode>(msg => new TextNode($" {msg}")
                 .WithForeground(Color.Black)
                 .WithBackground(Color.BrightCyan))
             .AsLayout()
@@ -201,21 +285,6 @@ public class DashboardPage : ReactivePage<DashboardViewModel>
     {
         var filled = Math.Clamp((int)(percent / 100.0 * width), 0, width);
         return $"[{"".PadRight(filled, '█')}{new string('░', width - filled)}]";
-    }
-
-    private static string CleanDiskName(string raw)
-    {
-        if (raw.StartsWith(@"\\.\PHYSICALDRIVE", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Disk " + raw[^1];
-        }
-
-        if (raw.StartsWith("/dev/", StringComparison.Ordinal))
-        {
-            return raw[5..];
-        }
-
-        return raw.Length > 12 ? raw[..12] : raw;
     }
 
     private static Color GetDiskColor(double pct) => pct switch

@@ -78,15 +78,23 @@ public class PerformanceViewModel : ReactiveViewModel
     {
         var ct = _cts!.Token;
 
-        var cpuActor = await _cpuRef.GetAsync(ct);
-        var memActor = await _memRef.GetAsync(ct);
-        var diskActor = await _diskRef.GetAsync(ct);
-        var netActor = await _netRef.GetAsync(ct);
+        var cpuTask = _cpuRef.GetAsync(ct);
+        var memTask = _memRef.GetAsync(ct);
+        var diskTask = _diskRef.GetAsync(ct);
+        var netTask = _netRef.GetAsync(ct);
+        await Task.WhenAll(cpuTask, memTask, diskTask, netTask);
 
-        var cpuStream = await cpuActor.Ask<MonitoringStream<CpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
-        var memStream = await memActor.Ask<MonitoringStream<MemorySnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
-        var diskStream = await diskActor.Ask<MonitoringStream<List<DiskSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
-        var netStream = await netActor.Ask<MonitoringStream<List<NetworkSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
+        var askTimeout = TimeSpan.FromSeconds(30);
+        var cpuStreamTask = cpuTask.Result.Ask<MonitoringStream<CpuSnapshot>>(new StartMonitoring(), askTimeout);
+        var memStreamTask = memTask.Result.Ask<MonitoringStream<MemorySnapshot>>(new StartMonitoring(), askTimeout);
+        var diskStreamTask = diskTask.Result.Ask<MonitoringStream<List<DiskSnapshot>>>(new StartMonitoring(), askTimeout);
+        var netStreamTask = netTask.Result.Ask<MonitoringStream<List<NetworkSnapshot>>>(new StartMonitoring(), askTimeout);
+        await Task.WhenAll(cpuStreamTask, memStreamTask, diskStreamTask, netStreamTask);
+
+        var cpuStream = cpuStreamTask.Result;
+        var memStream = memStreamTask.Result;
+        var diskStream = diskStreamTask.Result;
+        var netStream = netStreamTask.Result;
 
         _ = ConsumeAsync(cpuStream.Data, ct, snapshot =>
         {

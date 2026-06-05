@@ -71,10 +71,12 @@ public class ProcessesViewModel : ReactiveViewModel
         {
             var ct = _cts!.Token;
 
-            _processActionActor = await _processActionRef.GetAsync(ct);
-            var monitorActor = await _processMonitorRef.GetAsync(ct);
+            var actionTask = _processActionRef.GetAsync(ct);
+            var monitorTask = _processMonitorRef.GetAsync(ct);
+            await Task.WhenAll(actionTask, monitorTask);
+            _processActionActor = actionTask.Result;
 
-            var stream = await monitorActor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
+            var stream = await monitorTask.Result.Ask<MonitoringStream<List<ProcessSnapshot>>>(
                 new StartMonitoring(), TimeSpan.FromSeconds(30));
             await foreach (var list in stream.Data.WithCancellation(ct))
             {

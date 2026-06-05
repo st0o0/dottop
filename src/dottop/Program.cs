@@ -34,9 +34,6 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 
         var serviceActor = system.ActorOf(WindowsServiceActor.Props(), "windows-service");
         registry.Register<WindowsServiceActor>(serviceActor);
-
-        var startupActor = system.ActorOf(StartupActor.Props(), "startup");
-        registry.Register<StartupActor>(startupActor);
     });
 });
 
@@ -46,7 +43,6 @@ builder.Services.AddTermina("/", termina =>
     termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
     termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
     termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
-    termina.RegisterRoute<AutostartPage, AutostartViewModel>("/autostart", NavigationBehavior.PreserveState);
 });
 
 await builder.Build().RunAsync();

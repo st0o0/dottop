@@ -40,6 +40,3 @@ public sealed record StartService(string Name);
 public sealed record StopService(string Name);
 public sealed record RestartService(string Name);
 
-// Startup action requests
-public sealed record GetStartupEntries;
-public sealed record SetStartupEnabled(string Name, bool Enabled);

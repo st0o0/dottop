@@ -7,10 +7,10 @@ namespace dottop.Nodes;
 public sealed class TabBarNode : LayoutNode
 {
     private static readonly string[] TabLabels =
-        ["1:Prozesse", "2:Performance", "3:Dienste", "4:Netzwerk", "5:Autostart"];
+        ["1:Prozesse", "2:Performance", "3:Dienste", "4:Netzwerk"];
 
     private static readonly string[] TabRoutes =
-        ["/", "/performance", "/services", "/network", "/autostart"];
+        ["/", "/performance", "/services", "/network"];
 
     private readonly int _activeIndex;
 

@@ -79,7 +79,7 @@ public class NetworkViewModel : ReactiveViewModel
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
-            case ConsoleKey.D5: Navigate("/autostart"); break;
+
             case ConsoleKey.Q: Shutdown(); break;
         }
     }

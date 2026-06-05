@@ -67,15 +67,14 @@ public class AutostartViewModel : ReactiveViewModel
         }
     }
 
-    private async void ToggleSelected()
+    private void ToggleSelected()
     {
-        if (_startupActor is null || ListNode?.SelectedItem is not { } entry) return;
-        try
-        {
-            await _startupActor.Ask<object>(new SetStartupEnabled(entry.Name, !entry.Enabled), TimeSpan.FromSeconds(5));
-            RefreshEntries();
-        }
-        catch { }
+        if (ListNode?.SelectedItem is not { } entry) return;
+        var idx = ListNode.SelectedIndex;
+        var toggled = entry with { Enabled = !entry.Enabled };
+        Entries.Value = Entries.Value
+            .Select(e => e.Name == entry.Name ? toggled : e)
+            .ToList();
     }
 
     public override void Dispose()

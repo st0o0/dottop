@@ -12,6 +12,7 @@
         <PackageReference Include="Termina" Version="0.7.1"/>
         <PackageReference Include="Hardware.Info.AOT" Version="101.1.1.1"/>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0"/>
+        <PackageReference Include="Akka.Hosting" Version="1.5.36"/>
     </ItemGroup>
 
 </Project>

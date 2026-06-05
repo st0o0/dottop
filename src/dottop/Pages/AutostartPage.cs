@@ -17,12 +17,11 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
             e =>
             {
                 var name = e.Name.Length > 22 ? e.Name[..21] + "…" : e.Name;
-                var statusIcon = e.Enabled ? "✓" : "✗";
-                var statusLabel = e.Enabled ? "Aktiv" : "Deakt.";
+                var status = e.Enabled ? "✓ Aktiv    " : "✗ Deaktiviert";
                 var path = e.Path.Length > 30 ? e.Path[..29] + "…" : e.Path;
-                return $" {name,-22} {statusIcon} {statusLabel,-6} {path}";
+                return $" {name,-22} {status,-13} {path}";
             },
-            e => e.Enabled ? Color.BrightCyan : Color.Gray);
+            e => e.Enabled ? Color.BrightGreen : Color.BrightRed);
 
         ViewModel.ListNode = list;
 
@@ -42,7 +41,7 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {"Name",-22} {"Status",-8} Pfad")
+        return new TextNode($" {"Name",-22} {"Status",-13} Pfad")
             .WithForeground(Color.Gray).Height(1);
     }
 

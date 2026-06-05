@@ -38,11 +38,13 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
     private ILayoutNode BuildConnectionList()
     {
-        return ViewModel.FilteredConnections.CombineLatest<List<ConnectionInfo>, int, ILayoutNode>(
-            ViewModel.SelectedIndex,
-            (connections, selectedIdx) =>
+        var container = new ScrollableContainerNode().WithScrollbar(true);
+
+        ViewModel.FilteredConnections.CombineLatest(ViewModel.SelectedIndex,
+            (connections, selectedIdx) => (connections, selectedIdx))
+            .Subscribe(tuple =>
             {
-                var container = new ScrollableContainerNode().WithScrollbar(true);
+                var (connections, selectedIdx) = tuple;
                 var layout = Layouts.Vertical();
                 for (var i = 0; i < connections.Count; i++)
                 {
@@ -55,8 +57,10 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                         node.WithForeground(c.State == "LISTEN" ? Color.Gray : Color.BrightMagenta);
                     layout.WithChild(node.Height(1));
                 }
-                return container.WithContent(layout);
-            }).AsLayout().Fill();
+                container.WithContent(layout);
+            }).DisposeWith(Subscriptions);
+
+        return container.Fill();
     }
 
     private ILayoutNode BuildStatusBar()

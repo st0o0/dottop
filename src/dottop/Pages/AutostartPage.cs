@@ -28,11 +28,13 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
 
     private ILayoutNode BuildEntryList()
     {
-        return ViewModel.Entries.CombineLatest<List<StartupEntry>, int, ILayoutNode>(
-            ViewModel.SelectedIndex,
-            (entries, selectedIdx) =>
+        var container = new ScrollableContainerNode().WithScrollbar(true);
+
+        ViewModel.Entries.CombineLatest(ViewModel.SelectedIndex,
+            (entries, selectedIdx) => (entries, selectedIdx))
+            .Subscribe(tuple =>
             {
-                var container = new ScrollableContainerNode().WithScrollbar(true);
+                var (entries, selectedIdx) = tuple;
                 var layout = Layouts.Vertical();
                 for (var i = 0; i < entries.Count; i++)
                 {
@@ -49,9 +51,10 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
                         node.WithForeground(e.Enabled ? Color.BrightCyan : Color.Gray);
                     layout.WithChild(node.Height(1));
                 }
+                container.WithContent(layout);
+            }).DisposeWith(Subscriptions);
 
-                return container.WithContent(layout);
-            }).AsLayout().Fill();
+        return container.Fill();
     }
 
     private ILayoutNode BuildStatusBar()

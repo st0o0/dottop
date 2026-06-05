@@ -75,11 +75,13 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildProcessList()
     {
-        return ViewModel.FilteredProcesses.CombineLatest<List<ProcessSnapshot>, int, ILayoutNode>(
-            ViewModel.SelectedIndex,
-            (processes, selectedIdx) =>
+        var container = new ScrollableContainerNode().WithScrollbar(true);
+
+        ViewModel.FilteredProcesses.CombineLatest(ViewModel.SelectedIndex,
+            (processes, selectedIdx) => (processes, selectedIdx))
+            .Subscribe(tuple =>
             {
-                var container = new ScrollableContainerNode().WithScrollbar(true);
+                var (processes, selectedIdx) = tuple;
                 var layout = Layouts.Vertical();
                 for (var i = 0; i < processes.Count; i++)
                 {
@@ -99,8 +101,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                         });
                     layout.WithChild(node.Height(1));
                 }
-                return container.WithContent(layout);
-            }).AsLayout().Fill();
+                container.WithContent(layout);
+            }).DisposeWith(Subscriptions);
+
+        return container.Fill();
     }
 
     private void UpdateOverlayContent()

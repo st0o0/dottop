@@ -39,11 +39,13 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
     private ILayoutNode BuildServiceList()
     {
-        return ViewModel.FilteredServices.CombineLatest<List<WindowsServiceInfo>, int, ILayoutNode>(
-            ViewModel.SelectedIndex,
-            (services, selectedIdx) =>
+        var container = new ScrollableContainerNode().WithScrollbar(true);
+
+        ViewModel.FilteredServices.CombineLatest(ViewModel.SelectedIndex,
+            (services, selectedIdx) => (services, selectedIdx))
+            .Subscribe(tuple =>
             {
-                var container = new ScrollableContainerNode().WithScrollbar(true);
+                var (services, selectedIdx) = tuple;
                 var layout = Layouts.Vertical();
                 for (var i = 0; i < services.Count; i++)
                 {
@@ -57,8 +59,10 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                         node.WithForeground(s.Status == ServiceStatus.Running ? Color.BrightCyan : Color.Gray);
                     layout.WithChild(node.Height(1));
                 }
-                return container.WithContent(layout);
-            }).AsLayout().Fill();
+                container.WithContent(layout);
+            }).DisposeWith(Subscriptions);
+
+        return container.Fill();
     }
 
     private ILayoutNode BuildStatusBar()

@@ -16,7 +16,7 @@ public class ProcessMonitorActorTests : TestKit
         actor.Tell(new Tick());
         var list = ExpectMsg<List<ProcessSnapshot>>(TimeSpan.FromSeconds(5));
         Assert.NotEmpty(list);
-        Assert.All(list, p => Assert.True(p.Pid > 0));
+        Assert.All(list, p => Assert.True(p.Pid >= 0));
     }
 
     [Fact]

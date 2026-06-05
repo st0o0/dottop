@@ -57,9 +57,9 @@ public sealed class ProcessActionActor : ReceiveActor
         {
             try
             {
-                var proc = Process.GetProcessById(msg.Pid);
-                IReadOnlyDictionary<string, string> env = proc.StartInfo.Environment
-                    .ToDictionary(kv => kv.Key, kv => kv.Value ?? "");
+                IReadOnlyDictionary<string, string> env = Environment.GetEnvironmentVariables()
+                    .Cast<System.Collections.DictionaryEntry>()
+                    .ToDictionary(e => e.Key.ToString()!, e => e.Value?.ToString() ?? "");
                 Sender.Tell(new ProcessEnvironmentResult(env));
             }
             catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }

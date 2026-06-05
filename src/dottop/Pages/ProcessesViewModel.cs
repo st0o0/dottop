@@ -2,29 +2,247 @@ using Akka.Actor;
 using Akka.Hosting;
 using R3;
 using dottop.Actors;
+using dottop.Models;
 using Termina.Input;
 using Termina.Reactive;
 
 namespace dottop.Pages;
 
+public enum SortColumn { Name, Cpu, Ram, Pid }
+
 public class ProcessesViewModel : ReactiveViewModel
 {
-    public ProcessesViewModel(ActorSystem system, IRequiredActor<ProcessActionActor> processAction) { }
+    private readonly ActorSystem _system;
+    private readonly IRequiredActor<ProcessActionActor> _processActionRef;
+    private IActorRef? _processActionActor;
+    private readonly List<IActorRef> _bridges = [];
+
+    public ReactiveProperty<List<ProcessSnapshot>> AllProcesses { get; } = new([]);
+    public ReactiveProperty<List<ProcessSnapshot>> FilteredProcesses { get; } = new([]);
+    public ReactiveProperty<string> SearchText { get; } = new("");
+    public ReactiveProperty<ProcessGroup?> SelectedGroup { get; } = new((ProcessGroup?)null);
+    public ReactiveProperty<SortColumn> SortColumn { get; } = new(Pages.SortColumn.Ram);
+    public ReactiveProperty<int> SelectedIndex { get; } = new(0);
+    public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
+    public ReactiveProperty<bool> IsOverlayOpen { get; } = new(false);
+    public ReactiveProperty<ProcessSnapshot?> SelectedProcess { get; } = new(null);
+    public ReactiveProperty<int> OverlayTabIndex { get; } = new(0);
+    public ReactiveProperty<string> StatusMessage { get; } = new("");
+    public ReactiveProperty<ProcessTreeResult?> ProcessTree { get; } = new(null);
+    public ReactiveProperty<IReadOnlyDictionary<string, string>?> ProcessEnv { get; } = new(null);
+    public ReactiveProperty<IReadOnlyList<string>?> ProcessHandles { get; } = new(null);
+
+    public ProcessesViewModel(ActorSystem system, IRequiredActor<ProcessActionActor> processAction)
+    {
+        _system = system;
+        _processActionRef = processAction;
+    }
 
     public override void OnActivated()
     {
+        // Resolve actor ref
+        _processActionActor = _processActionRef.GetAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+        // Subscribe to process list via EventStream bridge
+        SubscribeToEvent<List<ProcessSnapshot>>(list =>
+        {
+            AllProcesses.Value = list;
+            ApplyFilter();
+        });
+
+        SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
+        SelectedGroup.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
+        SortColumn.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
+
         Input.OfType<IInputEvent, KeyPressed>()
-            .Subscribe(key =>
-            {
-                switch (key.KeyInfo.Key)
-                {
-                    case ConsoleKey.D2: Navigate("/performance"); break;
-                    case ConsoleKey.D3: Navigate("/services"); break;
-                    case ConsoleKey.D4: Navigate("/network"); break;
-                    case ConsoleKey.D5: Navigate("/autostart"); break;
-                    case ConsoleKey.Q or ConsoleKey.Escape: Shutdown(); break;
-                }
-            })
+            .Subscribe(HandleKey)
             .DisposeWith(Subscriptions);
+
+        UpdateStatus();
+    }
+
+    private void SubscribeToEvent<T>(Action<T> handler)
+    {
+        var bridge = _system.ActorOf(Props.Create(() => new BridgeActor<T>(handler)));
+        _system.EventStream.Subscribe(bridge, typeof(T));
+        _bridges.Add(bridge);
+    }
+
+    private void ApplyFilter()
+    {
+        var source = AllProcesses.Value.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(SearchText.Value))
+            source = source.Where(p =>
+                p.Name.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase) ||
+                p.Pid.ToString().Contains(SearchText.Value));
+
+        if (SelectedGroup.Value is { } group)
+            source = source.Where(p => p.Group == group);
+
+        source = SortColumn.Value switch
+        {
+            Pages.SortColumn.Cpu => source.OrderByDescending(p => p.CpuPercent),
+            Pages.SortColumn.Ram => source.OrderByDescending(p => p.WorkingSetBytes),
+            Pages.SortColumn.Pid => source.OrderBy(p => p.Pid),
+            Pages.SortColumn.Name => source.OrderBy(p => p.Name),
+            _ => source
+        };
+
+        FilteredProcesses.Value = source.ToList();
+        UpdateStatus();
+    }
+
+    private void HandleKey(KeyPressed key)
+    {
+        if (IsSearchActive.Value) { HandleSearchKey(key); return; }
+        if (IsOverlayOpen.Value) { HandleOverlayKey(key); return; }
+
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.UpArrow:
+                SelectedIndex.Value = Math.Max(0, SelectedIndex.Value - 1); break;
+            case ConsoleKey.DownArrow:
+                SelectedIndex.Value = Math.Min(FilteredProcesses.Value.Count - 1, SelectedIndex.Value + 1); break;
+            case ConsoleKey.Enter: OpenOverlay(); break;
+            case ConsoleKey.Oem2: IsSearchActive.Value = true; break;  // '/'
+            case ConsoleKey.Tab: CycleSortColumn(); break;
+            case ConsoleKey.G: CycleGroupFilter(); break;
+            case ConsoleKey.D2: Navigate("/performance"); break;
+            case ConsoleKey.D3: Navigate("/services"); break;
+            case ConsoleKey.D4: Navigate("/network"); break;
+            case ConsoleKey.D5: Navigate("/autostart"); break;
+            case ConsoleKey.Q: Shutdown(); break;
+        }
+    }
+
+    private void HandleSearchKey(KeyPressed key)
+    {
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
+            case ConsoleKey.Backspace:
+                if (SearchText.Value.Length > 0) SearchText.Value = SearchText.Value[..^1]; break;
+            default:
+                if (key.KeyInfo.KeyChar is >= ' ' and <= '~') SearchText.Value += key.KeyInfo.KeyChar; break;
+        }
+    }
+
+    private void HandleOverlayKey(KeyPressed key)
+    {
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.Escape: CloseOverlay(); break;
+            case ConsoleKey.LeftArrow:
+                OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1); LoadOverlayTab(); break;
+            case ConsoleKey.RightArrow:
+                OverlayTabIndex.Value = Math.Min(3, OverlayTabIndex.Value + 1); LoadOverlayTab(); break;
+            case ConsoleKey.K:
+                if (SelectedProcess.Value is { } proc && _processActionActor is not null)
+                    _processActionActor.Tell(new KillProcess(proc.Pid));
+                break;
+        }
+    }
+
+    private void OpenOverlay()
+    {
+        if (FilteredProcesses.Value.Count == 0) return;
+        var idx = Math.Clamp(SelectedIndex.Value, 0, FilteredProcesses.Value.Count - 1);
+        SelectedProcess.Value = FilteredProcesses.Value[idx];
+        OverlayTabIndex.Value = 0;
+        IsOverlayOpen.Value = true;
+        LoadOverlayTab();
+    }
+
+    public void CloseOverlay()
+    {
+        IsOverlayOpen.Value = false;
+        SelectedProcess.Value = null;
+        ProcessTree.Value = null;
+        ProcessEnv.Value = null;
+        ProcessHandles.Value = null;
+    }
+
+    private async void LoadOverlayTab()
+    {
+        if (SelectedProcess.Value is not { } proc || _processActionActor is null) return;
+        try
+        {
+            switch (OverlayTabIndex.Value)
+            {
+                case 1 when ProcessTree.Value is null:
+                    var tree = await _processActionActor.Ask<ProcessTreeResult>(
+                        new GetProcessTree(proc.Pid), TimeSpan.FromSeconds(5));
+                    ProcessTree.Value = tree;
+                    break;
+                case 2 when ProcessEnv.Value is null:
+                    var env = await _processActionActor.Ask<ProcessEnvironmentResult>(
+                        new GetProcessEnvironment(proc.Pid), TimeSpan.FromSeconds(5));
+                    ProcessEnv.Value = env.Variables;
+                    break;
+                case 3 when ProcessHandles.Value is null:
+                    var handles = await _processActionActor.Ask<ProcessHandlesResult>(
+                        new GetProcessHandles(proc.Pid), TimeSpan.FromSeconds(5));
+                    ProcessHandles.Value = handles.Handles;
+                    break;
+            }
+        }
+        catch { /* Actor timeout - ignore */ }
+    }
+
+    private void CycleSortColumn()
+    {
+        SortColumn.Value = SortColumn.Value switch
+        {
+            Pages.SortColumn.Ram => Pages.SortColumn.Cpu,
+            Pages.SortColumn.Cpu => Pages.SortColumn.Name,
+            Pages.SortColumn.Name => Pages.SortColumn.Pid,
+            _ => Pages.SortColumn.Ram,
+        };
+    }
+
+    private void CycleGroupFilter()
+    {
+        SelectedGroup.Value = SelectedGroup.Value switch
+        {
+            null => ProcessGroup.Apps,
+            ProcessGroup.Apps => ProcessGroup.Background,
+            ProcessGroup.Background => ProcessGroup.Windows,
+            _ => null,
+        };
+    }
+
+    private void UpdateStatus()
+    {
+        var groupLabel = SelectedGroup.Value?.ToString() ?? "Alle";
+        StatusMessage.Value = $" {FilteredProcesses.Value.Count} Prozesse | Gruppe: {groupLabel} | Sort: {SortColumn.Value} | /: Suche | Enter: Detail | Q: Beenden";
+    }
+
+    public override void OnDeactivating()
+    {
+        foreach (var bridge in _bridges)
+        {
+            _system.EventStream.Unsubscribe(bridge);
+            _system.Stop(bridge);
+        }
+        _bridges.Clear();
+        base.OnDeactivating();
+    }
+
+    public override void Dispose()
+    {
+        AllProcesses.Dispose(); FilteredProcesses.Dispose();
+        SearchText.Dispose(); SelectedGroup.Dispose();
+        SortColumn.Dispose(); SelectedIndex.Dispose();
+        IsSearchActive.Dispose(); IsOverlayOpen.Dispose();
+        SelectedProcess.Dispose(); OverlayTabIndex.Dispose();
+        StatusMessage.Dispose(); ProcessTree.Dispose();
+        ProcessEnv.Dispose(); ProcessHandles.Dispose();
+        base.Dispose();
+    }
+
+    private sealed class BridgeActor<T> : ReceiveActor
+    {
+        public BridgeActor(Action<T> handler) { Receive<T>(msg => handler(msg)); }
     }
 }

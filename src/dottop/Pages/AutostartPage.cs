@@ -28,7 +28,9 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
 
     private ILayoutNode BuildEntryList()
     {
-        var container = new ScrollableContainerNode().WithScrollbar(true);
+        var container = new ScrollableContainerNode()
+            .WithScrollbar(true)
+            .WithAutoScroll(AutoScrollPolicy.None);
 
         ViewModel.Entries.CombineLatest(ViewModel.SelectedIndex,
             (entries, selectedIdx) => (entries, selectedIdx))

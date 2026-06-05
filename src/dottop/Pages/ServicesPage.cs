@@ -39,7 +39,9 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
     private ILayoutNode BuildServiceList()
     {
-        var container = new ScrollableContainerNode().WithScrollbar(true);
+        var container = new ScrollableContainerNode()
+            .WithScrollbar(true)
+            .WithAutoScroll(AutoScrollPolicy.None);
 
         ViewModel.FilteredServices.CombineLatest(ViewModel.SelectedIndex,
             (services, selectedIdx) => (services, selectedIdx))

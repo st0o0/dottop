@@ -75,7 +75,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildProcessList()
     {
-        var container = new ScrollableContainerNode().WithScrollbar(true);
+        var container = new ScrollableContainerNode()
+            .WithScrollbar(true)
+            .WithAutoScroll(AutoScrollPolicy.None);
 
         ViewModel.FilteredProcesses.CombineLatest(ViewModel.SelectedIndex,
             (processes, selectedIdx) => (processes, selectedIdx))
@@ -103,6 +105,15 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 }
                 container.WithContent(layout);
             }).DisposeWith(Subscriptions);
+
+        ViewModel.SelectedIndex.Subscribe(idx =>
+        {
+            var viewportEstimate = Math.Max(1, container.ContentHeight - container.MaxScroll);
+            if (idx < container.ScrollOffset)
+                container.ScrollTo(idx);
+            else if (idx >= container.ScrollOffset + viewportEstimate)
+                container.ScrollTo(idx - viewportEstimate + 1);
+        }).DisposeWith(Subscriptions);
 
         return container.Fill();
     }

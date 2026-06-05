@@ -38,7 +38,9 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
     private ILayoutNode BuildConnectionList()
     {
-        var container = new ScrollableContainerNode().WithScrollbar(true);
+        var container = new ScrollableContainerNode()
+            .WithScrollbar(true)
+            .WithAutoScroll(AutoScrollPolicy.None);
 
         ViewModel.FilteredConnections.CombineLatest(ViewModel.SelectedIndex,
             (connections, selectedIdx) => (connections, selectedIdx))

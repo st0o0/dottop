@@ -41,23 +41,18 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .Subscribe(_ => cpuGraph.Push(ViewModel.CpuTotal.Value))
             .DisposeWith(Subscriptions);
 
+        var coresNode = new CpuCoresNode();
+
+        ViewModel.CpuCores.Subscribe(cores => coresNode.SetCores(cores))
+            .DisposeWith(Subscriptions);
+
         return new PanelNode()
             .WithTitle(" CPU ")
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightGreen)
             .WithContent(
                 Layouts.Vertical()
-                    .WithChild(
-                        ViewModel.CpuCores
-                            .Select<IReadOnlyList<double>, ILayoutNode>(cores =>
-                            {
-                                var layout = Layouts.Horizontal();
-                                for (var i = 0; i < cores.Count; i++)
-                                    layout.WithChild(
-                                        new TextNode($" C{i}:{cores[i],3:F0}%")
-                                            .WithForeground(Color.BrightGreen));
-                                return layout;
-                            }).AsLayout().Height(1))
+                    .WithChild(coresNode)
                     .WithChild(cpuGraph.Fill()))
             .Fill();
     }

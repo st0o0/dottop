@@ -9,11 +9,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Termina" Version="0.10.2"/>
         <PackageReference Include="Hardware.Info.AOT" Version="110.0.0.1"/>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8"/>
         <PackageReference Include="Akka.Hosting" Version="1.5.68"/>
         <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.8"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\lib\termina\src\Termina\Termina.csproj"/>
     </ItemGroup>
 
 </Project>

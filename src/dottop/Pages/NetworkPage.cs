@@ -49,11 +49,11 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
     private ILayoutNode BuildSearchBar()
     {
-        return ViewModel.SearchText
-            .Select<string, ILayoutNode>(search =>
+        return ViewModel.IsSearchActive.CombineLatest(ViewModel.SearchText,
+            (active, search) =>
             {
-                if (ViewModel.IsSearchActive.Value)
-                    return new TextNode($" / {search}█")
+                if (active)
+                    return (ILayoutNode)new TextNode($" / {search}█")
                         .WithForeground(Color.BrightYellow);
                 return new TextNode(" /: Suche nach IP/Port")
                     .WithForeground(Color.BrightGreen);

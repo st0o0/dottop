@@ -75,7 +75,9 @@ public class NetworkViewModel : ReactiveViewModel
             case ConsoleKey.End: ListNode?.MoveToEnd(); break;
             case ConsoleKey.PageUp: ListNode?.PageUp(); break;
             case ConsoleKey.PageDown: ListNode?.PageDown(); break;
-            case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
+            default:
+                if (key.KeyInfo.KeyChar == '/') IsSearchActive.Value = true;
+                break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;

@@ -94,13 +94,13 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildSearchBar()
     {
-        return ViewModel.SearchText
-            .Select<string, ILayoutNode>(search =>
+        return ViewModel.IsSearchActive.CombineLatest(ViewModel.SearchText,
+            (active, search) =>
             {
                 var groupLabel = ViewModel.SelectedGroup.Value?.ToString() ?? "Alle";
                 var sort = ViewModel.SortColumn.Value;
-                if (ViewModel.IsSearchActive.Value)
-                    return new TextNode($" / {search}█  Gruppe: [{groupLabel}]  Sort: {sort} ↓")
+                if (active)
+                    return (ILayoutNode)new TextNode($" / {search}█  Gruppe: [{groupLabel}]  Sort: {sort} ↓")
                         .WithForeground(Color.BrightYellow);
                 return new TextNode($" /: Suche  Gruppe: [{groupLabel}]  Sort: {sort} ↓  G: Gruppe  Tab: Sort")
                     .WithForeground(Color.BrightGreen);

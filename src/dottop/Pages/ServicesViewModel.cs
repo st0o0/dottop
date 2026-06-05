@@ -79,7 +79,9 @@ public class ServicesViewModel : ReactiveViewModel
             case ConsoleKey.End: ListNode?.MoveToEnd(); break;
             case ConsoleKey.PageUp: ListNode?.PageUp(); break;
             case ConsoleKey.PageDown: ListNode?.PageDown(); break;
-            case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
+            default:
+                if (key.KeyInfo.KeyChar == '/') IsSearchActive.Value = true;
+                break;
             case ConsoleKey.S: ActionOnSelected(); break;
             case ConsoleKey.X: ActionOnSelected(ActionType.Stop); break;
             case ConsoleKey.R: ActionOnSelected(ActionType.Restart); break;

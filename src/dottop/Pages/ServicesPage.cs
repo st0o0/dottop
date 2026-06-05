@@ -52,11 +52,11 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
     private ILayoutNode BuildSearchBar()
     {
-        return ViewModel.SearchText
-            .Select<string, ILayoutNode>(search =>
+        return ViewModel.IsSearchActive.CombineLatest(ViewModel.SearchText,
+            (active, search) =>
             {
-                if (ViewModel.IsSearchActive.Value)
-                    return new TextNode($" / {search}█")
+                if (active)
+                    return (ILayoutNode)new TextNode($" / {search}█")
                         .WithForeground(Color.BrightYellow);
                 return new TextNode(" /: Suche  S: Start  X: Stop  R: Restart")
                     .WithForeground(Color.BrightGreen);

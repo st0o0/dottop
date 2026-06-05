@@ -10,6 +10,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
 {
     private Channel<List<ProcessSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
+    private CancellationTokenSource? _streamCts;
     private Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)> _previousCpu = new();
 
     public static Props Props(IProcessClassifier classifier) =>
@@ -21,7 +22,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
         {
             CleanupPreviousStream();
 
-            var cts = new CancellationTokenSource();
+            _streamCts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<List<ProcessSnapshot>>(new BoundedChannelOptions(1)
             {
                 FullMode = BoundedChannelFullMode.DropOldest
@@ -30,13 +31,16 @@ public sealed class ProcessMonitorActor : ReceiveActor
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                 TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
 
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, cts.Token);
-            Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, cts));
+            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+            Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, _streamCts));
         });
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
 
             var now = DateTime.UtcNow;
             var coreCount = Environment.ProcessorCount;
@@ -85,8 +89,11 @@ public sealed class ProcessMonitorActor : ReceiveActor
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
         _channel?.Writer.TryComplete();
         _tickSchedule = null;
+        _streamCts = null;
         _channel = null;
     }
 

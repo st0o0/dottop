@@ -16,7 +16,10 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
     public (ulong ReadBytesPerSec, ulong WriteBytesPerSec, double ActivePercent) GetMetrics(string diskName)
     {
         if (_counters is null || !_counters.TryGetValue(diskName, out var c))
+        {
             return (0, 0, 0);
+        }
+
         try
         {
             var read = (ulong)Math.Max(0, c.Read.NextValue());
@@ -44,7 +47,11 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
             var category = new PerformanceCounterCategory("LogicalDisk");
             foreach (var instance in category.GetInstanceNames())
             {
-                if (instance == "_Total" || instance.Length < 2 || instance[1] != ':') continue;
+                if (instance == "_Total" || instance.Length < 2 || instance[1] != ':')
+                {
+                    continue;
+                }
+
                 try
                 {
                     counters[instance[..2]] = new DiskPerfCounters(

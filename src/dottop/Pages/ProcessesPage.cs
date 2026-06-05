@@ -112,8 +112,11 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             {
                 var groupLabel = t.Group?.ToString() ?? Strings.GroupAll;
                 if (t.Active)
+                {
                     return (ILayoutNode)new TextNode(string.Format(Strings.SearchBarActiveFormat, t.Search + "█", groupLabel, t.Sort) + " ↓")
                         .WithForeground(Color.BrightYellow);
+                }
+
                 return new TextNode(string.Format(Strings.SearchBarInactiveFormat, groupLabel, t.Sort) + " ↓")
                     .WithForeground(Color.BrightGreen);
             })
@@ -130,7 +133,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private void UpdateOverlayContent()
     {
-        if (_overlay is null || ViewModel.SelectedProcess.Value is not { } proc) return;
+        if (_overlay is null || ViewModel.SelectedProcess.Value is not { } proc)
+        {
+            return;
+        }
 
         var tabLabels = new[] { Strings.OverlayTabOverview, Strings.OverlayTabProcessTree, Strings.OverlayTabEnvironment, Strings.OverlayTabHandles };
         var activeTab = ViewModel.OverlayTabIndex.Value;
@@ -140,9 +146,14 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         {
             var tabNode = new TextNode($" {tabLabels[i]} ");
             if (i == activeTab)
+            {
                 tabNode.WithForeground(Color.Black).WithBackground(Color.BrightCyan);
+            }
             else
+            {
                 tabNode.WithForeground(Color.Gray);
+            }
+
             header.WithChild(tabNode.Height(1));
         }
 
@@ -201,7 +212,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private ILayoutNode BuildTreeTab()
     {
         if (ViewModel.ProcessTree.Value is not { } tree)
+        {
             return new TextNode(Strings.LoadingProcessTree).WithForeground(Color.Gray);
+        }
+
         var layout = Layouts.Vertical();
         RenderTree(layout, tree, 0);
         return layout;
@@ -221,7 +235,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private ILayoutNode BuildEnvTab()
     {
         if (ViewModel.ProcessEnv.Value is not { } env)
+        {
             return new TextNode(Strings.LoadingEnvironmentVars).WithForeground(Color.Gray);
+        }
+
         _envList = new DataListNode<KeyValuePair<string, string>>(
             kv => $" {kv.Key}={kv.Value}",
             _ => Color.BrightCyan);
@@ -233,9 +250,15 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private ILayoutNode BuildHandlesTab()
     {
         if (ViewModel.ProcessHandles.Value is not { } handles)
+        {
             return new TextNode(Strings.LoadingHandles).WithForeground(Color.Gray);
+        }
+
         if (handles.Count == 0)
+        {
             return new TextNode(Strings.NoHandleInfo).WithForeground(Color.Gray);
+        }
+
         _handlesList = new DataListNode<string>(
             h => $" {h}",
             _ => Color.BrightCyan);

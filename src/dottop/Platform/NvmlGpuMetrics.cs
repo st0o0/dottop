@@ -70,7 +70,9 @@ public sealed class NvmlGpuMetrics : IGpuMetricsProvider
             {
                 var nameBuffer = new byte[64];
                 if (getName(_device, nameBuffer, (uint)nameBuffer.Length) == 0)
+                {
                     _name = Encoding.UTF8.GetString(nameBuffer).TrimEnd('\0');
+                }
             }
 
             IsAvailable = true;
@@ -84,14 +86,19 @@ public sealed class NvmlGpuMetrics : IGpuMetricsProvider
     private T? GetDelegate<T>(string entryPoint) where T : Delegate
     {
         if (NativeLibrary.TryGetExport(_lib, entryPoint, out var ptr))
+        {
             return Marshal.GetDelegateForFunctionPointer<T>(ptr);
+        }
+
         return null;
     }
 
     public GpuSnapshot GetSnapshot()
     {
         if (!IsAvailable)
+        {
             return new GpuSnapshot(_name, 0, 0, 0, 0);
+        }
 
         double usage = 0;
         ulong vramUsed = 0, vramTotal = 0;
@@ -101,7 +108,9 @@ public sealed class NvmlGpuMetrics : IGpuMetricsProvider
         {
             if (_nvmlGetUtilization is not null &&
                 _nvmlGetUtilization(_device, out var utilization) == 0)
+            {
                 usage = utilization.gpu;
+            }
         }
         catch
         {
@@ -126,7 +135,9 @@ public sealed class NvmlGpuMetrics : IGpuMetricsProvider
         {
             if (_nvmlGetTemperature is not null &&
                 _nvmlGetTemperature(_device, 0, out var temperature) == 0)
+            {
                 temp = temperature;
+            }
         }
         catch
         {

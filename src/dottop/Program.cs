@@ -17,24 +17,38 @@ var builder = Host.CreateApplicationBuilder(args);
 
 // Create platform-specific services
 IDiskMetricsProvider diskMetrics = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-    ? new WindowsDiskMetrics() : new LinuxDiskMetrics();
+    ? new WindowsDiskMetrics()
+    : new LinuxDiskMetrics();
 IProcessTreeProvider processTree = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-    ? new WindowsProcessTree() : new LinuxProcessTree();
+    ? new WindowsProcessTree()
+    : new LinuxProcessTree();
 IServiceManager serviceManager = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-    ? new WindowsServiceManager() : new LinuxServiceManager();
+    ? new WindowsServiceManager()
+    : new LinuxServiceManager();
 IProcessClassifier processClassifier = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-    ? new WindowsProcessClassifier() : new LinuxProcessClassifier();
+    ? new WindowsProcessClassifier()
+    : new LinuxProcessClassifier();
 IConnectionProvider connectionProvider = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-    ? new WindowsConnectionProvider() : new LinuxConnectionProvider();
+    ? new WindowsConnectionProvider()
+    : new LinuxConnectionProvider();
 
 IGpuMetricsProvider gpuMetrics;
-try { gpuMetrics = new NvmlGpuMetrics(); }
-catch { gpuMetrics = new NoGpuMetrics(); }
-if (!gpuMetrics.IsAvailable)
+try
+{
+    gpuMetrics = new NvmlGpuMetrics();
+}
+catch
+{
     gpuMetrics = new NoGpuMetrics();
+}
 
-builder.Services.AddSingleton<IConnectionProvider>(connectionProvider);
-builder.Services.AddSingleton<IGpuMetricsProvider>(gpuMetrics);
+if (!gpuMetrics.IsAvailable)
+{
+    gpuMetrics = new NoGpuMetrics();
+}
+
+builder.Services.AddSingleton(connectionProvider);
+builder.Services.AddSingleton(gpuMetrics);
 
 builder.Services.AddAkka("dottop", configurationBuilder =>
 {

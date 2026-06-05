@@ -26,7 +26,10 @@ public sealed class TabBarNode : LayoutNode
 
     public override void Render(IRenderContext context, Rect bounds)
     {
-        if (!bounds.HasArea) return;
+        if (!bounds.HasArea)
+        {
+            return;
+        }
 
         var x = 1;
         for (var i = 0; i < TabLabels.Length; i++)

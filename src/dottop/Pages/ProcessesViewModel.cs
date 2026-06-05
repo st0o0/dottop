@@ -67,16 +67,15 @@ public class ProcessesViewModel : ReactiveViewModel
 
     private async Task InitializeAsync()
     {
-        var ct = _cts!.Token;
-
-        _processActionActor = await _processActionRef.GetAsync(ct);
-        var monitorActor = await _processMonitorRef.GetAsync(ct);
-
-        var stream = await monitorActor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
-            new StartMonitoring(), TimeSpan.FromSeconds(5));
-
         try
         {
+            var ct = _cts!.Token;
+
+            _processActionActor = await _processActionRef.GetAsync(ct);
+            var monitorActor = await _processMonitorRef.GetAsync(ct);
+
+            var stream = await monitorActor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
+                new StartMonitoring(), TimeSpan.FromSeconds(30));
             await foreach (var list in stream.Data.WithCancellation(ct))
             {
                 AllProcesses.Value = list;
@@ -95,6 +94,7 @@ public class ProcessesViewModel : ReactiveViewModel
             }
         }
         catch (OperationCanceledException) { }
+        catch (Exception) { }
     }
 
     private void ApplyFilter()
@@ -102,12 +102,16 @@ public class ProcessesViewModel : ReactiveViewModel
         var source = AllProcesses.Value.AsEnumerable();
 
         if (!string.IsNullOrEmpty(SearchText.Value))
+        {
             source = source.Where(p =>
                 p.Name.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase) ||
                 p.Pid.ToString().Contains(SearchText.Value));
+        }
 
         if (SelectedGroup.Value is { } group)
+        {
             source = source.Where(p => p.Group == group);
+        }
 
         source = SortColumn.Value switch
         {
@@ -146,7 +150,11 @@ public class ProcessesViewModel : ReactiveViewModel
                 }
                 break;
             default:
-                if (key.KeyInfo.KeyChar == '/') IsSearchActive.Value = true;
+                if (key.KeyInfo.KeyChar == '/')
+                {
+                    IsSearchActive.Value = true;
+                }
+
                 break;
             case ConsoleKey.Tab or ConsoleKey.F6: CycleSortColumn(); break;
             case ConsoleKey.G: CycleGroupFilter(); break;
@@ -164,9 +172,19 @@ public class ProcessesViewModel : ReactiveViewModel
         {
             case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
             case ConsoleKey.Backspace:
-                if (SearchText.Value.Length > 0) SearchText.Value = SearchText.Value[..^1]; break;
+                if (SearchText.Value.Length > 0)
+                {
+                    SearchText.Value = SearchText.Value[..^1];
+                }
+
+                break;
             default:
-                if (key.KeyInfo.KeyChar is >= ' ' and <= '~') SearchText.Value += key.KeyInfo.KeyChar; break;
+                if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
+                {
+                    SearchText.Value += key.KeyInfo.KeyChar;
+                }
+
+                break;
         }
     }
 
@@ -176,9 +194,14 @@ public class ProcessesViewModel : ReactiveViewModel
         {
             case ConsoleKey.Escape:
                 if (IsKillConfirmPending.Value)
+                {
                     IsKillConfirmPending.Value = false;
+                }
                 else
+                {
                     CloseOverlay();
+                }
+
                 break;
             case ConsoleKey.LeftArrow:
                 OverlayListNode = null;
@@ -196,7 +219,10 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.PageDown: OverlayListNode?.PageDown(); break;
             case ConsoleKey.K:
                 if (SelectedProcess.Value is not null && _processActionActor is not null)
+                {
                     IsKillConfirmPending.Value = true;
+                }
+
                 break;
             case ConsoleKey.Y:
                 if (IsKillConfirmPending.Value && SelectedProcess.Value is { } killTarget && _processActionActor is not null)
@@ -224,7 +250,11 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public async void LoadOverlayTab()
     {
-        if (SelectedProcess.Value is not { } proc || _processActionActor is null) return;
+        if (SelectedProcess.Value is not { } proc || _processActionActor is null)
+        {
+            return;
+        }
+
         try
         {
             switch (OverlayTabIndex.Value)

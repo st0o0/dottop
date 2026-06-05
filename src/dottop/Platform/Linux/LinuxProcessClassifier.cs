@@ -14,7 +14,10 @@ public sealed class LinuxProcessClassifier : IProcessClassifier
             var pid = process.Id;
 
             // Session 0 processes are kernel/system services
-            if (process.SessionId == 0) return ProcessGroup.Windows;
+            if (process.SessionId == 0)
+            {
+                return ProcessGroup.Windows;
+            }
 
             // Try to detect GUI apps by checking /proc/{pid}/environ for DISPLAY or WAYLAND
             try

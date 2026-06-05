@@ -66,6 +66,16 @@ public class PerformanceViewModel : ReactiveViewModel
 
     private async Task InitializeAsync()
     {
+        try
+        {
+            await InitializeStreamsAsync();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception) { }
+    }
+
+    private async Task InitializeStreamsAsync()
+    {
         var ct = _cts!.Token;
 
         var cpuActor = await _cpuRef.GetAsync(ct);
@@ -73,10 +83,10 @@ public class PerformanceViewModel : ReactiveViewModel
         var diskActor = await _diskRef.GetAsync(ct);
         var netActor = await _netRef.GetAsync(ct);
 
-        var cpuStream = await cpuActor.Ask<MonitoringStream<CpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
-        var memStream = await memActor.Ask<MonitoringStream<MemorySnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
-        var diskStream = await diskActor.Ask<MonitoringStream<List<DiskSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
-        var netStream = await netActor.Ask<MonitoringStream<List<NetworkSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
+        var cpuStream = await cpuActor.Ask<MonitoringStream<CpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
+        var memStream = await memActor.Ask<MonitoringStream<MemorySnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
+        var diskStream = await diskActor.Ask<MonitoringStream<List<DiskSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
+        var netStream = await netActor.Ask<MonitoringStream<List<NetworkSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
 
         _ = ConsumeAsync(cpuStream.Data, ct, snapshot =>
         {
@@ -84,7 +94,9 @@ public class PerformanceViewModel : ReactiveViewModel
             CpuTotal.Value = snapshot.TotalPercent;
             CpuCores.Value = snapshot.CorePercents;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Cpu)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         _ = ConsumeAsync(memStream.Data, ct, snapshot =>
@@ -92,32 +104,40 @@ public class PerformanceViewModel : ReactiveViewModel
             RamTotal.Value = snapshot.TotalBytes;
             RamUsed.Value = snapshot.UsedBytes;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Ram)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         _ = ConsumeAsync(diskStream.Data, ct, disks =>
         {
             Disks.Value = disks;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Disk)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         _ = ConsumeAsync(netStream.Data, ct, nets =>
         {
             Networks.Value = nets;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         if (_gpuMetrics.IsAvailable)
         {
             var gpuActor = await _gpuRef.GetAsync(ct);
-            var gpuStream = await gpuActor.Ask<MonitoringStream<GpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
+            var gpuStream = await gpuActor.Ask<MonitoringStream<GpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
             _ = ConsumeAsync(gpuStream.Data, ct, snapshot =>
             {
                 Gpu.Value = snapshot;
                 if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Gpu)
+                {
                     _detailContentChanged.OnNext(Unit.Default);
+                }
             });
         }
     }

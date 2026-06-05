@@ -55,11 +55,17 @@ public sealed class LinuxDiskMetrics : IDiskMetricsProvider
             foreach (var line in File.ReadAllLines("/proc/diskstats"))
             {
                 var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 14) continue;
+                if (parts.Length < 14)
+                {
+                    continue;
+                }
 
                 var name = parts[2];
                 // Skip partition entries (e.g. sda1), keep whole disks (sda, nvme0n1)
-                if (name.Length > 2 && char.IsDigit(name[^1]) && !name.Contains("nvme")) continue;
+                if (name.Length > 2 && char.IsDigit(name[^1]) && !name.Contains("nvme"))
+                {
+                    continue;
+                }
 
                 if (ulong.TryParse(parts[5], out var readSectors) &&
                     ulong.TryParse(parts[9], out var writeSectors) &&

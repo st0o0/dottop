@@ -12,6 +12,7 @@ public sealed class DiskMonitorActor : ReceiveActor
     private readonly IDiskMetricsProvider _diskMetrics;
     private Channel<List<DiskSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
+    private CancellationTokenSource? _streamCts;
 
     public static Props Props(IDiskMetricsProvider diskMetrics) =>
         Akka.Actor.Props.Create(() => new DiskMonitorActor(diskMetrics));
@@ -24,7 +25,7 @@ public sealed class DiskMonitorActor : ReceiveActor
         {
             CleanupPreviousStream();
 
-            var cts = new CancellationTokenSource();
+            _streamCts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<List<DiskSnapshot>>(new BoundedChannelOptions(1)
             {
                 FullMode = BoundedChannelFullMode.DropOldest
@@ -35,13 +36,17 @@ public sealed class DiskMonitorActor : ReceiveActor
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                 TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
 
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, cts.Token);
-            Sender.Tell(new MonitoringStream<List<DiskSnapshot>>(stream, cts));
+            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+            Sender.Tell(new MonitoringStream<List<DiskSnapshot>>(stream, _streamCts));
         });
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
+
             _hw.RefreshDriveList();
             var disks = _hw.DriveList
                 .Where(d => d.PartitionList.Count > 0)
@@ -65,7 +70,11 @@ public sealed class DiskMonitorActor : ReceiveActor
     {
         foreach (var s in new[] { volumeName, driveName })
         {
-            if (string.IsNullOrWhiteSpace(s)) continue;
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                continue;
+            }
+
             var trimmed = s.TrimEnd('\\', '/');
             if (trimmed is [_, ':', ..])
             {
@@ -78,8 +87,11 @@ public sealed class DiskMonitorActor : ReceiveActor
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
         _channel?.Writer.TryComplete();
         _tickSchedule = null;
+        _streamCts = null;
         _channel = null;
     }
 

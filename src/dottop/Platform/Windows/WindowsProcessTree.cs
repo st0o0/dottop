@@ -45,7 +45,10 @@ public sealed class WindowsProcessTree : IProcessTreeProvider
         foreach (var (pid, ppid) in parentMap)
         {
             if (!childrenMap.ContainsKey(ppid))
+            {
                 childrenMap[ppid] = [];
+            }
+
             childrenMap[ppid].Add(pid);
         }
 

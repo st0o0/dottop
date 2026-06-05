@@ -68,7 +68,10 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
     private void UpdateDetailModal()
     {
-        if (_detailModal is null || ViewModel.SelectedService.Value is not { } svc) return;
+        if (_detailModal is null || ViewModel.SelectedService.Value is not { } svc)
+        {
+            return;
+        }
 
         var statusIcon = svc.Status == ServiceStatus.Running ? "▶" : "■";
         var statusColor = svc.Status == ServiceStatus.Running ? Color.BrightGreen : Color.BrightRed;
@@ -96,8 +99,11 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             (active, search) =>
             {
                 if (active)
+                {
                     return (ILayoutNode)new TextNode($" / {search}█")
                         .WithForeground(Color.BrightYellow);
+                }
+
                 return new TextNode(Strings.ServicesSearchHint)
                     .WithForeground(Color.BrightGreen);
             }).AsLayout().Height(1);

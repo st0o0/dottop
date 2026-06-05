@@ -11,8 +11,16 @@ public sealed class WindowsProcessClassifier : IProcessClassifier
     {
         try
         {
-            if (process.MainWindowHandle != nint.Zero) return ProcessGroup.Apps;
-            if (process.SessionId == 0) return ProcessGroup.Windows;
+            if (process.MainWindowHandle != nint.Zero)
+            {
+                return ProcessGroup.Apps;
+            }
+
+            if (process.SessionId == 0)
+            {
+                return ProcessGroup.Windows;
+            }
+
             return ProcessGroup.Background;
         }
         catch { return ProcessGroup.Background; }

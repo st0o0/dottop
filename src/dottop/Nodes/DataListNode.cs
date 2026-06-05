@@ -52,7 +52,10 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     {
         _items = items;
         if (_selectedIndex >= _items.Count)
+        {
             _selectedIndex = Math.Max(0, _items.Count - 1);
+        }
+
         Invalidate();
     }
 
@@ -107,9 +110,13 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     private void EnsureVisible()
     {
         if (_selectedIndex < _scrollOffset)
+        {
             _scrollOffset = _selectedIndex;
+        }
         else if (_selectedIndex >= _scrollOffset + _viewportHeight)
+        {
             _scrollOffset = _selectedIndex - _viewportHeight + 1;
+        }
     }
 
     public override Size Measure(Size available)
@@ -121,7 +128,10 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
 
     public override void Render(IRenderContext context, Rect bounds)
     {
-        if (!bounds.HasArea) return;
+        if (!bounds.HasArea)
+        {
+            return;
+        }
 
         _viewportHeight = bounds.Height;
         var ctx = context.CreateSubContext(bounds);
@@ -131,14 +141,21 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
         for (var row = 0; row < _viewportHeight; row++)
         {
             var itemIdx = _scrollOffset + row;
-            if (itemIdx >= _items.Count) break;
+            if (itemIdx >= _items.Count)
+            {
+                break;
+            }
 
             var item = _items[itemIdx];
             var text = _formatter(item);
             if (text.Length > contentWidth)
+            {
                 text = text[..(contentWidth - 1)] + "…";
+            }
             else if (text.Length < contentWidth)
+            {
                 text = text.PadRight(contentWidth);
+            }
 
             if (itemIdx == _selectedIndex)
             {
@@ -155,13 +172,18 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
         }
 
         if (showScrollbar)
+        {
             RenderScrollbar(ctx, bounds.Width - 1, _viewportHeight);
+        }
     }
 
     private void RenderScrollbar(IRenderContext ctx, int x, int height)
     {
         var totalItems = _items.Count;
-        if (totalItems <= height) return;
+        if (totalItems <= height)
+        {
+            return;
+        }
 
         var thumbSize = Math.Max(1, height * height / totalItems);
         var maxThumbTop = height - thumbSize;
@@ -180,12 +202,18 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     private void Invalidate()
     {
         if (!_disposed)
+        {
             _invalidated.OnNext(Unit.Default);
+        }
     }
 
     public override void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         _invalidated.OnCompleted();
         _invalidated.Dispose();

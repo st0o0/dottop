@@ -45,7 +45,9 @@ public sealed class WindowsConnectionProvider : IConnectionProvider
         try
         {
             if (GetExtendedTcpTable(buffer, ref size, true, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0) != 0)
+            {
                 return results;
+            }
 
             var rowCount = Marshal.ReadInt32(buffer);
             var rowPtr = buffer + 4;
@@ -78,7 +80,9 @@ public sealed class WindowsConnectionProvider : IConnectionProvider
         try
         {
             if (GetExtendedUdpTable(buffer, ref size, true, AF_INET, UDP_TABLE_OWNER_PID, 0) != 0)
+            {
                 return results;
+            }
 
             var rowCount = Marshal.ReadInt32(buffer);
             var rowPtr = buffer + 4;

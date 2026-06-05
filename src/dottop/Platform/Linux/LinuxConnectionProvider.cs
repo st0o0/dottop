@@ -25,10 +25,16 @@ public sealed class LinuxConnectionProvider : IConnectionProvider
             foreach (var procDir in Directory.GetDirectories("/proc"))
             {
                 var dirName = Path.GetFileName(procDir);
-                if (!int.TryParse(dirName, out var pid)) continue;
+                if (!int.TryParse(dirName, out var pid))
+                {
+                    continue;
+                }
 
                 var fdDir = Path.Combine(procDir, "fd");
-                if (!Directory.Exists(fdDir)) continue;
+                if (!Directory.Exists(fdDir))
+                {
+                    continue;
+                }
 
                 string processName;
                 try
@@ -49,7 +55,9 @@ public sealed class LinuxConnectionProvider : IConnectionProvider
                             {
                                 var inodeStr = link["socket:[".Length..^1];
                                 if (long.TryParse(inodeStr, out var inode))
+                                {
                                     map.TryAdd(inode, (pid, processName));
+                                }
                             }
                         }
                         catch { }
@@ -66,13 +74,19 @@ public sealed class LinuxConnectionProvider : IConnectionProvider
         Dictionary<long, (int Pid, string Name)> inodeMap)
     {
         var results = new List<ConnectionSnapshot>();
-        if (!File.Exists(path)) return results;
+        if (!File.Exists(path))
+        {
+            return results;
+        }
 
         var lines = File.ReadAllLines(path);
         foreach (var line in lines.Skip(1)) // skip header
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 10) continue;
+            if (parts.Length < 10)
+            {
+                continue;
+            }
 
             try
             {
@@ -93,12 +107,18 @@ public sealed class LinuxConnectionProvider : IConnectionProvider
     private static string ParseHexEndpoint(string hex)
     {
         var parts = hex.Split(':');
-        if (parts.Length != 2) return hex;
+        if (parts.Length != 2)
+        {
+            return hex;
+        }
 
         var ipBytes = Convert.FromHexString(parts[0]);
         // /proc/net uses network byte order on little-endian
         if (BitConverter.IsLittleEndian && ipBytes.Length == 4)
+        {
             Array.Reverse(ipBytes);
+        }
+
         var ip = new IPAddress(ipBytes);
         var port = Convert.ToInt32(parts[1], 16);
         return $"{ip}:{port}";

@@ -15,7 +15,10 @@ public sealed class LinuxProcessTree : IProcessTreeProvider
             foreach (var dir in Directory.GetDirectories("/proc"))
             {
                 var dirName = Path.GetFileName(dir);
-                if (!int.TryParse(dirName, out var pid)) continue;
+                if (!int.TryParse(dirName, out var pid))
+                {
+                    continue;
+                }
 
                 try
                 {
@@ -23,7 +26,10 @@ public sealed class LinuxProcessTree : IProcessTreeProvider
                     // Format: pid (comm) state ppid ...
                     // comm can contain spaces/parens, so find last ')' to parse reliably
                     var closeParenIdx = statLine.LastIndexOf(')');
-                    if (closeParenIdx < 0) continue;
+                    if (closeParenIdx < 0)
+                    {
+                        continue;
+                    }
 
                     var afterComm = statLine[(closeParenIdx + 2)..].Split(' ');
                     if (afterComm.Length >= 2 && int.TryParse(afterComm[1], out var ppid))
@@ -54,7 +60,10 @@ public sealed class LinuxProcessTree : IProcessTreeProvider
         foreach (var (pid, ppid) in parentMap)
         {
             if (!childrenMap.ContainsKey(ppid))
+            {
                 childrenMap[ppid] = [];
+            }
+
             childrenMap[ppid].Add(pid);
         }
 

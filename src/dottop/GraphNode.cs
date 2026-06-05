@@ -63,7 +63,11 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
     public void Start()
     {
-        if (IsAnimating) return;
+        if (IsAnimating)
+        {
+            return;
+        }
+
         _timerSubscription ??= Observable.Interval(TimeSpan.FromMilliseconds(_intervalMs), _timeProvider)
             .Subscribe(_ => { _invalidated.OnNext(Unit.Default); });
         IsAnimating = true;
@@ -71,7 +75,11 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
     public void Stop()
     {
-        if (!IsAnimating) return;
+        if (!IsAnimating)
+        {
+            return;
+        }
+
         _timerSubscription?.Dispose();
         _timerSubscription = null;
         IsAnimating = false;
@@ -118,7 +126,9 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
     public override void Render(IRenderContext context, Rect bounds)
     {
         if (!bounds.HasArea)
+        {
             return;
+        }
 
         var width = bounds.Width;
         var height = bounds.Height;
@@ -255,7 +265,11 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
     private double Normalize(double value)
     {
         var range = _maxValue - _minValue;
-        if (range <= 0) return 0;
+        if (range <= 0)
+        {
+            return 0;
+        }
+
         return Math.Clamp((value - _minValue) / range, 0.0, 1.0);
     }
 

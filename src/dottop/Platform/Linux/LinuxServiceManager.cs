@@ -14,7 +14,10 @@ public sealed class LinuxServiceManager : IServiceManager
             foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
             {
                 var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 4) continue;
+                if (parts.Length < 4)
+                {
+                    continue;
+                }
 
                 var name = parts[0].Replace(".service", "");
                 var active = parts[2]; // active/inactive

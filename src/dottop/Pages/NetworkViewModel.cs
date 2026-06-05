@@ -49,11 +49,14 @@ public class NetworkViewModel : ReactiveViewModel
     {
         var source = Connections.Value.AsEnumerable();
         if (!string.IsNullOrEmpty(SearchText.Value))
+        {
             source = source.Where(c =>
                 c.ProcessName.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase) ||
                 c.Pid.ToString().Contains(SearchText.Value) ||
                 c.LocalEndpoint.Contains(SearchText.Value) ||
                 c.RemoteEndpoint.Contains(SearchText.Value));
+        }
+
         FilteredConnections.Value = source.ToList();
         StatusMessage.Value = string.Format(Strings.NetworkStatusFormat, FilteredConnections.Value.Count);
     }
@@ -65,8 +68,18 @@ public class NetworkViewModel : ReactiveViewModel
             switch (key.KeyInfo.Key)
             {
                 case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
-                case ConsoleKey.Backspace: if (SearchText.Value.Length > 0) SearchText.Value = SearchText.Value[..^1]; break;
-                default: if (key.KeyInfo.KeyChar is >= ' ' and <= '~') SearchText.Value += key.KeyInfo.KeyChar; break;
+                case ConsoleKey.Backspace: if (SearchText.Value.Length > 0)
+                    {
+                        SearchText.Value = SearchText.Value[..^1];
+                    }
+
+                    break;
+                default: if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
+                    {
+                        SearchText.Value += key.KeyInfo.KeyChar;
+                    }
+
+                    break;
             }
             return;
         }
@@ -79,7 +92,11 @@ public class NetworkViewModel : ReactiveViewModel
             case ConsoleKey.PageUp: ListNode?.PageUp(); break;
             case ConsoleKey.PageDown: ListNode?.PageDown(); break;
             default:
-                if (key.KeyInfo.KeyChar == '/') IsSearchActive.Value = true;
+                if (key.KeyInfo.KeyChar == '/')
+                {
+                    IsSearchActive.Value = true;
+                }
+
                 break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;

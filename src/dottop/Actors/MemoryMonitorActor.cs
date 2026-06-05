@@ -10,6 +10,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private Channel<MemorySnapshot>? _channel;
     private ICancelable? _tickSchedule;
+    private CancellationTokenSource? _streamCts;
 
     public static Props Props() => Akka.Actor.Props.Create<MemoryMonitorActor>();
 
@@ -22,7 +23,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
         {
             CleanupPreviousStream();
 
-            var cts = new CancellationTokenSource();
+            _streamCts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<MemorySnapshot>(new BoundedChannelOptions(1)
             {
                 FullMode = BoundedChannelFullMode.DropOldest
@@ -31,13 +32,17 @@ public sealed class MemoryMonitorActor : ReceiveActor
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                 TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
 
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, cts.Token);
-            Sender.Tell(new MonitoringStream<MemorySnapshot>(stream, cts));
+            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+            Sender.Tell(new MonitoringStream<MemorySnapshot>(stream, _streamCts));
         });
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
+
             _hw.RefreshMemoryStatus();
             var status = _hw.MemoryStatus;
             var used = status.TotalPhysical - status.AvailablePhysical;
@@ -48,8 +53,11 @@ public sealed class MemoryMonitorActor : ReceiveActor
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
         _channel?.Writer.TryComplete();
         _tickSchedule = null;
+        _streamCts = null;
         _channel = null;
     }
 

@@ -44,7 +44,11 @@ public class ServicesViewModel : ReactiveViewModel
 
     private async void RefreshServices()
     {
-        if (_serviceActor is null) return;
+        if (_serviceActor is null)
+        {
+            return;
+        }
+
         try
         {
             var result = await _serviceActor.Ask<List<ServiceInfo>>(new GetServices(), TimeSpan.FromSeconds(10));
@@ -58,9 +62,12 @@ public class ServicesViewModel : ReactiveViewModel
     {
         var source = AllServices.Value.AsEnumerable();
         if (!string.IsNullOrEmpty(SearchText.Value))
+        {
             source = source.Where(s =>
                 s.DisplayName.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase) ||
                 s.Name.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase));
+        }
+
         FilteredServices.Value = source.ToList();
         StatusMessage.Value = string.Format(Strings.ServicesStatusFormat, FilteredServices.Value.Count);
     }
@@ -72,8 +79,18 @@ public class ServicesViewModel : ReactiveViewModel
             switch (key.KeyInfo.Key)
             {
                 case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
-                case ConsoleKey.Backspace: if (SearchText.Value.Length > 0) SearchText.Value = SearchText.Value[..^1]; break;
-                default: if (key.KeyInfo.KeyChar is >= ' ' and <= '~') SearchText.Value += key.KeyInfo.KeyChar; break;
+                case ConsoleKey.Backspace: if (SearchText.Value.Length > 0)
+                    {
+                        SearchText.Value = SearchText.Value[..^1];
+                    }
+
+                    break;
+                default: if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
+                    {
+                        SearchText.Value += key.KeyInfo.KeyChar;
+                    }
+
+                    break;
             }
             return;
         }
@@ -91,7 +108,11 @@ public class ServicesViewModel : ReactiveViewModel
             case ConsoleKey.PageUp: ListNode?.PageUp(); break;
             case ConsoleKey.PageDown: ListNode?.PageDown(); break;
             default:
-                if (key.KeyInfo.KeyChar == '/') IsSearchActive.Value = true;
+                if (key.KeyInfo.KeyChar == '/')
+                {
+                    IsSearchActive.Value = true;
+                }
+
                 break;
             case ConsoleKey.Enter:
                 if (GetSelectedItem?.Invoke() is { } svc)
@@ -127,7 +148,11 @@ public class ServicesViewModel : ReactiveViewModel
 
     private async void ActionOnSelected(ActionType action = ActionType.Start)
     {
-        if (_serviceActor is null || GetSelectedItem?.Invoke() is not { } svc) return;
+        if (_serviceActor is null || GetSelectedItem?.Invoke() is not { } svc)
+        {
+            return;
+        }
+
         object msg = action switch
         {
             ActionType.Stop => new StopService(svc.Name),

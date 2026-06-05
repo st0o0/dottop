@@ -10,6 +10,7 @@ public sealed class CpuMonitorActor : ReceiveActor
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private Channel<CpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
+    private CancellationTokenSource? _streamCts;
 
     public static Props Props() => Akka.Actor.Props.Create<CpuMonitorActor>();
 
@@ -21,7 +22,7 @@ public sealed class CpuMonitorActor : ReceiveActor
         {
             CleanupPreviousStream();
 
-            var cts = new CancellationTokenSource();
+            _streamCts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<CpuSnapshot>(new BoundedChannelOptions(1)
             {
                 FullMode = BoundedChannelFullMode.DropOldest
@@ -30,13 +31,17 @@ public sealed class CpuMonitorActor : ReceiveActor
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                 TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
 
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, cts.Token);
-            Sender.Tell(new MonitoringStream<CpuSnapshot>(stream, cts));
+            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+            Sender.Tell(new MonitoringStream<CpuSnapshot>(stream, _streamCts));
         });
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
+
             _hw.RefreshCPUList(includePercentProcessorTime: true, 250, false);
             var totalPercent = _hw.CpuList.Count > 0
                 ? _hw.CpuList.Average(c => (double)c.PercentProcessorTime) : 0;
@@ -50,8 +55,11 @@ public sealed class CpuMonitorActor : ReceiveActor
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
         _channel?.Writer.TryComplete();
         _tickSchedule = null;
+        _streamCts = null;
         _channel = null;
     }
 

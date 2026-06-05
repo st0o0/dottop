@@ -19,7 +19,9 @@ public sealed class WindowsServiceManager : IServiceManager
                 var name = obj["Name"]?.ToString() ?? "";
                 var desc = obj["Description"]?.ToString() ?? "";
                 if (!string.IsNullOrEmpty(name))
+                {
                     descriptions[name] = desc;
+                }
             }
         }
         catch { }
@@ -50,7 +52,11 @@ public sealed class WindowsServiceManager : IServiceManager
     public string Restart(string name)
     {
         var sc = new ServiceController(name);
-        if (sc.Status == ServiceControllerStatus.Running) sc.Stop();
+        if (sc.Status == ServiceControllerStatus.Running)
+        {
+            sc.Stop();
+        }
+
         sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(10));
         sc.Start();
         return $"Service {name} neugestartet";

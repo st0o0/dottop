@@ -69,8 +69,11 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             (active, search) =>
             {
                 if (active)
+                {
                     return (ILayoutNode)new TextNode($" / {search}█")
                         .WithForeground(Color.BrightYellow);
+                }
+
                 return new TextNode(Strings.NetworkSearchHint)
                     .WithForeground(Color.BrightGreen);
             }).AsLayout().Height(1);

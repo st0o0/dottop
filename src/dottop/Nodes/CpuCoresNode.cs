@@ -20,7 +20,9 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
     {
         _cores = cores;
         if (!_disposed)
+        {
             _invalidated.OnNext(Unit.Default);
+        }
     }
 
     public override Size Measure(Size available)
@@ -40,7 +42,10 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
 
     public override void Render(IRenderContext context, Rect bounds)
     {
-        if (!bounds.HasArea || _cores.Count == 0) return;
+        if (!bounds.HasArea || _cores.Count == 0)
+        {
+            return;
+        }
 
         var ctx = context.CreateSubContext(bounds);
         var coresPerRow = Math.Max(1, bounds.Width / ItemWidth);
@@ -50,13 +55,18 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
             var row = i / coresPerRow;
             var col = i % coresPerRow;
 
-            if (row >= bounds.Height) break;
+            if (row >= bounds.Height)
+            {
+                break;
+            }
 
             var x = col * ItemWidth;
             var text = $" C{i}:{_cores[i],3:F0}% ";
 
             if (x + text.Length > bounds.Width)
+            {
                 text = text[..(bounds.Width - x)];
+            }
 
             ctx.SetForeground(Color.BrightGreen);
             ctx.WriteAt(x, row, text);
@@ -66,7 +76,11 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
 
     public override void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         _invalidated.OnCompleted();
         _invalidated.Dispose();

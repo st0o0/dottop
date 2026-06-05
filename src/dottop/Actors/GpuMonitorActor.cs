@@ -7,22 +7,22 @@ namespace dottop.Actors;
 
 public sealed class GpuMonitorActor : ReceiveActor
 {
-    private readonly IGpuMetricsProvider _gpuMetrics;
     private Channel<GpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
+    private CancellationTokenSource? _streamCts;
 
     public static Props Props(IGpuMetricsProvider gpuMetrics) =>
         Akka.Actor.Props.Create(() => new GpuMonitorActor(gpuMetrics));
 
     public GpuMonitorActor(IGpuMetricsProvider gpuMetrics)
     {
-        _gpuMetrics = gpuMetrics;
+        var gpuMetrics1 = gpuMetrics;
 
         Receive<StartMonitoring>(_ =>
         {
             CleanupPreviousStream();
 
-            var cts = new CancellationTokenSource();
+            _streamCts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<GpuSnapshot>(new BoundedChannelOptions(1)
             {
                 FullMode = BoundedChannelFullMode.DropOldest
@@ -31,14 +31,18 @@ public sealed class GpuMonitorActor : ReceiveActor
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                 TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
 
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, cts.Token);
-            Sender.Tell(new MonitoringStream<GpuSnapshot>(stream, cts));
+            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+            Sender.Tell(new MonitoringStream<GpuSnapshot>(stream, _streamCts));
         });
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null || !_gpuMetrics.IsAvailable) return;
-            var snapshot = _gpuMetrics.GetSnapshot();
+            if (_channel is null || !gpuMetrics1.IsAvailable)
+            {
+                return;
+            }
+
+            var snapshot = gpuMetrics1.GetSnapshot();
             _channel.Writer.TryWrite(snapshot);
         });
     }
@@ -46,8 +50,11 @@ public sealed class GpuMonitorActor : ReceiveActor
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
         _channel?.Writer.TryComplete();
         _tickSchedule = null;
+        _streamCts = null;
         _channel = null;
     }
 

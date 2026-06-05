@@ -1,23 +1,29 @@
-using System.Net.NetworkInformation;
 using R3;
+using dottop.Models;
 using dottop.Nodes;
+using dottop.Platform;
 using dottop.Resources;
 using Termina.Input;
 using Termina.Reactive;
 
 namespace dottop.Pages;
 
-public record ConnectionInfo(string ProcessName, int Pid, string LocalEndpoint, string RemoteEndpoint, string State);
-
 public class NetworkViewModel : ReactiveViewModel
 {
+    private readonly IConnectionProvider _connectionProvider;
+
     public IScrollableList? ListNode { get; set; }
 
-    public ReactiveProperty<List<ConnectionInfo>> Connections { get; } = new([]);
-    public ReactiveProperty<List<ConnectionInfo>> FilteredConnections { get; } = new([]);
+    public ReactiveProperty<List<ConnectionSnapshot>> Connections { get; } = new([]);
+    public ReactiveProperty<List<ConnectionSnapshot>> FilteredConnections { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
+
+    public NetworkViewModel(IConnectionProvider connectionProvider)
+    {
+        _connectionProvider = connectionProvider;
+    }
 
     public override void OnActivated()
     {
@@ -33,12 +39,7 @@ public class NetworkViewModel : ReactiveViewModel
     {
         try
         {
-            var props = IPGlobalProperties.GetIPGlobalProperties();
-            var tcp = props.GetActiveTcpConnections()
-                .Select(c => new ConnectionInfo("", 0, c.LocalEndPoint.ToString(), c.RemoteEndPoint.ToString(), c.State.ToString()));
-            var listeners = props.GetActiveTcpListeners()
-                .Select(l => new ConnectionInfo("", 0, l.ToString(), "*:*", "LISTEN"));
-            Connections.Value = [..tcp, ..listeners];
+            Connections.Value = _connectionProvider.GetConnections();
             ApplyFilter();
         }
         catch { }
@@ -50,6 +51,7 @@ public class NetworkViewModel : ReactiveViewModel
         if (!string.IsNullOrEmpty(SearchText.Value))
             source = source.Where(c =>
                 c.ProcessName.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase) ||
+                c.Pid.ToString().Contains(SearchText.Value) ||
                 c.LocalEndpoint.Contains(SearchText.Value) ||
                 c.RemoteEndpoint.Contains(SearchText.Value));
         FilteredConnections.Value = source.ToList();

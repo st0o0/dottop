@@ -5,6 +5,7 @@ using dottop.Pages;
 using dottop.Platform;
 using dottop.Platform.Linux;
 using dottop.Platform.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Termina.Hosting;
 using Termina.Pages;
@@ -23,6 +24,10 @@ IServiceManager serviceManager = RuntimeInformation.IsOSPlatform(OSPlatform.Wind
     ? new WindowsServiceManager() : new LinuxServiceManager();
 IProcessClassifier processClassifier = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsProcessClassifier() : new LinuxProcessClassifier();
+IConnectionProvider connectionProvider = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+    ? new WindowsConnectionProvider() : new LinuxConnectionProvider();
+
+builder.Services.AddSingleton<IConnectionProvider>(connectionProvider);
 
 builder.Services.AddAkka("dottop", configurationBuilder =>
 {

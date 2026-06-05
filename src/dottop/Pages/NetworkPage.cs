@@ -1,3 +1,4 @@
+using dottop.Models;
 using dottop.Nodes;
 using dottop.Resources;
 using R3;
@@ -11,15 +12,16 @@ namespace dottop.Pages;
 
 public class NetworkPage : ReactivePage<NetworkViewModel>
 {
-    private DataListNode<ConnectionInfo>? _list;
+    private DataListNode<ConnectionSnapshot>? _list;
 
     public override ILayoutNode BuildLayout()
     {
-        _list = new DataListNode<ConnectionInfo>(
+        _list = new DataListNode<ConnectionSnapshot>(
             c =>
             {
-                var local = c.LocalEndpoint.Length > 24 ? c.LocalEndpoint[..23] + "…" : c.LocalEndpoint;
-                var remote = c.RemoteEndpoint.Length > 24 ? c.RemoteEndpoint[..23] + "…" : c.RemoteEndpoint;
+                var name = c.ProcessName.Length > 16 ? c.ProcessName[..15] + "…" : c.ProcessName;
+                var local = c.LocalEndpoint.Length > 22 ? c.LocalEndpoint[..21] + "…" : c.LocalEndpoint;
+                var remote = c.RemoteEndpoint.Length > 22 ? c.RemoteEndpoint[..21] + "…" : c.RemoteEndpoint;
                 var icon = c.State switch
                 {
                     "Established" => "⬤",
@@ -27,7 +29,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                     "TimeWait" or "CloseWait" => "◌",
                     _ => "○"
                 };
-                return $" {icon} {local,-24} {remote,-24} {c.State}";
+                return $" {icon} {name,-16} {c.Pid,6} {c.Protocol,-4} {local,-22} {remote,-22} {c.State}";
             },
             c => c.State switch
             {
@@ -47,7 +49,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightMagenta)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($"   {Strings.HeaderLocal,-24} {Strings.HeaderRemote,-24} {Strings.HeaderStatus}")
+                    .WithChild(new TextNode($"   {Strings.HeaderProcess,-16} {Strings.HeaderPid,6} {"Proto",-4} {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus}")
                         .WithForeground(Color.BrightBlack).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())

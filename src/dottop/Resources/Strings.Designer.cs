@@ -109,6 +109,7 @@ internal class Strings
     internal static string ErrorFormat => ResourceManager.GetString("ErrorFormat", resourceCulture) ?? "";
 
     internal static string PanelNetworkConnections => ResourceManager.GetString("PanelNetworkConnections", resourceCulture) ?? "";
+    internal static string HeaderProcess => ResourceManager.GetString("HeaderProcess", resourceCulture) ?? "";
     internal static string HeaderLocal => ResourceManager.GetString("HeaderLocal", resourceCulture) ?? "";
     internal static string HeaderRemote => ResourceManager.GetString("HeaderRemote", resourceCulture) ?? "";
     internal static string NetworkSearchHint => ResourceManager.GetString("NetworkSearchHint", resourceCulture) ?? "";

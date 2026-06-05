@@ -208,6 +208,9 @@
   <data name="PanelNetworkConnections" xml:space="preserve">
     <value> Network </value>
   </data>
+  <data name="HeaderProcess" xml:space="preserve">
+    <value>Process</value>
+  </data>
   <data name="HeaderLocal" xml:space="preserve">
     <value>Local</value>
   </data>

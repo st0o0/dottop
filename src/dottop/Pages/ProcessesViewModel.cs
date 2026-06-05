@@ -18,8 +18,9 @@ public class ProcessesViewModel : ReactiveViewModel
     private IActorRef? _processActionActor;
     private CancellationTokenSource? _cts;
 
-    public DataListNode<ProcessSnapshot>? ListNode { get; set; }
+    public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
+    public Func<ProcessSnapshot?>? GetSelectedItem { get; set; }
 
     private readonly Subject<Unit> _overlayContentChanged = new();
     public Observable<Unit> OverlayContentChanged => _overlayContentChanged.AsObservable();
@@ -133,7 +134,7 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.PageUp: ListNode?.PageUp(); break;
             case ConsoleKey.PageDown: ListNode?.PageDown(); break;
             case ConsoleKey.Enter:
-                if (ListNode?.SelectedItem is { } proc)
+                if (GetSelectedItem?.Invoke() is { } proc)
                 {
                     SelectedProcess.Value = proc;
                     OverlayTabIndex.Value = 0;

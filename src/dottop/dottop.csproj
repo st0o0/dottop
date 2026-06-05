@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\lib\termina\src\Termina\Termina.csproj"/>
+        <PackageReference Include="Termina" Version="0.10.2"/>
     </ItemGroup>
 
 </Project>

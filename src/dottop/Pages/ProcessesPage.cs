@@ -35,6 +35,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             });
 
         ViewModel.ListNode = _list;
+        ViewModel.GetSelectedItem = () => _list.SelectedItem;
 
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)

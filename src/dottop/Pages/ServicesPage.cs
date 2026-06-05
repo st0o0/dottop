@@ -11,9 +11,11 @@ namespace dottop.Pages;
 
 public class ServicesPage : ReactivePage<ServicesViewModel>
 {
+    private DataListNode<WindowsServiceInfo>? _list;
+
     public override ILayoutNode BuildLayout()
     {
-        var list = new DataListNode<WindowsServiceInfo>(
+        _list = new DataListNode<WindowsServiceInfo>(
             s =>
             {
                 var name = s.DisplayName.Length > 30 ? s.DisplayName[..29] + "…" : s.DisplayName;
@@ -23,20 +25,21 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             },
             s => s.Status == ServiceStatus.Running ? Color.BrightCyan : Color.Gray);
 
-        ViewModel.ListNode = list;
+        ViewModel.ListNode = _list;
+        ViewModel.GetSelectedItem = () => _list.SelectedItem;
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(2))
             .WithChild(BuildSearchBar())
             .WithChild(BuildHeader())
-            .WithChild(list.Fill())
+            .WithChild(_list.Fill())
             .WithChild(BuildStatusBar());
     }
 
     public override void OnNavigatedTo()
     {
         base.OnNavigatedTo();
-        ViewModel.FilteredServices.Subscribe(services => ViewModel.ListNode?.SetItems(services))
+        ViewModel.FilteredServices.Subscribe(services => _list?.SetItems(services))
             .DisposeWith(Subscriptions);
     }
 

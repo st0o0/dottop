@@ -14,7 +14,8 @@ public class ServicesViewModel : ReactiveViewModel
     private readonly IRequiredActor<WindowsServiceActor> _serviceActorRef;
     private IActorRef? _serviceActor;
 
-    public DataListNode<WindowsServiceInfo>? ListNode { get; set; }
+    public IScrollableList? ListNode { get; set; }
+    public Func<WindowsServiceInfo?>? GetSelectedItem { get; set; }
 
     public ReactiveProperty<List<WindowsServiceInfo>> AllServices { get; } = new([]);
     public ReactiveProperty<List<WindowsServiceInfo>> FilteredServices { get; } = new([]);
@@ -94,7 +95,7 @@ public class ServicesViewModel : ReactiveViewModel
 
     private async void ActionOnSelected(ActionType action = ActionType.Start)
     {
-        if (_serviceActor is null || ListNode?.SelectedItem is not { } svc) return;
+        if (_serviceActor is null || GetSelectedItem?.Invoke() is not { } svc) return;
         object msg = action switch
         {
             ActionType.Stop => new StopService(svc.Name),

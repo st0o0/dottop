@@ -10,7 +10,7 @@ public record ConnectionInfo(string ProcessName, int Pid, string LocalEndpoint, 
 
 public class NetworkViewModel : ReactiveViewModel
 {
-    public DataListNode<ConnectionInfo>? ListNode { get; set; }
+    public IScrollableList? ListNode { get; set; }
 
     public ReactiveProperty<List<ConnectionInfo>> Connections { get; } = new([]);
     public ReactiveProperty<List<ConnectionInfo>> FilteredConnections { get; } = new([]);

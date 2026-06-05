@@ -10,9 +10,11 @@ namespace dottop.Pages;
 
 public class NetworkPage : ReactivePage<NetworkViewModel>
 {
+    private DataListNode<ConnectionInfo>? _list;
+
     public override ILayoutNode BuildLayout()
     {
-        var list = new DataListNode<ConnectionInfo>(
+        _list = new DataListNode<ConnectionInfo>(
             c =>
             {
                 var local = c.LocalEndpoint.Length > 22 ? c.LocalEndpoint[..21] + "…" : c.LocalEndpoint;
@@ -21,20 +23,20 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             },
             c => c.State == "LISTEN" ? Color.Gray : Color.BrightMagenta);
 
-        ViewModel.ListNode = list;
+        ViewModel.ListNode = _list;
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(3))
             .WithChild(BuildSearchBar())
             .WithChild(BuildHeader())
-            .WithChild(list.Fill())
+            .WithChild(_list.Fill())
             .WithChild(BuildStatusBar());
     }
 
     public override void OnNavigatedTo()
     {
         base.OnNavigatedTo();
-        ViewModel.FilteredConnections.Subscribe(connections => ViewModel.ListNode?.SetItems(connections))
+        ViewModel.FilteredConnections.Subscribe(connections => _list?.SetItems(connections))
             .DisposeWith(Subscriptions);
     }
 

@@ -19,13 +19,15 @@ public sealed class DiskMonitorActor : ReceiveActor
     {
         Receive<StartMonitoring>(_ =>
         {
+            CleanupPreviousStream();
+
             var cts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<List<DiskSnapshot>>(new BoundedChannelOptions(1)
             {
                 FullMode = BoundedChannelFullMode.DropOldest
             });
 
-            InitPerfCounters();
+            _counters ??= InitPerfCounters();
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                 TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
@@ -56,9 +58,9 @@ public sealed class DiskMonitorActor : ReceiveActor
         });
     }
 
-    private void InitPerfCounters()
+    private static Dictionary<string, DiskPerfCounters> InitPerfCounters()
     {
-        _counters = new Dictionary<string, DiskPerfCounters>();
+        var counters = new Dictionary<string, DiskPerfCounters>();
         try
         {
             var category = new PerformanceCounterCategory("LogicalDisk");
@@ -67,7 +69,7 @@ public sealed class DiskMonitorActor : ReceiveActor
                 if (instance == "_Total" || instance.Length < 2 || instance[1] != ':') continue;
                 try
                 {
-                    _counters[instance[..2]] = new DiskPerfCounters(
+                    counters[instance[..2]] = new DiskPerfCounters(
                         new PerformanceCounter("LogicalDisk", "Disk Read Bytes/sec", instance, true),
                         new PerformanceCounter("LogicalDisk", "Disk Write Bytes/sec", instance, true),
                         new PerformanceCounter("LogicalDisk", "% Disk Time", instance, true));
@@ -76,6 +78,7 @@ public sealed class DiskMonitorActor : ReceiveActor
             }
         }
         catch { }
+        return counters;
     }
 
     private (ulong Read, ulong Write, double Active) ReadPerfCounters(string driveLetter)
@@ -104,10 +107,17 @@ public sealed class DiskMonitorActor : ReceiveActor
         return !string.IsNullOrWhiteSpace(volumeName) ? volumeName : driveName;
     }
 
-    protected override void PostStop()
+    private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
         _channel?.Writer.TryComplete();
+        _tickSchedule = null;
+        _channel = null;
+    }
+
+    protected override void PostStop()
+    {
+        CleanupPreviousStream();
         if (_counters is not null)
             foreach (var c in _counters.Values)
                 c.Dispose();

@@ -19,6 +19,8 @@ public sealed class CpuMonitorActor : ReceiveActor
 
         Receive<StartMonitoring>(_ =>
         {
+            CleanupPreviousStream();
+
             var cts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<CpuSnapshot>(new BoundedChannelOptions(1)
             {
@@ -45,10 +47,17 @@ public sealed class CpuMonitorActor : ReceiveActor
         });
     }
 
-    protected override void PostStop()
+    private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
         _channel?.Writer.TryComplete();
+        _tickSchedule = null;
+        _channel = null;
+    }
+
+    protected override void PostStop()
+    {
+        CleanupPreviousStream();
         base.PostStop();
     }
 }

@@ -17,6 +17,8 @@ public sealed class ProcessMonitorActor : ReceiveActor
     {
         Receive<StartMonitoring>(_ =>
         {
+            CleanupPreviousStream();
+
             var cts = new CancellationTokenSource();
             _channel = Channel.CreateBounded<List<ProcessSnapshot>>(new BoundedChannelOptions(1)
             {
@@ -89,10 +91,17 @@ public sealed class ProcessMonitorActor : ReceiveActor
         catch { return ProcessGroup.Background; }
     }
 
-    protected override void PostStop()
+    private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
         _channel?.Writer.TryComplete();
+        _tickSchedule = null;
+        _channel = null;
+    }
+
+    protected override void PostStop()
+    {
+        CleanupPreviousStream();
         base.PostStop();
     }
 }

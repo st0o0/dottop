@@ -134,7 +134,7 @@ public class ProcessesViewModel : ReactiveViewModel
                 }
                 break;
             case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
-            case ConsoleKey.Tab: CycleSortColumn(); break;
+            case ConsoleKey.Tab or ConsoleKey.F6: CycleSortColumn(); break;
             case ConsoleKey.G: CycleGroupFilter(); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;

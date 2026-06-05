@@ -18,11 +18,16 @@ public class ServicesViewModel : ReactiveViewModel
     public IScrollableList? ListNode { get; set; }
     public Func<WindowsServiceInfo?>? GetSelectedItem { get; set; }
 
+    private readonly Subject<Unit> _detailContentChanged = new();
+    public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
+
     public ReactiveProperty<List<WindowsServiceInfo>> AllServices { get; } = new([]);
     public ReactiveProperty<List<WindowsServiceInfo>> FilteredServices { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
+    public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
+    public ReactiveProperty<WindowsServiceInfo?> SelectedService { get; } = new(null);
 
     public ServicesViewModel(ActorSystem system, IRequiredActor<ServiceActor> serviceActor)
     {
@@ -72,6 +77,11 @@ public class ServicesViewModel : ReactiveViewModel
             }
             return;
         }
+        if (IsDetailOpen.Value)
+        {
+            HandleDetailKey(key);
+            return;
+        }
         switch (key.KeyInfo.Key)
         {
             case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
@@ -83,6 +93,14 @@ public class ServicesViewModel : ReactiveViewModel
             default:
                 if (key.KeyInfo.KeyChar == '/') IsSearchActive.Value = true;
                 break;
+            case ConsoleKey.Enter:
+                if (GetSelectedItem?.Invoke() is { } svc)
+                {
+                    SelectedService.Value = svc;
+                    IsDetailOpen.Value = true;
+                    _detailContentChanged.OnNext(Unit.Default);
+                }
+                break;
             case ConsoleKey.S: ActionOnSelected(); break;
             case ConsoleKey.X: ActionOnSelected(ActionType.Stop); break;
             case ConsoleKey.R: ActionOnSelected(ActionType.Restart); break;
@@ -91,6 +109,17 @@ public class ServicesViewModel : ReactiveViewModel
             case ConsoleKey.D4: Navigate("/network"); break;
 
             case ConsoleKey.Q: Shutdown(); break;
+        }
+    }
+
+    private void HandleDetailKey(KeyPressed key)
+    {
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.Escape:
+                IsDetailOpen.Value = false;
+                SelectedService.Value = null;
+                break;
         }
     }
 
@@ -117,7 +146,8 @@ public class ServicesViewModel : ReactiveViewModel
     public override void Dispose()
     {
         AllServices.Dispose(); FilteredServices.Dispose(); SearchText.Dispose();
-        IsSearchActive.Dispose(); StatusMessage.Dispose();
+        IsSearchActive.Dispose(); StatusMessage.Dispose(); IsDetailOpen.Dispose();
+        SelectedService.Dispose(); _detailContentChanged.Dispose();
         base.Dispose();
     }
 }

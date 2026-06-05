@@ -105,6 +105,11 @@ internal class Strings
     internal static string HeaderStartType => ResourceManager.GetString("HeaderStartType", resourceCulture) ?? "";
     internal static string ServicesSearchHint => ResourceManager.GetString("ServicesSearchHint", resourceCulture) ?? "";
     internal static string ServicesStatusFormat => ResourceManager.GetString("ServicesStatusFormat", resourceCulture) ?? "";
+    internal static string ServiceDetailName => ResourceManager.GetString("ServiceDetailName", resourceCulture) ?? "";
+    internal static string ServiceDetailDisplay => ResourceManager.GetString("ServiceDetailDisplay", resourceCulture) ?? "";
+    internal static string ServiceDetailDescription => ResourceManager.GetString("ServiceDetailDescription", resourceCulture) ?? "";
+    internal static string ServiceNoDescription => ResourceManager.GetString("ServiceNoDescription", resourceCulture) ?? "";
+    internal static string ServiceDetailHints => ResourceManager.GetString("ServiceDetailHints", resourceCulture) ?? "";
     internal static string ErrorLoadingServices => ResourceManager.GetString("ErrorLoadingServices", resourceCulture) ?? "";
     internal static string ErrorFormat => ResourceManager.GetString("ErrorFormat", resourceCulture) ?? "";
 

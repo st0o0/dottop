@@ -8,4 +8,5 @@ public record WindowsServiceInfo(
     string DisplayName,
     ServiceStatus Status,
     ServiceStartType StartType,
-    int? Pid);
+    int? Pid,
+    string Description = "");

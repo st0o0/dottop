@@ -1,3 +1,4 @@
+using System.Management;
 using System.Runtime.Versioning;
 using System.ServiceProcess;
 using dottop.Models;
@@ -9,10 +10,25 @@ public sealed class WindowsServiceManager : IServiceManager
 {
     public List<WindowsServiceInfo> GetServices()
     {
+        var descriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            using var searcher = new ManagementObjectSearcher("SELECT Name, Description FROM Win32_Service");
+            foreach (var obj in searcher.Get())
+            {
+                var name = obj["Name"]?.ToString() ?? "";
+                var desc = obj["Description"]?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(name))
+                    descriptions[name] = desc;
+            }
+        }
+        catch { }
+
         return ServiceController.GetServices()
             .Select(s => new WindowsServiceInfo(
                 s.ServiceName, s.DisplayName,
-                MapStatus(s.Status), ServiceStartType.Manual, null))
+                MapStatus(s.Status), ServiceStartType.Manual, null,
+                descriptions.GetValueOrDefault(s.ServiceName, "")))
             .OrderBy(s => s.DisplayName)
             .ToList();
     }

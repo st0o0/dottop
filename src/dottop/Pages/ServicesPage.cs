@@ -13,6 +13,7 @@ namespace dottop.Pages;
 public class ServicesPage : ReactivePage<ServicesViewModel>
 {
     private DataListNode<WindowsServiceInfo>? _list;
+    private ModalNode? _detailModal;
 
     public override ILayoutNode BuildLayout()
     {
@@ -29,6 +30,16 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         ViewModel.ListNode = _list;
         ViewModel.GetSelectedItem = () => _list.SelectedItem;
 
+        _detailModal = new ModalNode()
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Color.BrightYellow)
+            .WithBackdrop(BackdropStyle.Solid)
+            .WithBackdropColor(Color.Black)
+            .WithDismissOnEscape(false)
+            .WithPadding(1);
+
+        var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
+
         return Layouts.Vertical()
             .WithChild(new TabBarNode(2))
             .WithChild(BuildSearchBar())
@@ -41,7 +52,8 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                         .WithForeground(Color.BrightBlack).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
-            .WithChild(BuildStatusBar());
+            .WithChild(BuildStatusBar())
+            .WithChild(conditionalDetail);
     }
 
     public override void OnNavigatedTo()
@@ -49,6 +61,33 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         base.OnNavigatedTo();
         ViewModel.FilteredServices.Subscribe(services => _list?.SetItems(services))
             .DisposeWith(Subscriptions);
+
+        ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())
+            .DisposeWith(Subscriptions);
+    }
+
+    private void UpdateDetailModal()
+    {
+        if (_detailModal is null || ViewModel.SelectedService.Value is not { } svc) return;
+
+        var statusIcon = svc.Status == ServiceStatus.Running ? "▶" : "■";
+        var statusColor = svc.Status == ServiceStatus.Running ? Color.BrightGreen : Color.BrightRed;
+        var desc = string.IsNullOrWhiteSpace(svc.Description)
+            ? Strings.ServiceNoDescription
+            : svc.Description;
+
+        _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(Color.BrightYellow);
+        _detailModal.Content = Layouts.Vertical()
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode($"  {Strings.ServiceDetailName}     {svc.Name}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode($"  {Strings.ServiceDetailDisplay}  {svc.DisplayName}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode($"  {Strings.HeaderStatus}      {statusIcon} {svc.Status}").WithForeground(statusColor).Height(1))
+            .WithChild(new TextNode($"  {Strings.HeaderStartType}  {svc.StartType}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode($"  {Strings.ServiceDetailDescription}").WithForeground(Color.BrightCyan).Height(1))
+            .WithChild(new TextNode($"  {desc}").WithForeground(Color.White).Height(1))
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode(Strings.ServiceDetailHints).WithForeground(Color.BrightGreen).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()

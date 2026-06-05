@@ -27,8 +27,9 @@ public sealed class LinuxServiceManager : IServiceManager
                     _ => ServiceStatus.Stopped,
                 };
 
-                var description = parts.Length > 4 ? string.Join(' ', parts[4..]) : name;
-                services.Add(new WindowsServiceInfo(name, description, status, ServiceStartType.Manual, null));
+                var displayName = parts.Length > 4 ? string.Join(' ', parts[4..]) : name;
+                var description = GetServiceDescription(name);
+                services.Add(new WindowsServiceInfo(name, displayName, status, ServiceStartType.Manual, null, description));
             }
         }
         catch { }
@@ -52,6 +53,16 @@ public sealed class LinuxServiceManager : IServiceManager
     {
         RunSystemctl($"restart {name}");
         return $"Service {name} neugestartet";
+    }
+
+    private static string GetServiceDescription(string name)
+    {
+        try
+        {
+            var output = RunSystemctl($"show -p Description --value {name}");
+            return output.Trim();
+        }
+        catch { return ""; }
     }
 
     private static string RunSystemctl(string arguments)

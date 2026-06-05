@@ -198,6 +198,21 @@
   <data name="ServicesStatusFormat" xml:space="preserve">
     <value> {0} Dienste | /: Suche | S: Start | X: Stop | R: Restart</value>
   </data>
+  <data name="ServiceDetailName" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="ServiceDetailDisplay" xml:space="preserve">
+    <value>Anzeige:</value>
+  </data>
+  <data name="ServiceDetailDescription" xml:space="preserve">
+    <value>Beschreibung:</value>
+  </data>
+  <data name="ServiceNoDescription" xml:space="preserve">
+    <value>Keine Beschreibung verfügbar</value>
+  </data>
+  <data name="ServiceDetailHints" xml:space="preserve">
+    <value>  Esc: Schließen</value>
+  </data>
   <data name="ErrorLoadingServices" xml:space="preserve">
     <value> Fehler beim Laden der Dienste</value>
   </data>

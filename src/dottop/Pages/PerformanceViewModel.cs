@@ -8,6 +8,8 @@ using Termina.Reactive;
 
 namespace dottop.Pages;
 
+public enum PerfDetailSection { Cpu, Ram, Disk, Network }
+
 public class PerformanceViewModel : ReactiveViewModel
 {
     private readonly IRequiredActor<CpuMonitorActor> _cpuRef;
@@ -23,6 +25,12 @@ public class PerformanceViewModel : ReactiveViewModel
     public ReactiveProperty<ulong> RamUsed { get; } = new(0);
     public ReactiveProperty<IReadOnlyList<DiskSnapshot>> Disks { get; } = new([]);
     public ReactiveProperty<IReadOnlyList<NetworkSnapshot>> Networks { get; } = new([]);
+
+    public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
+    public ReactiveProperty<PerfDetailSection> DetailSection { get; } = new(PerfDetailSection.Cpu);
+
+    private readonly Subject<Unit> _detailContentChanged = new();
+    public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
 
     public PerformanceViewModel(
         IRequiredActor<CpuMonitorActor> cpuRef,
@@ -65,16 +73,31 @@ public class PerformanceViewModel : ReactiveViewModel
             CpuName.Value = snapshot.Name;
             CpuTotal.Value = snapshot.TotalPercent;
             CpuCores.Value = snapshot.CorePercents;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Cpu)
+                _detailContentChanged.OnNext(Unit.Default);
         });
 
         _ = ConsumeAsync(memStream.Data, ct, snapshot =>
         {
             RamTotal.Value = snapshot.TotalBytes;
             RamUsed.Value = snapshot.UsedBytes;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Ram)
+                _detailContentChanged.OnNext(Unit.Default);
         });
 
-        _ = ConsumeAsync(diskStream.Data, ct, disks => Disks.Value = disks);
-        _ = ConsumeAsync(netStream.Data, ct, nets => Networks.Value = nets);
+        _ = ConsumeAsync(diskStream.Data, ct, disks =>
+        {
+            Disks.Value = disks;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Disk)
+                _detailContentChanged.OnNext(Unit.Default);
+        });
+
+        _ = ConsumeAsync(netStream.Data, ct, nets =>
+        {
+            Networks.Value = nets;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
+                _detailContentChanged.OnNext(Unit.Default);
+        });
     }
 
     private static async Task ConsumeAsync<T>(IAsyncEnumerable<T> stream, CancellationToken ct, Action<T> handler)
@@ -89,13 +112,54 @@ public class PerformanceViewModel : ReactiveViewModel
 
     private void HandleKey(KeyPressed key)
     {
+        if (IsDetailOpen.Value)
+        {
+            HandleDetailKey(key);
+            return;
+        }
+
         switch (key.KeyInfo.Key)
         {
+            case ConsoleKey.Enter or ConsoleKey.Tab:
+                DetailSection.Value = PerfDetailSection.Cpu;
+                IsDetailOpen.Value = true;
+                _detailContentChanged.OnNext(Unit.Default);
+                break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
             case ConsoleKey.D5: Navigate("/autostart"); break;
             case ConsoleKey.Q or ConsoleKey.Escape: Shutdown(); break;
+        }
+    }
+
+    private void HandleDetailKey(KeyPressed key)
+    {
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.Escape:
+                IsDetailOpen.Value = false;
+                break;
+            case ConsoleKey.Tab or ConsoleKey.RightArrow:
+                DetailSection.Value = DetailSection.Value switch
+                {
+                    PerfDetailSection.Cpu => PerfDetailSection.Ram,
+                    PerfDetailSection.Ram => PerfDetailSection.Disk,
+                    PerfDetailSection.Disk => PerfDetailSection.Network,
+                    _ => PerfDetailSection.Cpu,
+                };
+                _detailContentChanged.OnNext(Unit.Default);
+                break;
+            case ConsoleKey.LeftArrow:
+                DetailSection.Value = DetailSection.Value switch
+                {
+                    PerfDetailSection.Ram => PerfDetailSection.Cpu,
+                    PerfDetailSection.Disk => PerfDetailSection.Ram,
+                    PerfDetailSection.Network => PerfDetailSection.Disk,
+                    _ => PerfDetailSection.Network,
+                };
+                _detailContentChanged.OnNext(Unit.Default);
+                break;
         }
     }
 
@@ -118,6 +182,9 @@ public class PerformanceViewModel : ReactiveViewModel
         RamUsed.Dispose();
         Disks.Dispose();
         Networks.Dispose();
+        IsDetailOpen.Dispose();
+        DetailSection.Dispose();
+        _detailContentChanged.Dispose();
         base.Dispose();
     }
 }

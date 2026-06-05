@@ -41,17 +41,25 @@ public sealed class DiskMonitorActor : ReceiveActor
                     .SelectMany(p => p.VolumeList)
                     .Select(v =>
                     {
-                        var name = !string.IsNullOrWhiteSpace(v.VolumeName)
-                            ? v.VolumeName
-                            : v.Name;
-                        if (string.IsNullOrWhiteSpace(name))
-                            name = d.Name;
+                        var name = ExtractDriveLetter(v.Name, d.Name);
                         return new DiskSnapshot(name, v.Size, v.FreeSpace, 0, 0);
                     }))
                 .Where(d => d.TotalBytes > 0)
                 .ToList();
             _channel.Writer.TryWrite(disks);
         });
+    }
+
+    private static string ExtractDriveLetter(string volumeName, string driveName)
+    {
+        foreach (var s in new[] { volumeName, driveName })
+        {
+            if (string.IsNullOrWhiteSpace(s)) continue;
+            var trimmed = s.TrimEnd('\\', '/');
+            if (trimmed.Length >= 2 && trimmed[1] == ':')
+                return trimmed[..2];
+        }
+        return !string.IsNullOrWhiteSpace(volumeName) ? volumeName : driveName;
     }
 
     protected override void PostStop()

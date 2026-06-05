@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -9,11 +9,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Termina" Version="0.7.1"/>
-        <PackageReference Include="Hardware.Info.AOT" Version="101.1.1.1"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0"/>
-        <PackageReference Include="Akka.Hosting" Version="1.5.36"/>
-        <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.0"/>
+        <PackageReference Include="Termina" Version="0.10.2"/>
+        <PackageReference Include="Hardware.Info.AOT" Version="110.0.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8"/>
+        <PackageReference Include="Akka.Hosting" Version="1.5.68"/>
+        <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.8"/>
     </ItemGroup>
 
 </Project>

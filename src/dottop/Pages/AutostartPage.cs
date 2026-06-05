@@ -40,7 +40,8 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
                     var statusIcon = e.Enabled ? "✓" : "✗";
                     var statusLabel = e.Enabled ? "Aktiv" : "Deaktiviert";
                     var path = e.Path.Length > 30 ? e.Path[..30] + "..." : e.Path;
-                    var text = $" {e.Name,-24}  {e.Publisher,-18}  {statusIcon} {statusLabel,-12}  {e.Impact,-10}  {path}";
+                    var text =
+                        $" {e.Name,-24}  {e.Publisher,-18}  {statusIcon} {statusLabel,-12}  {e.Impact,-10}  {path}";
                     var node = new TextNode(text);
                     if (i == selectedIdx)
                         node.WithForeground(Color.White).WithBackground(Color.BrightBlue);
@@ -48,6 +49,7 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
                         node.WithForeground(e.Enabled ? Color.BrightCyan : Color.Gray);
                     layout.WithChild(node.Height(1));
                 }
+
                 return container.WithContent(layout);
             }).AsLayout().Fill();
     }

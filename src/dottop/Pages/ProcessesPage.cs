@@ -38,13 +38,17 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         _overlay.Dismissed.Subscribe(_ => ViewModel.CloseOverlay()).DisposeWith(Subscriptions);
 
+        var conditionalOverlay = new ConditionalNode(
+            ViewModel.IsOverlayOpen,
+            _overlay);
+
         return Layouts.Vertical()
             .WithChild(new TabBarNode(0))
             .WithChild(BuildToolbar())
             .WithChild(BuildHeader())
             .WithChild(BuildProcessList())
             .WithChild(BuildStatusBar())
-            .WithChild(_overlay);
+            .WithChild(conditionalOverlay);
     }
 
     private ILayoutNode BuildToolbar()

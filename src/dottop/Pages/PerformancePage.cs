@@ -119,17 +119,13 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
     private ILayoutNode BuildCpuDetailInfo()
     {
-        var cores = ViewModel.CpuCores.Value;
-        var layout = Layouts.Vertical();
-        layout.WithChild(new TextNode($" {ViewModel.CpuName.Value}  —  Gesamt: {ViewModel.CpuTotal.Value:F1}%")
-            .WithForeground(Color.BrightGreen).Height(1));
+        var coresNode = new CpuCoresNode();
+        coresNode.SetCores(ViewModel.CpuCores.Value);
 
-        var coresLine = Layouts.Horizontal();
-        for (var i = 0; i < cores.Count; i++)
-            coresLine.WithChild(new TextNode($" C{i}:{cores[i],3:F0}%").WithForeground(Color.BrightGreen));
-        layout.WithChild(coresLine.Height(1));
-
-        return layout;
+        return Layouts.Vertical()
+            .WithChild(new TextNode($" {ViewModel.CpuName.Value}  —  Gesamt: {ViewModel.CpuTotal.Value:F1}%")
+                .WithForeground(Color.BrightGreen).Height(1))
+            .WithChild(coresNode);
     }
 
     private ILayoutNode BuildRamDetailInfo()

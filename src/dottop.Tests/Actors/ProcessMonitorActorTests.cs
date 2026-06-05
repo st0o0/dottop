@@ -9,24 +9,40 @@ namespace dottop.Tests.Actors;
 public class ProcessMonitorActorTests : TestKit
 {
     [Fact]
-    public void ProcessMonitorActor_OnTick_PublishesProcessList()
+    public async Task ProcessMonitorActor_OnStartMonitoring_StreamsProcessList()
     {
         var actor = Sys.ActorOf(ProcessMonitorActor.Props());
-        Sys.EventStream.Subscribe(TestActor, typeof(List<ProcessSnapshot>));
-        actor.Tell(new Tick());
-        var list = ExpectMsg<List<ProcessSnapshot>>(TimeSpan.FromSeconds(5));
-        Assert.NotEmpty(list);
-        Assert.All(list, p => Assert.True(p.Pid >= 0));
+
+        var response = await actor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
+            new StartMonitoring(), TimeSpan.FromSeconds(5));
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await foreach (var list in response.Data.WithCancellation(cts.Token))
+        {
+            Assert.NotEmpty(list);
+            Assert.All(list, p => Assert.True(p.Pid >= 0));
+            break;
+        }
+
+        response.Cancellation.Cancel();
     }
 
     [Fact]
-    public void ProcessMonitorActor_ProcessList_IsSortedByMemory()
+    public async Task ProcessMonitorActor_ProcessList_IsSortedByMemory()
     {
         var actor = Sys.ActorOf(ProcessMonitorActor.Props());
-        Sys.EventStream.Subscribe(TestActor, typeof(List<ProcessSnapshot>));
-        actor.Tell(new Tick());
-        var list = ExpectMsg<List<ProcessSnapshot>>(TimeSpan.FromSeconds(5));
-        for (var i = 1; i < list.Count; i++)
-            Assert.True(list[i - 1].WorkingSetBytes >= list[i].WorkingSetBytes);
+
+        var response = await actor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
+            new StartMonitoring(), TimeSpan.FromSeconds(5));
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await foreach (var list in response.Data.WithCancellation(cts.Token))
+        {
+            for (var i = 1; i < list.Count; i++)
+                Assert.True(list[i - 1].WorkingSetBytes >= list[i].WorkingSetBytes);
+            break;
+        }
+
+        response.Cancellation.Cancel();
     }
 }

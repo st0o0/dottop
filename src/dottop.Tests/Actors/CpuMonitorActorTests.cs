@@ -9,13 +9,21 @@ namespace dottop.Tests.Actors;
 public class CpuMonitorActorTests : TestKit
 {
     [Fact]
-    public void CpuMonitorActor_OnTick_PublishesCpuSnapshot()
+    public async Task CpuMonitorActor_OnStartMonitoring_StreamsCpuSnapshots()
     {
         var actor = Sys.ActorOf(CpuMonitorActor.Props());
-        Sys.EventStream.Subscribe(TestActor, typeof(CpuSnapshot));
-        actor.Tell(new Tick());
-        var snapshot = ExpectMsg<CpuSnapshot>(TimeSpan.FromSeconds(5));
-        Assert.InRange(snapshot.TotalPercent, 0, 100);
-        Assert.NotEmpty(snapshot.CorePercents);
+
+        var response = await actor.Ask<MonitoringStream<CpuSnapshot>>(
+            new StartMonitoring(), TimeSpan.FromSeconds(5));
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await foreach (var snapshot in response.Data.WithCancellation(cts.Token))
+        {
+            Assert.InRange(snapshot.TotalPercent, 0, 100);
+            Assert.NotEmpty(snapshot.CorePercents);
+            break;
+        }
+
+        response.Cancellation.Cancel();
     }
 }

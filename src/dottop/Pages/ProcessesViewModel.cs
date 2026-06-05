@@ -12,10 +12,10 @@ public enum SortColumn { Name, Cpu, Ram, Pid }
 
 public class ProcessesViewModel : ReactiveViewModel
 {
-    private readonly ActorSystem _system;
+    private readonly IRequiredActor<ProcessMonitorActor> _processMonitorRef;
     private readonly IRequiredActor<ProcessActionActor> _processActionRef;
     private IActorRef? _processActionActor;
-    private readonly List<IActorRef> _bridges = [];
+    private CancellationTokenSource? _cts;
 
     public ReactiveProperty<List<ProcessSnapshot>> AllProcesses { get; } = new([]);
     public ReactiveProperty<List<ProcessSnapshot>> FilteredProcesses { get; } = new([]);
@@ -32,23 +32,18 @@ public class ProcessesViewModel : ReactiveViewModel
     public ReactiveProperty<IReadOnlyDictionary<string, string>?> ProcessEnv { get; } = new(null);
     public ReactiveProperty<IReadOnlyList<string>?> ProcessHandles { get; } = new(null);
 
-    public ProcessesViewModel(ActorSystem system, IRequiredActor<ProcessActionActor> processAction)
+    public ProcessesViewModel(
+        IRequiredActor<ProcessMonitorActor> processMonitor,
+        IRequiredActor<ProcessActionActor> processAction)
     {
-        _system = system;
+        _processMonitorRef = processMonitor;
         _processActionRef = processAction;
     }
 
     public override void OnActivated()
     {
-        // Resolve actor ref
-        _processActionActor = _processActionRef.GetAsync(CancellationToken.None).GetAwaiter().GetResult();
-
-        // Subscribe to process list via EventStream bridge
-        SubscribeToEvent<List<ProcessSnapshot>>(list =>
-        {
-            AllProcesses.Value = list;
-            ApplyFilter();
-        });
+        _cts = new CancellationTokenSource();
+        _ = InitializeAsync();
 
         SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
         SelectedGroup.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
@@ -61,11 +56,25 @@ public class ProcessesViewModel : ReactiveViewModel
         UpdateStatus();
     }
 
-    private void SubscribeToEvent<T>(Action<T> handler)
+    private async Task InitializeAsync()
     {
-        var bridge = _system.ActorOf(Props.Create(() => new BridgeActor<T>(handler)));
-        _system.EventStream.Subscribe(bridge, typeof(T));
-        _bridges.Add(bridge);
+        var ct = _cts!.Token;
+
+        _processActionActor = await _processActionRef.GetAsync(ct);
+        var monitorActor = await _processMonitorRef.GetAsync(ct);
+
+        var stream = await monitorActor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
+            new StartMonitoring(), TimeSpan.FromSeconds(5));
+
+        try
+        {
+            await foreach (var list in stream.Data.WithCancellation(ct))
+            {
+                AllProcesses.Value = list;
+                ApplyFilter();
+            }
+        }
+        catch (OperationCanceledException) { }
     }
 
     private void ApplyFilter()
@@ -105,7 +114,7 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.DownArrow:
                 SelectedIndex.Value = Math.Min(FilteredProcesses.Value.Count - 1, SelectedIndex.Value + 1); break;
             case ConsoleKey.Enter: OpenOverlay(); break;
-            case ConsoleKey.Oem2: IsSearchActive.Value = true; break;  // '/'
+            case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
             case ConsoleKey.Tab: CycleSortColumn(); break;
             case ConsoleKey.G: CycleGroupFilter(); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
@@ -187,7 +196,7 @@ public class ProcessesViewModel : ReactiveViewModel
                     break;
             }
         }
-        catch { /* Actor timeout - ignore */ }
+        catch { }
     }
 
     private void CycleSortColumn()
@@ -220,17 +229,16 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public override void OnDeactivating()
     {
-        foreach (var bridge in _bridges)
-        {
-            _system.EventStream.Unsubscribe(bridge);
-            _system.Stop(bridge);
-        }
-        _bridges.Clear();
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
         base.OnDeactivating();
     }
 
     public override void Dispose()
     {
+        _cts?.Cancel();
+        _cts?.Dispose();
         AllProcesses.Dispose(); FilteredProcesses.Dispose();
         SearchText.Dispose(); SelectedGroup.Dispose();
         SortColumn.Dispose(); SelectedIndex.Dispose();
@@ -239,10 +247,5 @@ public class ProcessesViewModel : ReactiveViewModel
         StatusMessage.Dispose(); ProcessTree.Dispose();
         ProcessEnv.Dispose(); ProcessHandles.Dispose();
         base.Dispose();
-    }
-
-    private sealed class BridgeActor<T> : ReceiveActor
-    {
-        public BridgeActor(Action<T> handler) { Receive<T>(msg => handler(msg)); }
     }
 }

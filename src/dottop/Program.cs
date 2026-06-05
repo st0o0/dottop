@@ -14,9 +14,20 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 {
     configurationBuilder.WithActors((system, registry) =>
     {
-        var monitor = system.ActorOf(
-            SystemMonitorActor.Props(TimeSpan.FromSeconds(1)), "system-monitor");
-        registry.Register<SystemMonitorActor>(monitor);
+        var cpu = system.ActorOf(CpuMonitorActor.Props(), "cpu-monitor");
+        registry.Register<CpuMonitorActor>(cpu);
+
+        var memory = system.ActorOf(MemoryMonitorActor.Props(), "memory-monitor");
+        registry.Register<MemoryMonitorActor>(memory);
+
+        var disk = system.ActorOf(DiskMonitorActor.Props(), "disk-monitor");
+        registry.Register<DiskMonitorActor>(disk);
+
+        var network = system.ActorOf(NetworkMonitorActor.Props(), "network-monitor");
+        registry.Register<NetworkMonitorActor>(network);
+
+        var process = system.ActorOf(ProcessMonitorActor.Props(), "process-monitor");
+        registry.Register<ProcessMonitorActor>(process);
 
         var processAction = system.ActorOf(ProcessActionActor.Props(), "process-action");
         registry.Register<ProcessActionActor>(processAction);

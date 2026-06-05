@@ -4,25 +4,15 @@ namespace dottop.Actors;
 
 public sealed class SystemMonitorActor : ReceiveActor
 {
-    public static Props Props(TimeSpan interval)
-        => Akka.Actor.Props.Create(() => new SystemMonitorActor(interval));
+    public static Props Props() => Akka.Actor.Props.Create<SystemMonitorActor>();
 
-    public SystemMonitorActor(TimeSpan interval)
+    public SystemMonitorActor()
     {
-        var cpu = Context.ActorOf(CpuMonitorActor.Props(), "cpu");
-        var memory = Context.ActorOf(MemoryMonitorActor.Props(), "memory");
-        var disk = Context.ActorOf(DiskMonitorActor.Props(), "disk");
-        var network = Context.ActorOf(NetworkMonitorActor.Props(), "network");
-        var process = Context.ActorOf(ProcessMonitorActor.Props(), "process");
-        var children = new[] { cpu, memory, disk, network, process };
-
-        Context.System.Scheduler.ScheduleTellRepeatedly(
-            TimeSpan.Zero, interval, Self, new Tick(), Self);
-
-        Receive<Tick>(_ =>
-        {
-            foreach (var child in children) child.Tell(new Tick());
-        });
+        Context.ActorOf(CpuMonitorActor.Props(), "cpu");
+        Context.ActorOf(MemoryMonitorActor.Props(), "memory");
+        Context.ActorOf(DiskMonitorActor.Props(), "disk");
+        Context.ActorOf(NetworkMonitorActor.Props(), "network");
+        Context.ActorOf(ProcessMonitorActor.Props(), "process");
     }
 
     protected override SupervisorStrategy SupervisorStrategy()

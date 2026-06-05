@@ -1,5 +1,7 @@
 using Akka.Actor;
+using Akka.Hosting;
 using R3;
+using dottop.Actors;
 using dottop.Models;
 using Termina.Input;
 using Termina.Reactive;
@@ -8,8 +10,11 @@ namespace dottop.Pages;
 
 public class PerformanceViewModel : ReactiveViewModel
 {
-    private readonly ActorSystem _system;
-    private readonly List<IActorRef> _bridges = [];
+    private readonly IRequiredActor<CpuMonitorActor> _cpuRef;
+    private readonly IRequiredActor<MemoryMonitorActor> _memRef;
+    private readonly IRequiredActor<DiskMonitorActor> _diskRef;
+    private readonly IRequiredActor<NetworkMonitorActor> _netRef;
+    private CancellationTokenSource? _cts;
 
     public ReactiveProperty<double> CpuTotal { get; } = new(0);
     public ReactiveProperty<IReadOnlyList<double>> CpuCores { get; } = new([]);
@@ -19,39 +24,67 @@ public class PerformanceViewModel : ReactiveViewModel
     public ReactiveProperty<IReadOnlyList<DiskSnapshot>> Disks { get; } = new([]);
     public ReactiveProperty<IReadOnlyList<NetworkSnapshot>> Networks { get; } = new([]);
 
-    public PerformanceViewModel(ActorSystem system)
+    public PerformanceViewModel(
+        IRequiredActor<CpuMonitorActor> cpuRef,
+        IRequiredActor<MemoryMonitorActor> memRef,
+        IRequiredActor<DiskMonitorActor> diskRef,
+        IRequiredActor<NetworkMonitorActor> netRef)
     {
-        _system = system;
+        _cpuRef = cpuRef;
+        _memRef = memRef;
+        _diskRef = diskRef;
+        _netRef = netRef;
     }
 
     public override void OnActivated()
     {
-        SubscribeToEvent<CpuSnapshot>(snapshot =>
-        {
-            CpuName.Value = snapshot.Name;
-            CpuTotal.Value = snapshot.TotalPercent;
-            CpuCores.Value = snapshot.CorePercents;
-        });
-
-        SubscribeToEvent<MemorySnapshot>(snapshot =>
-        {
-            RamTotal.Value = snapshot.TotalBytes;
-            RamUsed.Value = snapshot.UsedBytes;
-        });
-
-        SubscribeToEvent<List<DiskSnapshot>>(disks => Disks.Value = disks);
-        SubscribeToEvent<List<NetworkSnapshot>>(nets => Networks.Value = nets);
+        _cts = new CancellationTokenSource();
+        _ = InitializeAsync();
 
         Input.OfType<IInputEvent, KeyPressed>()
             .Subscribe(HandleKey)
             .DisposeWith(Subscriptions);
     }
 
-    private void SubscribeToEvent<T>(Action<T> handler)
+    private async Task InitializeAsync()
     {
-        var bridge = _system.ActorOf(Props.Create(() => new BridgeActor<T>(handler)));
-        _system.EventStream.Subscribe(bridge, typeof(T));
-        _bridges.Add(bridge);
+        var ct = _cts!.Token;
+
+        var cpuActor = await _cpuRef.GetAsync(ct);
+        var memActor = await _memRef.GetAsync(ct);
+        var diskActor = await _diskRef.GetAsync(ct);
+        var netActor = await _netRef.GetAsync(ct);
+
+        var cpuStream = await cpuActor.Ask<MonitoringStream<CpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
+        var memStream = await memActor.Ask<MonitoringStream<MemorySnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
+        var diskStream = await diskActor.Ask<MonitoringStream<List<DiskSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
+        var netStream = await netActor.Ask<MonitoringStream<List<NetworkSnapshot>>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
+
+        _ = ConsumeAsync(cpuStream.Data, ct, snapshot =>
+        {
+            CpuName.Value = snapshot.Name;
+            CpuTotal.Value = snapshot.TotalPercent;
+            CpuCores.Value = snapshot.CorePercents;
+        });
+
+        _ = ConsumeAsync(memStream.Data, ct, snapshot =>
+        {
+            RamTotal.Value = snapshot.TotalBytes;
+            RamUsed.Value = snapshot.UsedBytes;
+        });
+
+        _ = ConsumeAsync(diskStream.Data, ct, disks => Disks.Value = disks);
+        _ = ConsumeAsync(netStream.Data, ct, nets => Networks.Value = nets);
+    }
+
+    private static async Task ConsumeAsync<T>(IAsyncEnumerable<T> stream, CancellationToken ct, Action<T> handler)
+    {
+        try
+        {
+            await foreach (var item in stream.WithCancellation(ct))
+                handler(item);
+        }
+        catch (OperationCanceledException) { }
     }
 
     private void HandleKey(KeyPressed key)
@@ -68,17 +101,16 @@ public class PerformanceViewModel : ReactiveViewModel
 
     public override void OnDeactivating()
     {
-        foreach (var bridge in _bridges)
-        {
-            _system.EventStream.Unsubscribe(bridge);
-            _system.Stop(bridge);
-        }
-        _bridges.Clear();
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
         base.OnDeactivating();
     }
 
     public override void Dispose()
     {
+        _cts?.Cancel();
+        _cts?.Dispose();
         CpuTotal.Dispose();
         CpuCores.Dispose();
         CpuName.Dispose();
@@ -87,10 +119,5 @@ public class PerformanceViewModel : ReactiveViewModel
         Disks.Dispose();
         Networks.Dispose();
         base.Dispose();
-    }
-
-    private sealed class BridgeActor<T> : ReceiveActor
-    {
-        public BridgeActor(Action<T> handler) { Receive<T>(msg => handler(msg)); }
     }
 }

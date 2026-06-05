@@ -113,7 +113,7 @@
     <value>Umgebung</value>
   </data>
   <data name="OverlayTabHandles" xml:space="preserve">
-    <value>Handles</value>
+    <value>Module</value>
   </data>
   <!-- Process overlay content -->
   <data name="OverlayKeyboardHints" xml:space="preserve">
@@ -126,10 +126,10 @@
     <value> Lade Umgebungsvariablen...</value>
   </data>
   <data name="LoadingHandles" xml:space="preserve">
-    <value> Lade Handles...</value>
+    <value> Lade Module...</value>
   </data>
   <data name="NoHandleInfo" xml:space="preserve">
-    <value> Keine Handle-Informationen verfügbar</value>
+    <value> Keine Modul-Informationen verfügbar</value>
   </data>
   <!-- ProcessesViewModel status -->
   <data name="ProcessStatusFormat" xml:space="preserve">

@@ -19,4 +19,12 @@
         <PackageReference Include="Termina" Version="0.10.2"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Update="Resources\Strings.resx">
+            <Generator>ResXFileCodeGenerator</Generator>
+            <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+        <EmbeddedResource Update="Resources\Strings.de.resx" />
+    </ItemGroup>
+
 </Project>

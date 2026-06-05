@@ -1,6 +1,7 @@
 using dottop.Actors;
 using dottop.Models;
 using dottop.Nodes;
+using dottop.Resources;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -53,7 +54,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithChild(new TabBarNode(0))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
-                .WithTitle(" Prozesse ")
+                .WithTitle(Strings.PanelProcesses)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightCyan)
                 .WithContent(Layouts.Vertical()
@@ -97,12 +98,12 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         return ViewModel.IsSearchActive.CombineLatest(ViewModel.SearchText,
             (active, search) =>
             {
-                var groupLabel = ViewModel.SelectedGroup.Value?.ToString() ?? "Alle";
+                var groupLabel = ViewModel.SelectedGroup.Value?.ToString() ?? Strings.GroupAll;
                 var sort = ViewModel.SortColumn.Value;
                 if (active)
-                    return (ILayoutNode)new TextNode($" / {search}█  Gruppe: [{groupLabel}]  Sort: {sort} ↓")
+                    return (ILayoutNode)new TextNode(string.Format(Strings.SearchBarActiveFormat, search + "█", groupLabel, sort) + " ↓")
                         .WithForeground(Color.BrightYellow);
-                return new TextNode($" /: Suche  Gruppe: [{groupLabel}]  Sort: {sort} ↓  G: Gruppe  Tab: Sort")
+                return new TextNode(string.Format(Strings.SearchBarInactiveFormat, groupLabel, sort) + " ↓")
                     .WithForeground(Color.BrightGreen);
             })
             .AsLayout()
@@ -111,7 +112,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {"PID",5} {"Name",-18} {"CPU%",6} {"RAM",6} Gruppe")
+        return new TextNode($" {Strings.HeaderPid,5} {Strings.HeaderName,-18} {Strings.HeaderCpuPercent,6} {Strings.HeaderRam,6} {Strings.HeaderGroup}")
             .WithForeground(Color.Gray)
             .Height(1);
     }
@@ -120,7 +121,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (_overlay is null || ViewModel.SelectedProcess.Value is not { } proc) return;
 
-        var tabLabels = new[] { "Übersicht", "Prozessbaum", "Umgebung", "Handles" };
+        var tabLabels = new[] { Strings.OverlayTabOverview, Strings.OverlayTabProcessTree, Strings.OverlayTabEnvironment, Strings.OverlayTabHandles };
         var activeTab = ViewModel.OverlayTabIndex.Value;
 
         var header = Layouts.Horizontal();
@@ -159,15 +160,15 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         var ramMb = proc.WorkingSetBytes / 1024 / 1024;
         return Layouts.Vertical()
             .WithChild(new TextNode($" CPU: {proc.CpuPercent:F1}%     RAM: {ramMb} MB    Threads: {proc.ThreadCount}    Handles: {proc.HandleCount}").WithForeground(Color.BrightCyan).Height(1))
-            .WithChild(new TextNode($" User: {proc.UserName}    PID: {proc.Pid}    Parent: {proc.ParentPid}    Gruppe: {proc.Group}").WithForeground(Color.BrightCyan).Height(1))
+            .WithChild(new TextNode($" User: {proc.UserName}    PID: {proc.Pid}    Parent: {proc.ParentPid}    {Strings.HeaderGroup}: {proc.Group}").WithForeground(Color.BrightCyan).Height(1))
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode(" [K] Kill   ←→ Tabs   Esc Schließen").WithForeground(Color.BrightGreen).Height(1));
+            .WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Color.BrightGreen).Height(1));
     }
 
     private ILayoutNode BuildTreeTab()
     {
         if (ViewModel.ProcessTree.Value is not { } tree)
-            return new TextNode(" Lade Prozessbaum...").WithForeground(Color.Gray);
+            return new TextNode(Strings.LoadingProcessTree).WithForeground(Color.Gray);
         var layout = Layouts.Vertical();
         RenderTree(layout, tree, 0);
         return layout;
@@ -186,7 +187,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private ILayoutNode BuildEnvTab()
     {
         if (ViewModel.ProcessEnv.Value is not { } env)
-            return new TextNode(" Lade Umgebungsvariablen...").WithForeground(Color.Gray);
+            return new TextNode(Strings.LoadingEnvironmentVars).WithForeground(Color.Gray);
         _envList = new DataListNode<KeyValuePair<string, string>>(
             kv => $" {kv.Key}={kv.Value}",
             _ => Color.BrightCyan);
@@ -198,9 +199,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private ILayoutNode BuildHandlesTab()
     {
         if (ViewModel.ProcessHandles.Value is not { } handles)
-            return new TextNode(" Lade Handles...").WithForeground(Color.Gray);
+            return new TextNode(Strings.LoadingHandles).WithForeground(Color.Gray);
         if (handles.Count == 0)
-            return new TextNode(" Keine Handle-Informationen verfügbar").WithForeground(Color.Gray);
+            return new TextNode(Strings.NoHandleInfo).WithForeground(Color.Gray);
         _handlesList = new DataListNode<string>(
             h => $" {h}",
             _ => Color.BrightCyan);

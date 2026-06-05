@@ -1,6 +1,7 @@
 using System.Net.NetworkInformation;
 using R3;
 using dottop.Nodes;
+using dottop.Resources;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -52,7 +53,7 @@ public class NetworkViewModel : ReactiveViewModel
                 c.LocalEndpoint.Contains(SearchText.Value) ||
                 c.RemoteEndpoint.Contains(SearchText.Value));
         FilteredConnections.Value = source.ToList();
-        StatusMessage.Value = $" {FilteredConnections.Value.Count} Verbindungen | /: Suche";
+        StatusMessage.Value = string.Format(Strings.NetworkStatusFormat, FilteredConnections.Value.Count);
     }
 
     private void HandleKey(KeyPressed key)

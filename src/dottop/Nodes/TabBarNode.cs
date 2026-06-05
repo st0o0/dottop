@@ -1,3 +1,4 @@
+using dottop.Resources;
 using Termina.Layout;
 using Termina.Rendering;
 using Termina.Terminal;
@@ -6,8 +7,8 @@ namespace dottop.Nodes;
 
 public sealed class TabBarNode : LayoutNode
 {
-    private static readonly string[] TabLabels =
-        ["1:Prozesse", "2:Performance", "3:Dienste", "4:Netzwerk"];
+    private static string[] TabLabels =>
+        [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork];
 
     private static readonly string[] TabRoutes =
         ["/", "/performance", "/services", "/network"];

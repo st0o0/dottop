@@ -1,5 +1,6 @@
 using dottop.Models;
 using dottop.Nodes;
+using dottop.Resources;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -71,7 +72,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .WithSpacing(1)
                 .WithChild(BuildNetworkPanel())
                 .Fill())
-            .WithChild(new TextNode(" Enter/Tab: Detail  |  1-5: Tab  |  Q: Beenden")
+            .WithChild(new TextNode(Strings.PerfStatusBar)
                 .WithForeground(Color.Black).WithBackground(Color.BrightCyan).Height(1))
             .WithChild(conditionalDetail);
     }
@@ -129,7 +130,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         if (_detailModal is null || _detailGraph is null) return;
 
         var section = ViewModel.DetailSection.Value;
-        var sections = new[] { "CPU", "RAM", "Disk", "Netzwerk" };
+        var sections = new[] { "CPU", "RAM", "Disk", Strings.DetailSectionNetwork };
         var sectionIdx = (int)section;
 
         var tabBar = Layouts.Horizontal();
@@ -148,11 +149,11 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             PerfDetailSection.Cpu => (Color.BrightGreen, "CPU", BuildCpuDetailInfo()),
             PerfDetailSection.Ram => (Color.BrightBlue, "RAM", BuildRamDetailInfo()),
             PerfDetailSection.Disk => (Color.BrightYellow, "Disk", BuildDiskDetailInfo()),
-            PerfDetailSection.Network => (Color.BrightMagenta, "Netzwerk", BuildNetworkDetailInfo()),
+            PerfDetailSection.Network => (Color.BrightMagenta, Strings.DetailSectionNetwork, BuildNetworkDetailInfo()),
             _ => (Color.White, "", Layouts.Vertical() as ILayoutNode)
         };
 
-        _detailModal.WithTitle($" {title} Detail ").WithTitleColor(color).WithBorderColor(color);
+        _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(color).WithBorderColor(color);
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram)
         {
@@ -182,7 +183,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         coresNode.SetCores(ViewModel.CpuCores.Value);
 
         return Layouts.Vertical()
-            .WithChild(new TextNode($" {ViewModel.CpuName.Value}  —  Gesamt: {ViewModel.CpuTotal.Value:F1}%")
+            .WithChild(new TextNode($" {ViewModel.CpuName.Value}  —  {Strings.TotalLabel} {ViewModel.CpuTotal.Value:F1}%")
                 .WithForeground(Color.BrightGreen).Height(1))
             .WithChild(coresNode);
     }
@@ -194,7 +195,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var pct = ViewModel.RamTotal.Value > 0 ? (double)ViewModel.RamUsed.Value / ViewModel.RamTotal.Value * 100 : 0;
 
         return Layouts.Vertical()
-            .WithChild(new TextNode($" Benutzt: {usedGb:F1} GiB / {totalGb:F1} GiB  ({pct:F1}%)")
+            .WithChild(new TextNode(string.Format(Strings.UsedFormat, usedGb, totalGb, pct))
                 .WithForeground(Color.BrightBlue).Height(1))
             .WithChild(new TextNode($" {BuildBar(pct, 40)}")
                 .WithForeground(Color.BrightBlue).Height(1));
@@ -204,7 +205,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     {
         var disks = ViewModel.Disks.Value;
         if (disks.Count == 0)
-            return new TextNode(" Keine Disks gefunden").WithForeground(Color.Gray);
+            return new TextNode(Strings.NoDisksFound).WithForeground(Color.Gray);
 
         var idx = Math.Clamp(ViewModel.DiskDetailIndex.Value, 0, disks.Count - 1);
         var disk = disks[idx];
@@ -225,20 +226,20 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         return Layouts.Vertical()
             .WithChild(diskTabs.Height(1))
-            .WithChild(new TextNode($" {disk.Name}  {usedGb:F1}/{totalGb:F1} GB  ({disk.UsedPercent:F0}% belegt)  {BuildBar(disk.UsedPercent, 20)}")
+            .WithChild(new TextNode(string.Format(Strings.DiskUsedFormat, disk.Name, usedGb, totalGb, disk.UsedPercent, BuildBar(disk.UsedPercent, 20)))
                 .WithForeground(Color.BrightYellow).Height(1))
             .WithChild(new TextNode($" Read: {FormatBytes(disk.ReadBytesPerSec)}  Write: {FormatBytes(disk.WriteBytesPerSec)}  Active: {disk.ActiveTimePercent:F0}%")
                 .WithForeground(Color.BrightCyan).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new PanelNode()
-                .WithTitle(" Active Time % ")
+                .WithTitle(Strings.PanelActiveTime)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightYellow)
                 .WithContent(_diskActiveGraph!)
                 .HeightPercent(50)
                 .Fill())
             .WithChild(new PanelNode()
-                .WithTitle(" Transfer Rate ")
+                .WithTitle(Strings.PanelTransferRate)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightCyan)
                 .WithContent(_diskTransferGraph!)
@@ -251,7 +252,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var layout = Layouts.Vertical();
         if (nets.Count == 0)
         {
-            layout.WithChild(new TextNode(" Keine aktiven Adapter").WithForeground(Color.Gray).Height(1));
+            layout.WithChild(new TextNode(Strings.NoActiveAdapters).WithForeground(Color.Gray).Height(1));
             return layout;
         }
         foreach (var net in nets)
@@ -266,7 +267,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     private ILayoutNode BuildCpuPanel()
     {
         return new PanelNode()
-            .WithTitle(" CPU ")
+            .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightGreen)
             .WithContent(
@@ -274,7 +275,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                     .WithChild(
                         ViewModel.CpuTotal
                             .Select<double, ILayoutNode>(pct =>
-                                new TextNode($" Gesamt: {pct:F1}%")
+                                new TextNode($" {Strings.TotalLabel} {pct:F1}%")
                                     .WithForeground(Color.BrightGreen))
                             .AsLayout().Height(1))
                     .WithChild(_coresNode!)
@@ -285,7 +286,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     private ILayoutNode BuildRamPanel()
     {
         return new PanelNode()
-            .WithTitle(" RAM ")
+            .WithTitle(Strings.PanelRam)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightBlue)
             .WithContent(
@@ -308,7 +309,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     private ILayoutNode BuildDiskPanel()
     {
         return new PanelNode()
-            .WithTitle(" Disks ")
+            .WithTitle(Strings.PanelDisks)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightYellow)
             .WithContent(
@@ -316,7 +317,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                     .Select<IReadOnlyList<DiskSnapshot>, ILayoutNode>(disks =>
                     {
                         if (disks.Count == 0)
-                            return new TextNode(" No disks found").WithForeground(Color.Gray);
+                            return new TextNode(Strings.NoDisksFound).WithForeground(Color.Gray);
                         var layout = Layouts.Vertical();
                         foreach (var disk in disks)
                         {
@@ -334,7 +335,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     private ILayoutNode BuildNetworkPanel()
     {
         return new PanelNode()
-            .WithTitle(" Network ")
+            .WithTitle(Strings.PanelNetwork)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightMagenta)
             .WithContent(
@@ -342,7 +343,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                     .Select<IReadOnlyList<NetworkSnapshot>, ILayoutNode>(nets =>
                     {
                         if (nets.Count == 0)
-                            return new TextNode(" No active adapters").WithForeground(Color.Gray);
+                            return new TextNode(Strings.NoActiveAdapters).WithForeground(Color.Gray);
                         var layout = Layouts.Vertical();
                         foreach (var net in nets.Take(4))
                             layout.WithChild(

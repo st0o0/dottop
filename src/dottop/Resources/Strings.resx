@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!-- Tab bar labels -->
+  <data name="TabProcesses" xml:space="preserve">
+    <value>1:Processes</value>
+  </data>
+  <data name="TabPerformance" xml:space="preserve">
+    <value>2:Performance</value>
+  </data>
+  <data name="TabServices" xml:space="preserve">
+    <value>3:Services</value>
+  </data>
+  <data name="TabNetwork" xml:space="preserve">
+    <value>4:Network</value>
+  </data>
+  <!-- ProcessesPage -->
+  <data name="PanelProcesses" xml:space="preserve">
+    <value> Processes </value>
+  </data>
+  <data name="HeaderPid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="HeaderName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="HeaderCpuPercent" xml:space="preserve">
+    <value>CPU%</value>
+  </data>
+  <data name="HeaderRam" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="HeaderGroup" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="GroupAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="SearchHint" xml:space="preserve">
+    <value>/: Search</value>
+  </data>
+  <data name="SearchBarActiveFormat" xml:space="preserve">
+    <value> / {0}  Group: [{1}]  Sort: {2} </value>
+  </data>
+  <data name="SearchBarInactiveFormat" xml:space="preserve">
+    <value> /: Search  Group: [{0}]  Sort: {1}   G: Group  Tab: Sort</value>
+  </data>
+  <!-- Process overlay tabs -->
+  <data name="OverlayTabOverview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="OverlayTabProcessTree" xml:space="preserve">
+    <value>Process Tree</value>
+  </data>
+  <data name="OverlayTabEnvironment" xml:space="preserve">
+    <value>Environment</value>
+  </data>
+  <data name="OverlayTabHandles" xml:space="preserve">
+    <value>Handles</value>
+  </data>
+  <!-- Process overlay content -->
+  <data name="OverlayKeyboardHints" xml:space="preserve">
+    <value> [K] Kill   Tabs   Esc Close</value>
+  </data>
+  <data name="LoadingProcessTree" xml:space="preserve">
+    <value> Loading process tree...</value>
+  </data>
+  <data name="LoadingEnvironmentVars" xml:space="preserve">
+    <value> Loading environment variables...</value>
+  </data>
+  <data name="LoadingHandles" xml:space="preserve">
+    <value> Loading handles...</value>
+  </data>
+  <data name="NoHandleInfo" xml:space="preserve">
+    <value> No handle information available</value>
+  </data>
+  <!-- ProcessesViewModel status -->
+  <data name="ProcessStatusFormat" xml:space="preserve">
+    <value> {0} processes | Group: {1} | Sort: {2} | /: Search | Enter: Detail | Q: Quit</value>
+  </data>
+  <!-- PerformancePage -->
+  <data name="PanelCpu" xml:space="preserve">
+    <value> CPU </value>
+  </data>
+  <data name="PanelRam" xml:space="preserve">
+    <value> RAM </value>
+  </data>
+  <data name="PanelDisks" xml:space="preserve">
+    <value> Disks </value>
+  </data>
+  <data name="PanelNetwork" xml:space="preserve">
+    <value> Network </value>
+  </data>
+  <data name="TotalLabel" xml:space="preserve">
+    <value>Total:</value>
+  </data>
+  <data name="PerfStatusBar" xml:space="preserve">
+    <value> Enter/Tab: Detail  |  1-5: Tab  |  Q: Quit</value>
+  </data>
+  <data name="DetailSectionNetwork" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="DetailTitle" xml:space="preserve">
+    <value> {0} Detail </value>
+  </data>
+  <data name="UsedFormat" xml:space="preserve">
+    <value> Used: {0:F1} GiB / {1:F1} GiB  ({2:F1}%)</value>
+  </data>
+  <data name="NoDisksFound" xml:space="preserve">
+    <value> No disks found</value>
+  </data>
+  <data name="DiskUsedFormat" xml:space="preserve">
+    <value> {0}  {1:F1}/{2:F1} GB  ({3:F0}% used)  {4}</value>
+  </data>
+  <data name="PanelActiveTime" xml:space="preserve">
+    <value> Active Time % </value>
+  </data>
+  <data name="PanelTransferRate" xml:space="preserve">
+    <value> Transfer Rate </value>
+  </data>
+  <data name="NoActiveAdapters" xml:space="preserve">
+    <value> No active adapters</value>
+  </data>
+  <!-- ServicesPage -->
+  <data name="PanelServices" xml:space="preserve">
+    <value> Services </value>
+  </data>
+  <data name="HeaderStatus" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="HeaderStartType" xml:space="preserve">
+    <value>Start Type</value>
+  </data>
+  <data name="ServicesSearchHint" xml:space="preserve">
+    <value> /: Search  S: Start  X: Stop  R: Restart</value>
+  </data>
+  <!-- ServicesViewModel -->
+  <data name="ServicesStatusFormat" xml:space="preserve">
+    <value> {0} services | /: Search | S: Start | X: Stop | R: Restart</value>
+  </data>
+  <data name="ErrorLoadingServices" xml:space="preserve">
+    <value> Error loading services</value>
+  </data>
+  <data name="ErrorFormat" xml:space="preserve">
+    <value> Error: {0}</value>
+  </data>
+  <!-- NetworkPage -->
+  <data name="PanelNetworkConnections" xml:space="preserve">
+    <value> Network </value>
+  </data>
+  <data name="HeaderLocal" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="HeaderRemote" xml:space="preserve">
+    <value>Remote</value>
+  </data>
+  <data name="NetworkSearchHint" xml:space="preserve">
+    <value> /: Search by IP/Port</value>
+  </data>
+  <!-- NetworkViewModel -->
+  <data name="NetworkStatusFormat" xml:space="preserve">
+    <value> {0} connections | /: Search</value>
+  </data>
+</root>

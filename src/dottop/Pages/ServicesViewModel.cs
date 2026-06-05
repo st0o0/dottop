@@ -4,6 +4,7 @@ using R3;
 using dottop.Actors;
 using dottop.Models;
 using dottop.Nodes;
+using dottop.Resources;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -45,7 +46,7 @@ public class ServicesViewModel : ReactiveViewModel
             AllServices.Value = result;
             ApplyFilter();
         }
-        catch { StatusMessage.Value = " Fehler beim Laden der Dienste"; }
+        catch { StatusMessage.Value = Strings.ErrorLoadingServices; }
     }
 
     private void ApplyFilter()
@@ -56,7 +57,7 @@ public class ServicesViewModel : ReactiveViewModel
                 s.DisplayName.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase) ||
                 s.Name.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase));
         FilteredServices.Value = source.ToList();
-        StatusMessage.Value = $" {FilteredServices.Value.Count} Dienste | /: Suche | S: Start | X: Stop | R: Restart";
+        StatusMessage.Value = string.Format(Strings.ServicesStatusFormat, FilteredServices.Value.Count);
     }
 
     private void HandleKey(KeyPressed key)
@@ -110,7 +111,7 @@ public class ServicesViewModel : ReactiveViewModel
             StatusMessage.Value = result is ActionSuccess s ? $" {s.Message}" : $" {((ActionFailure)result).Error}";
             RefreshServices();
         }
-        catch (Exception ex) { StatusMessage.Value = $" Fehler: {ex.Message}"; }
+        catch (Exception ex) { StatusMessage.Value = string.Format(Strings.ErrorFormat, ex.Message); }
     }
 
     public override void Dispose()

@@ -1,4 +1,5 @@
 using dottop.Nodes;
+using dottop.Resources;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -29,11 +30,11 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             .WithChild(new TabBarNode(3))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
-                .WithTitle(" Netzwerk ")
+                .WithTitle(Strings.PanelNetworkConnections)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightMagenta)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($" {"Lokal",-22} {"Remote",-22} {"Status",-12}")
+                    .WithChild(new TextNode($" {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus,-12}")
                         .WithForeground(Color.Gray).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
@@ -55,7 +56,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 if (active)
                     return (ILayoutNode)new TextNode($" / {search}█")
                         .WithForeground(Color.BrightYellow);
-                return new TextNode(" /: Suche nach IP/Port")
+                return new TextNode(Strings.NetworkSearchHint)
                     .WithForeground(Color.BrightGreen);
             }).AsLayout().Height(1);
     }

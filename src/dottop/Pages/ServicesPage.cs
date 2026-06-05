@@ -1,5 +1,6 @@
 using dottop.Models;
 using dottop.Nodes;
+using dottop.Resources;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -32,11 +33,11 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             .WithChild(new TabBarNode(2))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
-                .WithTitle(" Dienste ")
+                .WithTitle(Strings.PanelServices)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightYellow)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($" {"Name",-30} {"Status",-12} {"Starttyp",-12} {"PID",6}")
+                    .WithChild(new TextNode($" {Strings.HeaderName,-30} {Strings.HeaderStatus,-12} {Strings.HeaderStartType,-12} {"PID",6}")
                         .WithForeground(Color.Gray).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
@@ -58,7 +59,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                 if (active)
                     return (ILayoutNode)new TextNode($" / {search}█")
                         .WithForeground(Color.BrightYellow);
-                return new TextNode(" /: Suche  S: Start  X: Stop  R: Restart")
+                return new TextNode(Strings.ServicesSearchHint)
                     .WithForeground(Color.BrightGreen);
             }).AsLayout().Height(1);
     }

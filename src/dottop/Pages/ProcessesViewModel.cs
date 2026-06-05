@@ -4,6 +4,7 @@ using R3;
 using dottop.Actors;
 using dottop.Models;
 using dottop.Nodes;
+using dottop.Resources;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -258,8 +259,8 @@ public class ProcessesViewModel : ReactiveViewModel
 
     private void UpdateStatus()
     {
-        var groupLabel = SelectedGroup.Value?.ToString() ?? "Alle";
-        StatusMessage.Value = $" {FilteredProcesses.Value.Count} Prozesse | Gruppe: {groupLabel} | Sort: {SortColumn.Value} | /: Suche | Enter: Detail | Q: Beenden";
+        var groupLabel = SelectedGroup.Value?.ToString() ?? Strings.GroupAll;
+        StatusMessage.Value = string.Format(Strings.ProcessStatusFormat, FilteredProcesses.Value.Count, groupLabel, SortColumn.Value);
     }
 
     public override void OnDeactivating()

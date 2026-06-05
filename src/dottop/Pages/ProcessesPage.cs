@@ -52,10 +52,18 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 UpdateOverlayContent();
         }).DisposeWith(Subscriptions);
 
-        ViewModel.SelectedProcess.Subscribe(_ =>
+        ViewModel.AllProcesses.Subscribe(list =>
         {
-            if (ViewModel.IsOverlayOpen.Value && ViewModel.OverlayTabIndex.Value == 0)
-                UpdateOverlayContent();
+            if (ViewModel.IsOverlayOpen.Value && ViewModel.OverlayTabIndex.Value == 0
+                && ViewModel.SelectedProcess.Value is { } current)
+            {
+                var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
+                if (updated is not null)
+                {
+                    ViewModel.SelectedProcess.Value = updated;
+                    UpdateOverlayContent();
+                }
+            }
         }).DisposeWith(Subscriptions);
 
         ViewModel.OverlayTabIndex.Subscribe(_ =>

@@ -28,6 +28,7 @@ public class PerformanceViewModel : ReactiveViewModel
 
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
     public ReactiveProperty<PerfDetailSection> DetailSection { get; } = new(PerfDetailSection.Cpu);
+    public ReactiveProperty<int> DiskDetailIndex { get; } = new(0);
 
     private readonly Subject<Unit> _detailContentChanged = new();
     public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
@@ -148,6 +149,7 @@ public class PerformanceViewModel : ReactiveViewModel
                     PerfDetailSection.Disk => PerfDetailSection.Network,
                     _ => PerfDetailSection.Cpu,
                 };
+                DiskDetailIndex.Value = 0;
                 _detailContentChanged.OnNext(Unit.Default);
                 break;
             case ConsoleKey.LeftArrow:
@@ -158,7 +160,23 @@ public class PerformanceViewModel : ReactiveViewModel
                     PerfDetailSection.Network => PerfDetailSection.Disk,
                     _ => PerfDetailSection.Network,
                 };
+                DiskDetailIndex.Value = 0;
                 _detailContentChanged.OnNext(Unit.Default);
+                break;
+            case ConsoleKey.UpArrow:
+                if (DetailSection.Value == PerfDetailSection.Disk && DiskDetailIndex.Value > 0)
+                {
+                    DiskDetailIndex.Value--;
+                    _detailContentChanged.OnNext(Unit.Default);
+                }
+                break;
+            case ConsoleKey.DownArrow:
+                if (DetailSection.Value == PerfDetailSection.Disk &&
+                    DiskDetailIndex.Value < Disks.Value.Count - 1)
+                {
+                    DiskDetailIndex.Value++;
+                    _detailContentChanged.OnNext(Unit.Default);
+                }
                 break;
         }
     }
@@ -184,6 +202,7 @@ public class PerformanceViewModel : ReactiveViewModel
         Networks.Dispose();
         IsDetailOpen.Dispose();
         DetailSection.Dispose();
+        DiskDetailIndex.Dispose();
         _detailContentChanged.Dispose();
         base.Dispose();
     }

@@ -13,6 +13,8 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 {
     private ModalNode? _detailModal;
     private GraphNode? _detailGraph;
+    private GraphNode? _diskActiveGraph;
+    private GraphNode? _diskTransferGraph;
     private GraphNode? _cpuGraph;
     private GraphNode? _ramGraph;
     private CpuCoresNode? _coresNode;
@@ -43,6 +45,16 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithStyle(GraphStyle.Blocks)
             .WithColor(Color.BrightGreen)
             .WithRange(0, 100);
+
+        _diskActiveGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(Color.BrightYellow)
+            .WithRange(0, 100);
+
+        _diskTransferGraph = new GraphNode()
+            .WithStyle(GraphStyle.Braille)
+            .WithColor(Color.BrightCyan)
+            .WithRange(0, 100_000_000);
 
         var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
 
@@ -77,15 +89,30 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 var used = ViewModel.RamUsed.Value;
                 _ramGraph?.Push(total > 0 ? (double)used / total * 100 : 0);
 
-                if (ViewModel.IsDetailOpen.Value && _detailGraph is not null)
+                if (ViewModel.IsDetailOpen.Value)
                 {
-                    var value = ViewModel.DetailSection.Value switch
+                    if (ViewModel.DetailSection.Value is PerfDetailSection.Cpu or PerfDetailSection.Ram
+                        && _detailGraph is not null)
                     {
-                        PerfDetailSection.Cpu => ViewModel.CpuTotal.Value,
-                        PerfDetailSection.Ram => total > 0 ? (double)used / total * 100 : 0,
-                        _ => 0
-                    };
-                    _detailGraph.Push(value);
+                        var value = ViewModel.DetailSection.Value switch
+                        {
+                            PerfDetailSection.Cpu => ViewModel.CpuTotal.Value,
+                            PerfDetailSection.Ram => total > 0 ? (double)used / total * 100 : 0,
+                            _ => 0
+                        };
+                        _detailGraph.Push(value);
+                    }
+
+                    if (ViewModel.DetailSection.Value == PerfDetailSection.Disk)
+                    {
+                        var disks = ViewModel.Disks.Value;
+                        var idx = ViewModel.DiskDetailIndex.Value;
+                        if (idx >= 0 && idx < disks.Count)
+                        {
+                            _diskActiveGraph?.Push(disks[idx].ActiveTimePercent);
+                            _diskTransferGraph?.Push(disks[idx].TransferBytesPerSec);
+                        }
+                    }
                 }
             })
             .DisposeWith(Subscriptions);
@@ -125,17 +152,21 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             _ => (Color.White, "", Layouts.Vertical() as ILayoutNode)
         };
 
-        _detailGraph.WithColor(color).WithRange(0, 100);
         _detailModal.WithTitle($" {title} Detail ").WithTitleColor(color).WithBorderColor(color);
 
-        var showGraph = section is PerfDetailSection.Cpu or PerfDetailSection.Ram;
-
-        if (showGraph)
+        if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram)
         {
+            _detailGraph!.WithColor(color).WithRange(0, 100);
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(info)
                 .WithChild(_detailGraph.Fill());
+        }
+        else if (section == PerfDetailSection.Disk)
+        {
+            _detailModal.Content = Layouts.Vertical()
+                .WithChild(tabBar.Height(1))
+                .WithChild(Layouts.Vertical().WithChild(info).Fill());
         }
         else
         {
@@ -172,16 +203,46 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     private ILayoutNode BuildDiskDetailInfo()
     {
         var disks = ViewModel.Disks.Value;
-        var layout = Layouts.Vertical();
-        foreach (var disk in disks)
+        if (disks.Count == 0)
+            return new TextNode(" Keine Disks gefunden").WithForeground(Color.Gray);
+
+        var idx = Math.Clamp(ViewModel.DiskDetailIndex.Value, 0, disks.Count - 1);
+        var disk = disks[idx];
+
+        var usedGb = disk.UsedBytes / 1024.0 / 1024 / 1024;
+        var totalGb = disk.TotalBytes / 1024.0 / 1024 / 1024;
+
+        var diskTabs = Layouts.Horizontal();
+        for (var i = 0; i < disks.Count; i++)
         {
-            var usedGb = disk.UsedBytes / 1024.0 / 1024 / 1024;
-            var totalGb = disk.TotalBytes / 1024.0 / 1024 / 1024;
-            layout.WithChild(new TextNode($" {disk.Name,-4} {BuildBar(disk.UsedPercent, 30)} {usedGb:F0}/{totalGb:F0} GB ({disk.UsedPercent:F0}%)")
-                .WithForeground(disk.UsedPercent > 90 ? Color.BrightRed : disk.UsedPercent > 75 ? Color.BrightYellow : Color.BrightGreen)
-                .Height(1));
+            var label = new TextNode($" {disks[i].Name} ");
+            if (i == idx)
+                label.WithForeground(Color.Black).WithBackground(Color.BrightYellow);
+            else
+                label.WithForeground(Color.Gray);
+            diskTabs.WithChild(label);
         }
-        return layout;
+
+        return Layouts.Vertical()
+            .WithChild(diskTabs.Height(1))
+            .WithChild(new TextNode($" {disk.Name}  {usedGb:F1}/{totalGb:F1} GB  ({disk.UsedPercent:F0}% belegt)  {BuildBar(disk.UsedPercent, 20)}")
+                .WithForeground(Color.BrightYellow).Height(1))
+            .WithChild(new TextNode($" Read: {FormatBytes(disk.ReadBytesPerSec)}  Write: {FormatBytes(disk.WriteBytesPerSec)}  Active: {disk.ActiveTimePercent:F0}%")
+                .WithForeground(Color.BrightCyan).Height(1))
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new PanelNode()
+                .WithTitle(" Active Time % ")
+                .WithBorder(BorderStyle.Rounded)
+                .WithBorderColor(Color.BrightYellow)
+                .WithContent(_diskActiveGraph!)
+                .HeightPercent(50)
+                .Fill())
+            .WithChild(new PanelNode()
+                .WithTitle(" Transfer Rate ")
+                .WithBorder(BorderStyle.Rounded)
+                .WithBorderColor(Color.BrightCyan)
+                .WithContent(_diskTransferGraph!)
+                .Fill());
     }
 
     private ILayoutNode BuildNetworkDetailInfo()

@@ -51,6 +51,8 @@ jobs:
           -c Release
           -r ${{ matrix.rid }}
           --self-contained
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish/${{ matrix.artifact }}
 
       - name: Archive (Linux)

@@ -37,8 +37,8 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithColor(Color.BrightGreen)
             .WithRange(0, 100);
 
-        ViewModel.CpuTotal
-            .Subscribe(v => cpuGraph.Push(v))
+        Observable.Interval(TimeSpan.FromMilliseconds(200))
+            .Subscribe(_ => cpuGraph.Push(ViewModel.CpuTotal.Value))
             .DisposeWith(Subscriptions);
 
         return new PanelNode()
@@ -69,9 +69,14 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithColor(Color.BrightBlue)
             .WithRange(0, 100);
 
-        ViewModel.RamUsed.CombineLatest(ViewModel.RamTotal,
-                (used, total) => total > 0 ? (double)used / total * 100 : 0)
-            .Subscribe(v => ramGraph.Push(v))
+        Observable.Interval(TimeSpan.FromMilliseconds(200))
+            .Subscribe(_ =>
+            {
+                var total = ViewModel.RamTotal.Value;
+                var used = ViewModel.RamUsed.Value;
+                var pct = total > 0 ? (double)used / total * 100 : 0;
+                ramGraph.Push(pct);
+            })
             .DisposeWith(Subscriptions);
 
         return new PanelNode()

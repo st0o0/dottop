@@ -5,6 +5,7 @@ using dottop.Actors;
 using dottop.Models;
 using dottop.Nodes;
 using dottop.Resources;
+using dottop.Services;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -16,6 +17,7 @@ public class ProcessesViewModel : ReactiveViewModel
 {
     private readonly IRequiredActor<ProcessMonitorActor> _processMonitorRef;
     private readonly IRequiredActor<ProcessActionActor> _processActionRef;
+    private readonly SettingsService _settingsService;
     private IActorRef? _processActionActor;
     private CancellationTokenSource? _cts;
 
@@ -43,14 +45,32 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public ProcessesViewModel(
         IRequiredActor<ProcessMonitorActor> processMonitor,
-        IRequiredActor<ProcessActionActor> processAction)
+        IRequiredActor<ProcessActionActor> processAction,
+        SettingsService settingsService)
     {
         _processMonitorRef = processMonitor;
         _processActionRef = processAction;
+        _settingsService = settingsService;
     }
 
     public override void OnActivated()
     {
+        SortColumn.Value = _settingsService.Settings.DefaultSort switch
+        {
+            "cpu" => Pages.SortColumn.Cpu,
+            "name" => Pages.SortColumn.Name,
+            "pid" => Pages.SortColumn.Pid,
+            _ => Pages.SortColumn.Ram,
+        };
+
+        SelectedGroup.Value = _settingsService.Settings.DefaultGroup switch
+        {
+            "apps" => ProcessGroup.Apps,
+            "background" => ProcessGroup.Background,
+            "system" => ProcessGroup.Windows,
+            _ => null,
+        };
+
         _cts = new CancellationTokenSource();
         _ = InitializeAsync();
 

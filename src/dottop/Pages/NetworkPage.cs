@@ -1,6 +1,7 @@
 using dottop.Models;
 using dottop.Nodes;
 using dottop.Resources;
+using dottop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -47,7 +48,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelNetworkConnections)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.Cyan)
+                .WithBorderColor(Theme.Primary)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderProcess,-16} {Strings.HeaderPid,6} {"Proto",-4} {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus}")
                         .WithForeground(Color.BrightBlack).Height(1))
@@ -83,7 +84,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Color.Black).WithBackground(Color.BrightCyan))
+                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
             .AsLayout().Height(1);
     }
 }

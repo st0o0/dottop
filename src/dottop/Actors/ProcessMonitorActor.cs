@@ -8,16 +8,19 @@ namespace dottop.Actors;
 
 public sealed class ProcessMonitorActor : ReceiveActor
 {
+    private readonly TimeSpan _interval;
     private Channel<List<ProcessSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
     private Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)> _previousCpu = new();
 
-    public static Props Props(IProcessClassifier classifier) =>
-        Akka.Actor.Props.Create(() => new ProcessMonitorActor(classifier));
+    public static Props Props(IProcessClassifier classifier, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new ProcessMonitorActor(classifier, interval));
 
-    public ProcessMonitorActor(IProcessClassifier classifier)
+    public ProcessMonitorActor(IProcessClassifier classifier, TimeSpan interval)
     {
+        _interval = interval;
+
         Receive<StartMonitoring>(_ =>
         {
             CleanupPreviousStream();
@@ -29,7 +32,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
             });
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
+                TimeSpan.Zero, _interval, Self, new Tick(), Self);
 
             var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
             Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, _streamCts));

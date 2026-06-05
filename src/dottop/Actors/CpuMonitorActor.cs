@@ -8,15 +8,18 @@ namespace dottop.Actors;
 public sealed class CpuMonitorActor : ReceiveActor
 {
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
+    private readonly TimeSpan _interval;
     private Channel<CpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
+    private bool _initialized;
 
-    public static Props Props() => Akka.Actor.Props.Create<CpuMonitorActor>();
+    public static Props Props(TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new CpuMonitorActor(interval));
 
-    public CpuMonitorActor()
+    public CpuMonitorActor(TimeSpan interval)
     {
-        _hw.RefreshCPUList(includePercentProcessorTime: false, 250, false);
+        _interval = interval;
 
         Receive<StartMonitoring>(_ =>
         {
@@ -29,7 +32,7 @@ public sealed class CpuMonitorActor : ReceiveActor
             });
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
+                TimeSpan.Zero, _interval, Self, new Tick(), Self);
 
             var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
             Sender.Tell(new MonitoringStream<CpuSnapshot>(stream, _streamCts));
@@ -40,6 +43,12 @@ public sealed class CpuMonitorActor : ReceiveActor
             if (_channel is null)
             {
                 return;
+            }
+
+            if (!_initialized)
+            {
+                _hw.RefreshCPUList(includePercentProcessorTime: false, 250, false);
+                _initialized = true;
             }
 
             _hw.RefreshCPUList(includePercentProcessorTime: true, 250, false);

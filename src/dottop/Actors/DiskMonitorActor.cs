@@ -10,16 +10,18 @@ public sealed class DiskMonitorActor : ReceiveActor
 {
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private readonly IDiskMetricsProvider _diskMetrics;
+    private readonly TimeSpan _interval;
     private Channel<List<DiskSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
 
-    public static Props Props(IDiskMetricsProvider diskMetrics) =>
-        Akka.Actor.Props.Create(() => new DiskMonitorActor(diskMetrics));
+    public static Props Props(IDiskMetricsProvider diskMetrics, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new DiskMonitorActor(diskMetrics, interval));
 
-    public DiskMonitorActor(IDiskMetricsProvider diskMetrics)
+    public DiskMonitorActor(IDiskMetricsProvider diskMetrics, TimeSpan interval)
     {
         _diskMetrics = diskMetrics;
+        _interval = interval;
 
         Receive<StartMonitoring>(_ =>
         {
@@ -34,7 +36,7 @@ public sealed class DiskMonitorActor : ReceiveActor
             _diskMetrics.Initialize();
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
+                TimeSpan.Zero, _interval, Self, new Tick(), Self);
 
             var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
             Sender.Tell(new MonitoringStream<List<DiskSnapshot>>(stream, _streamCts));

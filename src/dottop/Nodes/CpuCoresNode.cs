@@ -1,3 +1,4 @@
+using dottop.Themes;
 using R3;
 using Termina.Layout;
 using Termina.Rendering;
@@ -68,7 +69,7 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
                 text = text[..(bounds.Width - x)];
             }
 
-            ctx.SetForeground(Color.Cyan);
+            ctx.SetForeground(Theme.Primary);
             ctx.WriteAt(x, row, text);
         }
         ctx.ResetColors();

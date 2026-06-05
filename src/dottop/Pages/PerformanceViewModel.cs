@@ -4,8 +4,10 @@ using R3;
 using dottop.Actors;
 using dottop.Models;
 using dottop.Platform;
+using dottop.Services;
 using Termina.Input;
 using Termina.Reactive;
+using Termina.Rendering;
 
 namespace dottop.Pages;
 
@@ -20,6 +22,8 @@ public class PerformanceViewModel : ReactiveViewModel
     private readonly IRequiredActor<GpuMonitorActor> _gpuRef;
     private readonly IGpuMetricsProvider _gpuMetrics;
     private CancellationTokenSource? _cts;
+
+    public GraphStyle GraphStyleSetting { get; }
 
     public ReactiveProperty<double> CpuTotal { get; } = new(0);
     public ReactiveProperty<IReadOnlyList<double>> CpuCores { get; } = new([]);
@@ -44,7 +48,8 @@ public class PerformanceViewModel : ReactiveViewModel
         IRequiredActor<DiskMonitorActor> diskRef,
         IRequiredActor<NetworkMonitorActor> netRef,
         IRequiredActor<GpuMonitorActor> gpuRef,
-        IGpuMetricsProvider gpuMetrics)
+        IGpuMetricsProvider gpuMetrics,
+        SettingsService settingsService)
     {
         _cpuRef = cpuRef;
         _memRef = memRef;
@@ -52,6 +57,14 @@ public class PerformanceViewModel : ReactiveViewModel
         _netRef = netRef;
         _gpuRef = gpuRef;
         _gpuMetrics = gpuMetrics;
+
+        GraphStyleSetting = settingsService.Settings.GraphStyle switch
+        {
+            "braille" => GraphStyle.Braille,
+            "outline" => GraphStyle.Outline,
+            "ascii" => GraphStyle.Ascii,
+            _ => GraphStyle.Blocks,
+        };
     }
 
     public override void OnActivated()

@@ -15,7 +15,7 @@ public class DiskMonitorActorTests : TestKit
         var fakeDisk = new FakeDiskMetrics();
         fakeDisk.Data["C:"] = (1024 * 1024, 512 * 1024, 42.5);
 
-        var actor = Sys.ActorOf(DiskMonitorActor.Props(fakeDisk));
+        var actor = Sys.ActorOf(DiskMonitorActor.Props(fakeDisk, TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<List<DiskSnapshot>>>(
             new StartMonitoring(), TimeSpan.FromSeconds(5));

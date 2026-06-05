@@ -7,15 +7,17 @@ namespace dottop.Actors;
 
 public sealed class GpuMonitorActor : ReceiveActor
 {
+    private readonly TimeSpan _interval;
     private Channel<GpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
 
-    public static Props Props(IGpuMetricsProvider gpuMetrics) =>
-        Akka.Actor.Props.Create(() => new GpuMonitorActor(gpuMetrics));
+    public static Props Props(IGpuMetricsProvider gpuMetrics, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new GpuMonitorActor(gpuMetrics, interval));
 
-    public GpuMonitorActor(IGpuMetricsProvider gpuMetrics)
+    public GpuMonitorActor(IGpuMetricsProvider gpuMetrics, TimeSpan interval)
     {
+        _interval = interval;
         var gpuMetrics1 = gpuMetrics;
 
         Receive<StartMonitoring>(_ =>
@@ -29,7 +31,7 @@ public sealed class GpuMonitorActor : ReceiveActor
             });
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
+                TimeSpan.Zero, _interval, Self, new Tick(), Self);
 
             var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
             Sender.Tell(new MonitoringStream<GpuSnapshot>(stream, _streamCts));

@@ -1,4 +1,5 @@
 using dottop.Resources;
+using dottop.Themes;
 using Termina.Layout;
 using Termina.Rendering;
 using Termina.Terminal;
@@ -37,12 +38,12 @@ public sealed class TabBarNode : LayoutNode
             var label = $" {TabLabels[i]} ";
             if (i == _activeIndex)
             {
-                context.SetForeground(Color.Black);
-                context.SetBackground(Color.BrightCyan);
+                context.SetForeground(Theme.SelectionText);
+                context.SetBackground(Theme.Selection);
             }
             else
             {
-                context.SetForeground(Color.Gray);
+                context.SetForeground(Theme.Secondary);
             }
 
             context.WriteAt(x, 0, label);

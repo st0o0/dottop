@@ -13,7 +13,7 @@ public class ProcessMonitorActorWithFakesTests : TestKit
     public async Task ProcessMonitorActor_UsesClassifier_ForGrouping()
     {
         var fakeClassifier = new FakeProcessClassifier { DefaultGroup = ProcessGroup.Apps };
-        var actor = Sys.ActorOf(ProcessMonitorActor.Props(fakeClassifier));
+        var actor = Sys.ActorOf(ProcessMonitorActor.Props(fakeClassifier, TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
             new StartMonitoring(), TimeSpan.FromSeconds(5));
@@ -33,7 +33,7 @@ public class ProcessMonitorActorWithFakesTests : TestKit
     public async Task ProcessMonitorActor_WithBackgroundClassifier_AllBackground()
     {
         var fakeClassifier = new FakeProcessClassifier { DefaultGroup = ProcessGroup.Background };
-        var actor = Sys.ActorOf(ProcessMonitorActor.Props(fakeClassifier));
+        var actor = Sys.ActorOf(ProcessMonitorActor.Props(fakeClassifier, TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
             new StartMonitoring(), TimeSpan.FromSeconds(5));

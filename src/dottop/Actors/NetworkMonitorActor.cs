@@ -8,14 +8,18 @@ namespace dottop.Actors;
 public sealed class NetworkMonitorActor : ReceiveActor
 {
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
+    private readonly TimeSpan _interval;
     private Channel<List<NetworkSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
 
-    public static Props Props() => Akka.Actor.Props.Create<NetworkMonitorActor>();
+    public static Props Props(TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new NetworkMonitorActor(interval));
 
-    public NetworkMonitorActor()
+    public NetworkMonitorActor(TimeSpan interval)
     {
+        _interval = interval;
+
         Receive<StartMonitoring>(_ =>
         {
             CleanupPreviousStream();
@@ -27,7 +31,7 @@ public sealed class NetworkMonitorActor : ReceiveActor
             });
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
+                TimeSpan.Zero, _interval, Self, new Tick(), Self);
 
             var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
             Sender.Tell(new MonitoringStream<List<NetworkSnapshot>>(stream, _streamCts));

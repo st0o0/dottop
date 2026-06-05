@@ -1,6 +1,7 @@
 using dottop.Models;
 using dottop.Nodes;
 using dottop.Resources;
+using dottop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -23,13 +24,15 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
     public override ILayoutNode BuildLayout()
     {
+        var graphStyle = ViewModel.GraphStyleSetting;
+
         _cpuGraph = new GraphNode()
-            .WithStyle(GraphStyle.Blocks)
+            .WithStyle(graphStyle)
             .WithColor(Color.Cyan)
             .WithRange(0, 100);
 
         _ramGraph = new GraphNode()
-            .WithStyle(GraphStyle.Braille)
+            .WithStyle(graphStyle)
             .WithColor(Color.Cyan)
             .WithRange(0, 100);
 
@@ -37,29 +40,29 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.BrightCyan)
+            .WithBorderColor(Theme.Primary)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
             .WithPadding(1);
 
         _detailGraph = new GraphNode()
-            .WithStyle(GraphStyle.Blocks)
+            .WithStyle(graphStyle)
             .WithColor(Color.Cyan)
             .WithRange(0, 100);
 
         _diskActiveGraph = new GraphNode()
-            .WithStyle(GraphStyle.Blocks)
+            .WithStyle(graphStyle)
             .WithColor(Color.Cyan)
             .WithRange(0, 100);
 
         _diskTransferGraph = new GraphNode()
-            .WithStyle(GraphStyle.Braille)
+            .WithStyle(graphStyle)
             .WithColor(Color.Cyan)
             .WithRange(0, 100_000_000);
 
         _gpuGraph = new GraphNode()
-            .WithStyle(GraphStyle.Blocks)
+            .WithStyle(graphStyle)
             .WithColor(Color.Cyan)
             .WithRange(0, 100);
 
@@ -85,7 +88,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .Fill())
             .WithChild(bottomRow.Fill())
             .WithChild(new TextNode(Strings.PerfStatusBar)
-                .WithForeground(Color.Black).WithBackground(Color.BrightCyan).Height(1))
+                .WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar).Height(1))
             .WithChild(conditionalDetail);
     }
 
@@ -170,11 +173,11 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             var node = new TextNode($" {sections[i]} ");
             if (i == sectionIdx)
             {
-                node.WithForeground(Color.Black).WithBackground(Color.BrightCyan);
+                node.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
             }
             else
             {
-                node.WithForeground(Color.Gray);
+                node.WithForeground(Theme.Secondary);
             }
 
             tabBar.WithChild(node);
@@ -190,7 +193,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             _ => (Color.White, "", Layouts.Vertical())
         };
 
-        _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(Color.BrightCyan).WithBorderColor(Color.Cyan);
+        _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(Theme.Primary).WithBorderColor(Theme.Primary);
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {
@@ -281,14 +284,14 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelActiveTime)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.Cyan)
+                .WithBorderColor(Theme.Primary)
                 .WithContent(_diskActiveGraph!)
                 .HeightPercent(50)
                 .Fill())
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelTransferRate)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.Cyan)
+                .WithBorderColor(Theme.Primary)
                 .WithContent(_diskTransferGraph!)
                 .Fill());
     }
@@ -341,7 +344,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.Cyan)
+            .WithBorderColor(Theme.Primary)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -360,7 +363,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelRam)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.Cyan)
+            .WithBorderColor(Theme.Primary)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -383,7 +386,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelDisks)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.Cyan)
+            .WithBorderColor(Theme.Primary)
             .WithContent(
                 ViewModel.Disks
                     .Select<IReadOnlyList<DiskSnapshot>, ILayoutNode>(disks =>
@@ -413,7 +416,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelNetwork)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.Cyan)
+            .WithBorderColor(Theme.Primary)
             .WithContent(
                 ViewModel.Networks
                     .Select<IReadOnlyList<NetworkSnapshot>, ILayoutNode>(nets =>
@@ -439,7 +442,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelGpu)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.Cyan)
+            .WithBorderColor(Theme.Primary)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(

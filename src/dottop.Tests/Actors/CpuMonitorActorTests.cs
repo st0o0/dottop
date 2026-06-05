@@ -11,7 +11,7 @@ public class CpuMonitorActorTests : TestKit
     [Fact]
     public async Task CpuMonitorActor_OnStartMonitoring_StreamsCpuSnapshots()
     {
-        var actor = Sys.ActorOf(CpuMonitorActor.Props());
+        var actor = Sys.ActorOf(CpuMonitorActor.Props(TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<CpuSnapshot>>(
             new StartMonitoring(), TimeSpan.FromSeconds(5));

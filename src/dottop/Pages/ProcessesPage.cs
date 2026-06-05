@@ -2,6 +2,7 @@ using dottop.Actors;
 using dottop.Models;
 using dottop.Nodes;
 using dottop.Resources;
+using dottop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -41,7 +42,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.BrightCyan)
+            .WithBorderColor(Theme.Primary)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -57,7 +58,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelProcesses)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.BrightCyan)
+                .WithBorderColor(Theme.Primary)
                 .WithContent(Layouts.Vertical()
                     .WithChild(BuildHeader())
                     .WithChild(_list.Fill()))
@@ -141,18 +142,18 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             var tabNode = new TextNode($" {tabLabels[i]} ");
             if (i == activeTab)
             {
-                tabNode.WithForeground(Color.Black).WithBackground(Color.BrightCyan);
+                tabNode.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
             }
             else
             {
-                tabNode.WithForeground(Color.Gray);
+                tabNode.WithForeground(Theme.Secondary);
             }
 
             header.WithChild(tabNode.Height(1));
         }
 
         _overlay.WithTitle($" {proc.Name} — PID {proc.Pid} ");
-        _overlay.WithTitleColor(Color.BrightCyan);
+        _overlay.WithTitleColor(Theme.Primary);
         _overlay.Content = Layouts.Vertical()
             .WithChild(header.Height(1))
             .WithChild(BuildOverlayTab(proc, activeTab));
@@ -265,7 +266,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Color.Black).WithBackground(Color.BrightCyan))
+                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
             .AsLayout()
             .Height(1);
     }

@@ -1,3 +1,4 @@
+using dottop.Themes;
 using R3;
 using Termina.Layout;
 using Termina.Rendering;
@@ -27,8 +28,8 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     private int _viewportHeight = 20;
     private bool _disposed;
 
-    private Color _selectedFg = Color.Black;
-    private Color _selectedBg = Color.BrightCyan;
+    private Color _selectedFg = Theme.SelectionText;
+    private Color _selectedBg = Theme.Selection;
 
     public DataListNode(Func<T, string> formatter, Func<T, Color>? colorSelector = null)
     {

@@ -8,16 +8,19 @@ namespace dottop.Actors;
 public sealed class MemoryMonitorActor : ReceiveActor
 {
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
+    private readonly TimeSpan _interval;
     private Channel<MemorySnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
+    private bool _initialized;
+    private ulong _totalCapacity;
 
-    public static Props Props() => Akka.Actor.Props.Create<MemoryMonitorActor>();
+    public static Props Props(TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new MemoryMonitorActor(interval));
 
-    public MemoryMonitorActor()
+    public MemoryMonitorActor(TimeSpan interval)
     {
-        _hw.RefreshMemoryList();
-        var totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
+        _interval = interval;
 
         Receive<StartMonitoring>(_ =>
         {
@@ -30,7 +33,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
             });
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, TimeSpan.FromSeconds(1), Self, new Tick(), Self);
+                TimeSpan.Zero, _interval, Self, new Tick(), Self);
 
             var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
             Sender.Tell(new MonitoringStream<MemorySnapshot>(stream, _streamCts));
@@ -43,10 +46,17 @@ public sealed class MemoryMonitorActor : ReceiveActor
                 return;
             }
 
+            if (!_initialized)
+            {
+                _hw.RefreshMemoryList();
+                _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
+                _initialized = true;
+            }
+
             _hw.RefreshMemoryStatus();
             var status = _hw.MemoryStatus;
             var used = status.TotalPhysical - status.AvailablePhysical;
-            _channel.Writer.TryWrite(new MemorySnapshot(totalCapacity, used));
+            _channel.Writer.TryWrite(new MemorySnapshot(_totalCapacity, used));
         });
     }
 

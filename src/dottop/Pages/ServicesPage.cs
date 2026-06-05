@@ -1,6 +1,7 @@
 using dottop.Models;
 using dottop.Nodes;
 using dottop.Resources;
+using dottop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -32,7 +33,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.Cyan)
+            .WithBorderColor(Theme.Primary)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -46,7 +47,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelServices)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.Cyan)
+                .WithBorderColor(Theme.Primary)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderName,-32} {Strings.HeaderStatus,-8} {Strings.HeaderStartType,-10}")
                         .WithForeground(Color.BrightBlack).Height(1))
@@ -79,7 +80,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             ? Strings.ServiceNoDescription
             : svc.Description;
 
-        _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(Color.BrightCyan);
+        _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(Theme.Primary);
         _detailModal.Content = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.ServiceDetailName}     {svc.Name}").WithForeground(Color.Gray).Height(1))
@@ -87,7 +88,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             .WithChild(new TextNode($"  {Strings.HeaderStatus}      {statusIcon} {svc.Status}").WithForeground(statusColor).Height(1))
             .WithChild(new TextNode($"  {Strings.HeaderStartType}  {svc.StartType}").WithForeground(Color.Gray).Height(1))
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  {Strings.ServiceDetailDescription}").WithForeground(Color.BrightCyan).Height(1))
+            .WithChild(new TextNode($"  {Strings.ServiceDetailDescription}").WithForeground(Theme.Primary).Height(1))
             .WithChild(new TextNode($"  {desc}").WithForeground(Color.White).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode(Strings.ServiceDetailHints).WithForeground(Color.Gray).Height(1));
@@ -113,7 +114,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Color.Black).WithBackground(Color.BrightCyan))
+                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
             .AsLayout().Height(1);
     }
 }

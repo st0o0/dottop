@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Akka.Hosting;
 using dottop.Actors;
@@ -6,6 +7,7 @@ using dottop.Platform;
 using dottop.Platform.Linux;
 using dottop.Platform.Windows;
 using dottop.Services;
+using dottop.Themes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Termina.Hosting;
@@ -51,6 +53,17 @@ if (!gpuMetrics.IsAvailable)
 var settingsService = new SettingsService();
 settingsService.Load();
 
+Theme.Apply(settingsService.Settings.Theme);
+
+if (settingsService.Settings.Language != "system")
+{
+    var culture = new CultureInfo(settingsService.Settings.Language);
+    CultureInfo.CurrentUICulture = culture;
+    CultureInfo.CurrentCulture = culture;
+}
+
+var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
+
 builder.Services.AddSingleton(settingsService);
 builder.Services.AddSingleton(connectionProvider);
 builder.Services.AddSingleton(gpuMetrics);
@@ -59,19 +72,19 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 {
     configurationBuilder.WithActors((system, registry) =>
     {
-        var cpu = system.ActorOf(CpuMonitorActor.Props(), "cpu-monitor");
+        var cpu = system.ActorOf(CpuMonitorActor.Props(refreshInterval), "cpu-monitor");
         registry.Register<CpuMonitorActor>(cpu);
 
-        var memory = system.ActorOf(MemoryMonitorActor.Props(), "memory-monitor");
+        var memory = system.ActorOf(MemoryMonitorActor.Props(refreshInterval), "memory-monitor");
         registry.Register<MemoryMonitorActor>(memory);
 
-        var disk = system.ActorOf(DiskMonitorActor.Props(diskMetrics), "disk-monitor");
+        var disk = system.ActorOf(DiskMonitorActor.Props(diskMetrics, refreshInterval), "disk-monitor");
         registry.Register<DiskMonitorActor>(disk);
 
-        var network = system.ActorOf(NetworkMonitorActor.Props(), "network-monitor");
+        var network = system.ActorOf(NetworkMonitorActor.Props(refreshInterval), "network-monitor");
         registry.Register<NetworkMonitorActor>(network);
 
-        var process = system.ActorOf(ProcessMonitorActor.Props(processClassifier), "process-monitor");
+        var process = system.ActorOf(ProcessMonitorActor.Props(processClassifier, refreshInterval), "process-monitor");
         registry.Register<ProcessMonitorActor>(process);
 
         var processAction = system.ActorOf(ProcessActionActor.Props(processTree), "process-action");
@@ -80,7 +93,7 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
         var serviceActor = system.ActorOf(ServiceActor.Props(serviceManager), "service");
         registry.Register<ServiceActor>(serviceActor);
 
-        var gpuActor = system.ActorOf(GpuMonitorActor.Props(gpuMetrics), "gpu-monitor");
+        var gpuActor = system.ActorOf(GpuMonitorActor.Props(gpuMetrics, refreshInterval), "gpu-monitor");
         registry.Register<GpuMonitorActor>(gpuActor);
     });
 });

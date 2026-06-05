@@ -12,7 +12,7 @@ public class ProcessMonitorActorTests : TestKit
     [Fact]
     public async Task ProcessMonitorActor_OnStartMonitoring_StreamsProcessList()
     {
-        var actor = Sys.ActorOf(ProcessMonitorActor.Props(new WindowsProcessClassifier()));
+        var actor = Sys.ActorOf(ProcessMonitorActor.Props(new WindowsProcessClassifier(), TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
             new StartMonitoring(), TimeSpan.FromSeconds(5));
@@ -31,7 +31,7 @@ public class ProcessMonitorActorTests : TestKit
     [Fact]
     public async Task ProcessMonitorActor_ProcessList_IsSortedByMemory()
     {
-        var actor = Sys.ActorOf(ProcessMonitorActor.Props(new WindowsProcessClassifier()));
+        var actor = Sys.ActorOf(ProcessMonitorActor.Props(new WindowsProcessClassifier(), TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
             new StartMonitoring(), TimeSpan.FromSeconds(5));

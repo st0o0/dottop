@@ -1,5 +1,6 @@
 using dottop.Nodes;
 using dottop.Resources;
+using dottop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -22,7 +23,7 @@ public class SettingsPage : ReactivePage<SettingsViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.SettingsTitle)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.Cyan)
+                .WithBorderColor(Theme.Primary)
                 .WithContent(_settingsListNode)
                 .Fill())
             .WithChild(BuildStatusBar());
@@ -39,7 +40,7 @@ public class SettingsPage : ReactivePage<SettingsViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Color.Black).WithBackground(Color.BrightCyan))
+                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
             .AsLayout().Height(1);
     }
 }
@@ -89,12 +90,12 @@ public sealed class SettingsListNode : LayoutNode, IInvalidatingNode
 
             if (isSelected)
             {
-                ctx.SetForeground(Color.Black);
-                ctx.SetBackground(Color.BrightCyan);
+                ctx.SetForeground(Theme.SelectionText);
+                ctx.SetBackground(Theme.Selection);
             }
             else
             {
-                ctx.SetForeground(Color.White);
+                ctx.SetForeground(Theme.Text);
             }
 
             ctx.WriteAt(0, row, text);

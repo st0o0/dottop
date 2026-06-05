@@ -39,19 +39,14 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightCyan)
-            .WithBackdrop(BackdropStyle.Dim);
+            .WithBackdrop(BackdropStyle.Dim)
+            .WithDismissOnEscape(false)
+            .WithPadding(0);
 
         ViewModel.IsOverlayOpen.Subscribe(open =>
         {
             if (open)
-            {
                 UpdateOverlayContent();
-                Focus.PushFocus(_overlay!);
-            }
-            else
-            {
-                Focus.PopFocus();
-            }
         }).DisposeWith(Subscriptions);
 
         ViewModel.SelectedProcess.Subscribe(_ =>
@@ -83,8 +78,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             if (ViewModel.IsOverlayOpen.Value)
                 UpdateOverlayContent();
         }).DisposeWith(Subscriptions);
-
-        _overlay.Dismissed.Subscribe(_ => ViewModel.CloseOverlay()).DisposeWith(Subscriptions);
 
         var conditionalOverlay = new ConditionalNode(
             ViewModel.IsOverlayOpen,

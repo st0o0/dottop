@@ -23,15 +23,19 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
         ViewModel.ListNode = list;
 
-        ViewModel.FilteredServices.Subscribe(services => list.SetItems(services))
-            .DisposeWith(Subscriptions);
-
         return Layouts.Vertical()
             .WithChild(new TabBarNode(2))
             .WithChild(BuildSearchBar())
             .WithChild(BuildHeader())
             .WithChild(list.Fill())
             .WithChild(BuildStatusBar());
+    }
+
+    public override void OnNavigatedTo()
+    {
+        base.OnNavigatedTo();
+        ViewModel.FilteredServices.Subscribe(services => ViewModel.ListNode?.SetItems(services))
+            .DisposeWith(Subscriptions);
     }
 
     private ILayoutNode BuildSearchBar()

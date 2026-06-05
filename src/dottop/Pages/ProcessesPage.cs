@@ -36,9 +36,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         ViewModel.ListNode = _list;
 
-        ViewModel.FilteredProcesses.Subscribe(list => _list.SetItems(list))
-            .DisposeWith(Subscriptions);
-
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightCyan)
@@ -46,12 +43,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
             .WithPadding(1);
-
-        ViewModel.OverlayContentChanged.Subscribe(_ =>
-        {
-            if (ViewModel.IsOverlayOpen.Value)
-                UpdateOverlayContent();
-        }).DisposeWith(Subscriptions);
 
         var conditionalOverlay = new ConditionalNode(
             ViewModel.IsOverlayOpen,
@@ -64,6 +55,34 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithChild(_list.Fill())
             .WithChild(BuildStatusBar())
             .WithChild(conditionalOverlay);
+    }
+
+    public override void OnNavigatedTo()
+    {
+        base.OnNavigatedTo();
+
+        ViewModel.FilteredProcesses.Subscribe(list => _list?.SetItems(list))
+            .DisposeWith(Subscriptions);
+
+        ViewModel.OverlayContentChanged.Subscribe(_ =>
+        {
+            if (ViewModel.IsOverlayOpen.Value)
+                UpdateOverlayContent();
+        }).DisposeWith(Subscriptions);
+
+        ViewModel.AllProcesses.Subscribe(list =>
+        {
+            if (ViewModel.IsOverlayOpen.Value && ViewModel.OverlayTabIndex.Value == 0
+                && ViewModel.SelectedProcess.Value is { } current)
+            {
+                var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
+                if (updated is not null)
+                {
+                    ViewModel.SelectedProcess.Value = updated;
+                    UpdateOverlayContent();
+                }
+            }
+        }).DisposeWith(Subscriptions);
     }
 
     private ILayoutNode BuildToolbar()

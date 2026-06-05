@@ -25,14 +25,18 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
 
         ViewModel.ListNode = list;
 
-        ViewModel.Entries.Subscribe(entries => list.SetItems(entries))
-            .DisposeWith(Subscriptions);
-
         return Layouts.Vertical()
             .WithChild(new TabBarNode(4))
             .WithChild(BuildHeader())
             .WithChild(list.Fill())
             .WithChild(BuildStatusBar());
+    }
+
+    public override void OnNavigatedTo()
+    {
+        base.OnNavigatedTo();
+        ViewModel.Entries.Subscribe(entries => ViewModel.ListNode?.SetItems(entries))
+            .DisposeWith(Subscriptions);
     }
 
     private ILayoutNode BuildHeader()

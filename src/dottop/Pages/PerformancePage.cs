@@ -13,9 +13,24 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 {
     private ModalNode? _detailModal;
     private GraphNode? _detailGraph;
+    private GraphNode? _cpuGraph;
+    private GraphNode? _ramGraph;
+    private CpuCoresNode? _coresNode;
 
     public override ILayoutNode BuildLayout()
     {
+        _cpuGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(Color.BrightGreen)
+            .WithRange(0, 100);
+
+        _ramGraph = new GraphNode()
+            .WithStyle(GraphStyle.Braille)
+            .WithColor(Color.BrightBlue)
+            .WithRange(0, 100);
+
+        _coresNode = new CpuCoresNode();
+
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightCyan)
@@ -28,26 +43,6 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithStyle(GraphStyle.Blocks)
             .WithColor(Color.BrightGreen)
             .WithRange(0, 100);
-
-        ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())
-            .DisposeWith(Subscriptions);
-
-        Observable.Interval(TimeSpan.FromMilliseconds(200))
-            .Subscribe(_ =>
-            {
-                if (ViewModel.IsDetailOpen.Value)
-                {
-                    var value = ViewModel.DetailSection.Value switch
-                    {
-                        PerfDetailSection.Cpu => ViewModel.CpuTotal.Value,
-                        PerfDetailSection.Ram => ViewModel.RamTotal.Value > 0
-                            ? (double)ViewModel.RamUsed.Value / ViewModel.RamTotal.Value * 100 : 0,
-                        _ => 0
-                    };
-                    _detailGraph?.Push(value);
-                }
-            })
-            .DisposeWith(Subscriptions);
 
         var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
 
@@ -67,6 +62,39 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithChild(new TextNode(" Enter/Tab: Detail  |  1-5: Tab  |  Q: Beenden")
                 .WithForeground(Color.Black).WithBackground(Color.BrightCyan).Height(1))
             .WithChild(conditionalDetail);
+    }
+
+    public override void OnNavigatedTo()
+    {
+        base.OnNavigatedTo();
+
+        Observable.Interval(TimeSpan.FromMilliseconds(200))
+            .Subscribe(_ =>
+            {
+                _cpuGraph?.Push(ViewModel.CpuTotal.Value);
+
+                var total = ViewModel.RamTotal.Value;
+                var used = ViewModel.RamUsed.Value;
+                _ramGraph?.Push(total > 0 ? (double)used / total * 100 : 0);
+
+                if (ViewModel.IsDetailOpen.Value && _detailGraph is not null)
+                {
+                    var value = ViewModel.DetailSection.Value switch
+                    {
+                        PerfDetailSection.Cpu => ViewModel.CpuTotal.Value,
+                        PerfDetailSection.Ram => total > 0 ? (double)used / total * 100 : 0,
+                        _ => 0
+                    };
+                    _detailGraph.Push(value);
+                }
+            })
+            .DisposeWith(Subscriptions);
+
+        ViewModel.CpuCores.Subscribe(cores => _coresNode?.SetCores(cores))
+            .DisposeWith(Subscriptions);
+
+        ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())
+            .DisposeWith(Subscriptions);
     }
 
     private void UpdateDetailModal()
@@ -167,31 +195,15 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         }
         foreach (var net in nets)
         {
-            layout.WithChild(new TextNode($" {net.Name}")
-                .WithForeground(Color.BrightMagenta).Height(1));
+            layout.WithChild(new TextNode($" {net.Name}").WithForeground(Color.BrightMagenta).Height(1));
             layout.WithChild(new TextNode($"   ↓ {FormatBytes(net.RxBytesPerSec),-14}  ↑ {FormatBytes(net.TxBytesPerSec)}")
                 .WithForeground(Color.Magenta).Height(1));
         }
         return layout;
     }
 
-    // --- Main panels (overview) ---
-
     private ILayoutNode BuildCpuPanel()
     {
-        var cpuGraph = new GraphNode()
-            .WithStyle(GraphStyle.Blocks)
-            .WithColor(Color.BrightGreen)
-            .WithRange(0, 100);
-
-        Observable.Interval(TimeSpan.FromMilliseconds(200))
-            .Subscribe(_ => cpuGraph.Push(ViewModel.CpuTotal.Value))
-            .DisposeWith(Subscriptions);
-
-        var coresNode = new CpuCoresNode();
-        ViewModel.CpuCores.Subscribe(cores => coresNode.SetCores(cores))
-            .DisposeWith(Subscriptions);
-
         return new PanelNode()
             .WithTitle(" CPU ")
             .WithBorder(BorderStyle.Rounded)
@@ -204,28 +216,13 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                                 new TextNode($" Gesamt: {pct:F1}%")
                                     .WithForeground(Color.BrightGreen))
                             .AsLayout().Height(1))
-                    .WithChild(coresNode)
-                    .WithChild(cpuGraph.Fill()))
+                    .WithChild(_coresNode!)
+                    .WithChild(_cpuGraph!.Fill()))
             .Fill();
     }
 
     private ILayoutNode BuildRamPanel()
     {
-        var ramGraph = new GraphNode()
-            .WithStyle(GraphStyle.Braille)
-            .WithColor(Color.BrightBlue)
-            .WithRange(0, 100);
-
-        Observable.Interval(TimeSpan.FromMilliseconds(200))
-            .Subscribe(_ =>
-            {
-                var total = ViewModel.RamTotal.Value;
-                var used = ViewModel.RamUsed.Value;
-                var pct = total > 0 ? (double)used / total * 100 : 0;
-                ramGraph.Push(pct);
-            })
-            .DisposeWith(Subscriptions);
-
         return new PanelNode()
             .WithTitle(" RAM ")
             .WithBorder(BorderStyle.Rounded)
@@ -242,7 +239,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                                 return new TextNode($" {usedGb:F1} / {totalGb:F1} GiB  {pct:F1}%")
                                     .WithForeground(Color.BrightBlue);
                             }).AsLayout().Height(1))
-                    .WithChild(ramGraph.Fill())
+                    .WithChild(_ramGraph!.Fill())
                     .Fill())
             .Fill();
     }

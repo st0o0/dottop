@@ -18,15 +18,19 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
         ViewModel.ListNode = list;
 
-        ViewModel.FilteredConnections.Subscribe(connections => list.SetItems(connections))
-            .DisposeWith(Subscriptions);
-
         return Layouts.Vertical()
             .WithChild(new TabBarNode(3))
             .WithChild(BuildSearchBar())
             .WithChild(BuildHeader())
             .WithChild(list.Fill())
             .WithChild(BuildStatusBar());
+    }
+
+    public override void OnNavigatedTo()
+    {
+        base.OnNavigatedTo();
+        ViewModel.FilteredConnections.Subscribe(connections => ViewModel.ListNode?.SetItems(connections))
+            .DisposeWith(Subscriptions);
     }
 
     private ILayoutNode BuildSearchBar()

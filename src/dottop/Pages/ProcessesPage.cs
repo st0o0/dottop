@@ -72,25 +72,24 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         ViewModel.FilteredProcesses.Subscribe(list => _list?.SetItems(list))
             .DisposeWith(Subscriptions);
 
-        ViewModel.OverlayContentChanged.Subscribe(_ =>
-        {
-            if (ViewModel.IsOverlayOpen.Value)
-                UpdateOverlayContent();
-        }).DisposeWith(Subscriptions);
+        ViewModel.OverlayContentChanged.Subscribe(_ => UpdateOverlayContent())
+            .DisposeWith(Subscriptions);
 
-        ViewModel.AllProcesses.Subscribe(list =>
-        {
-            if (ViewModel.IsOverlayOpen.Value && ViewModel.OverlayTabIndex.Value == 0
-                && ViewModel.SelectedProcess.Value is { } current)
+        Observable.Interval(TimeSpan.FromSeconds(1))
+            .Subscribe(_ =>
             {
-                var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
-                if (updated is not null)
+                if (ViewModel.IsOverlayOpen.Value && ViewModel.OverlayTabIndex.Value == 0
+                    && ViewModel.SelectedProcess.Value is { } current)
                 {
-                    ViewModel.SelectedProcess.Value = updated;
-                    UpdateOverlayContent();
+                    var updated = ViewModel.AllProcesses.Value.FirstOrDefault(p => p.Pid == current.Pid);
+                    if (updated is not null)
+                    {
+                        ViewModel.SelectedProcess.Value = updated;
+                        UpdateOverlayContent();
+                    }
                 }
-            }
-        }).DisposeWith(Subscriptions);
+            })
+            .DisposeWith(Subscriptions);
     }
 
     private ILayoutNode BuildSearchBar()

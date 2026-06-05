@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Threading.Channels;
 using Akka.Actor;
 using dottop.Models;
+using dottop.Platform;
 
 namespace dottop.Actors;
 
@@ -11,9 +12,10 @@ public sealed class ProcessMonitorActor : ReceiveActor
     private ICancelable? _tickSchedule;
     private Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)> _previousCpu = new();
 
-    public static Props Props() => Akka.Actor.Props.Create<ProcessMonitorActor>();
+    public static Props Props(IProcessClassifier classifier) =>
+        Akka.Actor.Props.Create(() => new ProcessMonitorActor(classifier));
 
-    public ProcessMonitorActor()
+    public ProcessMonitorActor(IProcessClassifier classifier)
     {
         Receive<StartMonitoring>(_ =>
         {
@@ -62,7 +64,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
                         }
 
                         return new ProcessSnapshot(
-                            Pid: pid, Name: p.ProcessName, Group: ClassifyProcess(p),
+                            Pid: pid, Name: p.ProcessName, Group: classifier.Classify(p),
                             CpuPercent: Math.Round(cpuPercent, 1),
                             WorkingSetBytes: p.WorkingSet64,
                             DiskBytesPerSec: 0, NetworkBytesPerSec: 0,
@@ -78,17 +80,6 @@ public sealed class ProcessMonitorActor : ReceiveActor
             _previousCpu = currentCpu;
             _channel.Writer.TryWrite(snapshots!);
         });
-    }
-
-    private static ProcessGroup ClassifyProcess(Process p)
-    {
-        try
-        {
-            if (p.MainWindowHandle != nint.Zero) return ProcessGroup.Apps;
-            if (p.SessionId == 0) return ProcessGroup.Windows;
-            return ProcessGroup.Background;
-        }
-        catch { return ProcessGroup.Background; }
     }
 
     private void CleanupPreviousStream()

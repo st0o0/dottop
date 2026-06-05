@@ -12,7 +12,7 @@ namespace dottop.Pages;
 
 public class ServicesViewModel : ReactiveViewModel
 {
-    private readonly IRequiredActor<WindowsServiceActor> _serviceActorRef;
+    private readonly IRequiredActor<ServiceActor> _serviceActorRef;
     private IActorRef? _serviceActor;
 
     public IScrollableList? ListNode { get; set; }
@@ -24,7 +24,7 @@ public class ServicesViewModel : ReactiveViewModel
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
 
-    public ServicesViewModel(ActorSystem system, IRequiredActor<WindowsServiceActor> serviceActor)
+    public ServicesViewModel(ActorSystem system, IRequiredActor<ServiceActor> serviceActor)
     {
         _serviceActorRef = serviceActor;
     }

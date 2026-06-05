@@ -13,11 +13,24 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 {
     public override ILayoutNode BuildLayout()
     {
+        var list = new DataListNode<WindowsServiceInfo>(
+            s =>
+            {
+                var statusIcon = s.Status == ServiceStatus.Running ? "●" : "○";
+                return $" {s.DisplayName,-28}  {statusIcon} {s.Status,-10}  {s.StartType,-14}  {s.Pid?.ToString() ?? "—",6}";
+            },
+            s => s.Status == ServiceStatus.Running ? Color.BrightCyan : Color.Gray);
+
+        ViewModel.FilteredServices.Subscribe(services => list.SetItems(services))
+            .DisposeWith(Subscriptions);
+
+        Focus.PushFocus(list);
+
         return Layouts.Vertical()
             .WithChild(new TabBarNode(2))
             .WithChild(BuildSearchBar())
             .WithChild(BuildHeader())
-            .WithChild(BuildServiceList())
+            .WithChild(list.Fill())
             .WithChild(BuildStatusBar());
     }
 
@@ -35,36 +48,6 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
     {
         return new TextNode($" {"Name",-28}  {"Status",-12}  {"Starttyp",-14}  {"PID",6}")
             .WithForeground(Color.Gray).Height(1);
-    }
-
-    private ILayoutNode BuildServiceList()
-    {
-        var container = new ScrollableContainerNode()
-            .WithScrollbar(true)
-            .WithAutoScroll(AutoScrollPolicy.None);
-
-        ViewModel.FilteredServices.CombineLatest(ViewModel.SelectedIndex,
-            (services, selectedIdx) => (services, selectedIdx))
-            .Subscribe(tuple =>
-            {
-                var (services, selectedIdx) = tuple;
-                var layout = Layouts.Vertical();
-                for (var i = 0; i < services.Count; i++)
-                {
-                    var s = services[i];
-                    var statusIcon = s.Status == ServiceStatus.Running ? "●" : "○";
-                    var text = $" {s.DisplayName,-28}  {statusIcon} {s.Status,-10}  {s.StartType,-14}  {s.Pid?.ToString() ?? "—",6}";
-                    var node = new TextNode(text);
-                    if (i == selectedIdx)
-                        node.WithForeground(Color.White).WithBackground(Color.BrightBlue);
-                    else
-                        node.WithForeground(s.Status == ServiceStatus.Running ? Color.BrightCyan : Color.Gray);
-                    layout.WithChild(node.Height(1));
-                }
-                container.WithContent(layout);
-            }).DisposeWith(Subscriptions);
-
-        return container.Fill();
     }
 
     private ILayoutNode BuildStatusBar()

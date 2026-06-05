@@ -12,11 +12,20 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 {
     public override ILayoutNode BuildLayout()
     {
+        var list = new DataListNode<ConnectionInfo>(
+            c => $" {c.ProcessName,-16}  {c.Pid,6}  {c.LocalEndpoint,-22}  {c.RemoteEndpoint,-22}  {c.State}",
+            c => c.State == "LISTEN" ? Color.Gray : Color.BrightMagenta);
+
+        ViewModel.FilteredConnections.Subscribe(connections => list.SetItems(connections))
+            .DisposeWith(Subscriptions);
+
+        Focus.PushFocus(list);
+
         return Layouts.Vertical()
             .WithChild(new TabBarNode(3))
             .WithChild(BuildSearchBar())
             .WithChild(BuildHeader())
-            .WithChild(BuildConnectionList())
+            .WithChild(list.Fill())
             .WithChild(BuildStatusBar());
     }
 
@@ -34,35 +43,6 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
     {
         return new TextNode($" {"Prozess",-16}  {"PID",6}  {"Lokal",-22}  {"Remote",-22}  Status")
             .WithForeground(Color.Gray).Height(1);
-    }
-
-    private ILayoutNode BuildConnectionList()
-    {
-        var container = new ScrollableContainerNode()
-            .WithScrollbar(true)
-            .WithAutoScroll(AutoScrollPolicy.None);
-
-        ViewModel.FilteredConnections.CombineLatest(ViewModel.SelectedIndex,
-            (connections, selectedIdx) => (connections, selectedIdx))
-            .Subscribe(tuple =>
-            {
-                var (connections, selectedIdx) = tuple;
-                var layout = Layouts.Vertical();
-                for (var i = 0; i < connections.Count; i++)
-                {
-                    var c = connections[i];
-                    var text = $" {c.ProcessName,-16}  {c.Pid,6}  {c.LocalEndpoint,-22}  {c.RemoteEndpoint,-22}  {c.State}";
-                    var node = new TextNode(text);
-                    if (i == selectedIdx)
-                        node.WithForeground(Color.White).WithBackground(Color.BrightBlue);
-                    else
-                        node.WithForeground(c.State == "LISTEN" ? Color.Gray : Color.BrightMagenta);
-                    layout.WithChild(node.Height(1));
-                }
-                container.WithContent(layout);
-            }).DisposeWith(Subscriptions);
-
-        return container.Fill();
     }
 
     private ILayoutNode BuildStatusBar()

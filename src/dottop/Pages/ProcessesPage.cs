@@ -13,9 +13,37 @@ namespace dottop.Pages;
 public class ProcessesPage : ReactivePage<ProcessesViewModel>
 {
     private ModalNode? _overlay;
+    private DataListNode<ProcessSnapshot>? _list;
 
     public override ILayoutNode BuildLayout()
     {
+        _list = new DataListNode<ProcessSnapshot>(
+            p =>
+            {
+                var ramMb = p.WorkingSetBytes / 1024 / 1024;
+                return $" {p.Pid,5}  {p.Name,-20}  {p.CpuPercent,5:F1}%  {ramMb,6} MB  {p.Group}";
+            },
+            p => p.Group switch
+            {
+                ProcessGroup.Apps => Color.BrightCyan,
+                ProcessGroup.Background => Color.Gray,
+                ProcessGroup.Windows => Color.DarkGray,
+                _ => Color.White,
+            });
+
+        _list.ItemSelected.Subscribe(proc =>
+        {
+            ViewModel.SelectedProcess.Value = proc;
+            ViewModel.OverlayTabIndex.Value = 0;
+            ViewModel.IsOverlayOpen.Value = true;
+            ViewModel.LoadOverlayTab();
+        }).DisposeWith(Subscriptions);
+
+        ViewModel.FilteredProcesses.Subscribe(list => _list.SetItems(list))
+            .DisposeWith(Subscriptions);
+
+        Focus.PushFocus(_list);
+
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightCyan)
@@ -34,7 +62,29 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             }
         }).DisposeWith(Subscriptions);
 
-        ViewModel.OverlayTabIndex.Subscribe(_ => UpdateOverlayContent()).DisposeWith(Subscriptions);
+        ViewModel.OverlayTabIndex.Subscribe(_ =>
+        {
+            if (ViewModel.IsOverlayOpen.Value)
+                UpdateOverlayContent();
+        }).DisposeWith(Subscriptions);
+
+        ViewModel.ProcessTree.Subscribe(_ =>
+        {
+            if (ViewModel.IsOverlayOpen.Value)
+                UpdateOverlayContent();
+        }).DisposeWith(Subscriptions);
+
+        ViewModel.ProcessEnv.Subscribe(_ =>
+        {
+            if (ViewModel.IsOverlayOpen.Value)
+                UpdateOverlayContent();
+        }).DisposeWith(Subscriptions);
+
+        ViewModel.ProcessHandles.Subscribe(_ =>
+        {
+            if (ViewModel.IsOverlayOpen.Value)
+                UpdateOverlayContent();
+        }).DisposeWith(Subscriptions);
 
         _overlay.Dismissed.Subscribe(_ => ViewModel.CloseOverlay()).DisposeWith(Subscriptions);
 
@@ -46,7 +96,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithChild(new TabBarNode(0))
             .WithChild(BuildToolbar())
             .WithChild(BuildHeader())
-            .WithChild(BuildProcessList())
+            .WithChild(_list.Fill())
             .WithChild(BuildStatusBar())
             .WithChild(conditionalOverlay);
     }
@@ -71,51 +121,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         return new TextNode($" {"PID",5}  {"Name",-20}  {"CPU%",6}  {"RAM",10}  Gruppe")
             .WithForeground(Color.Gray)
             .Height(1);
-    }
-
-    private ILayoutNode BuildProcessList()
-    {
-        var container = new ScrollableContainerNode()
-            .WithScrollbar(true)
-            .WithAutoScroll(AutoScrollPolicy.None);
-
-        ViewModel.FilteredProcesses.CombineLatest(ViewModel.SelectedIndex,
-            (processes, selectedIdx) => (processes, selectedIdx))
-            .Subscribe(tuple =>
-            {
-                var (processes, selectedIdx) = tuple;
-                var layout = Layouts.Vertical();
-                for (var i = 0; i < processes.Count; i++)
-                {
-                    var p = processes[i];
-                    var ramMb = p.WorkingSetBytes / 1024 / 1024;
-                    var text = $" {p.Pid,5}  {p.Name,-20}  {p.CpuPercent,5:F1}%  {ramMb,6} MB  {p.Group}";
-                    var node = new TextNode(text);
-                    if (i == selectedIdx)
-                        node.WithForeground(Color.White).WithBackground(Color.BrightBlue);
-                    else
-                        node.WithForeground(p.Group switch
-                        {
-                            ProcessGroup.Apps => Color.BrightCyan,
-                            ProcessGroup.Background => Color.Gray,
-                            ProcessGroup.Windows => Color.DarkGray,
-                            _ => Color.White,
-                        });
-                    layout.WithChild(node.Height(1));
-                }
-                container.WithContent(layout);
-            }).DisposeWith(Subscriptions);
-
-        ViewModel.SelectedIndex.Subscribe(idx =>
-        {
-            var viewportEstimate = Math.Max(1, container.ContentHeight - container.MaxScroll);
-            if (idx < container.ScrollOffset)
-                container.ScrollTo(idx);
-            else if (idx >= container.ScrollOffset + viewportEstimate)
-                container.ScrollTo(idx - viewportEstimate + 1);
-        }).DisposeWith(Subscriptions);
-
-        return container.Fill();
     }
 
     private void UpdateOverlayContent()
@@ -153,7 +158,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             3 => BuildHandlesTab(),
             _ => new TextNode("").WithForeground(Color.Red)
         };
-        // Wrap in a vertical layout so we can apply Fill()
         return Layouts.Vertical().WithChild(content).Fill();
     }
 

@@ -13,10 +13,25 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
 {
     public override ILayoutNode BuildLayout()
     {
+        var list = new DataListNode<StartupEntry>(
+            e =>
+            {
+                var statusIcon = e.Enabled ? "✓" : "✗";
+                var statusLabel = e.Enabled ? "Aktiv" : "Deaktiviert";
+                var path = e.Path.Length > 30 ? e.Path[..30] + "..." : e.Path;
+                return $" {e.Name,-24}  {e.Publisher,-18}  {statusIcon} {statusLabel,-12}  {e.Impact,-10}  {path}";
+            },
+            e => e.Enabled ? Color.BrightCyan : Color.Gray);
+
+        ViewModel.Entries.Subscribe(entries => list.SetItems(entries))
+            .DisposeWith(Subscriptions);
+
+        Focus.PushFocus(list);
+
         return Layouts.Vertical()
             .WithChild(new TabBarNode(4))
             .WithChild(BuildHeader())
-            .WithChild(BuildEntryList())
+            .WithChild(list.Fill())
             .WithChild(BuildStatusBar());
     }
 
@@ -24,39 +39,6 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
     {
         return new TextNode($" {"Name",-24}  {"Publisher",-18}  {"Status",-14}  {"Einfluss",-10}  Pfad")
             .WithForeground(Color.Gray).Height(1);
-    }
-
-    private ILayoutNode BuildEntryList()
-    {
-        var container = new ScrollableContainerNode()
-            .WithScrollbar(true)
-            .WithAutoScroll(AutoScrollPolicy.None);
-
-        ViewModel.Entries.CombineLatest(ViewModel.SelectedIndex,
-            (entries, selectedIdx) => (entries, selectedIdx))
-            .Subscribe(tuple =>
-            {
-                var (entries, selectedIdx) = tuple;
-                var layout = Layouts.Vertical();
-                for (var i = 0; i < entries.Count; i++)
-                {
-                    var e = entries[i];
-                    var statusIcon = e.Enabled ? "✓" : "✗";
-                    var statusLabel = e.Enabled ? "Aktiv" : "Deaktiviert";
-                    var path = e.Path.Length > 30 ? e.Path[..30] + "..." : e.Path;
-                    var text =
-                        $" {e.Name,-24}  {e.Publisher,-18}  {statusIcon} {statusLabel,-12}  {e.Impact,-10}  {path}";
-                    var node = new TextNode(text);
-                    if (i == selectedIdx)
-                        node.WithForeground(Color.White).WithBackground(Color.BrightBlue);
-                    else
-                        node.WithForeground(e.Enabled ? Color.BrightCyan : Color.Gray);
-                    layout.WithChild(node.Height(1));
-                }
-                container.WithContent(layout);
-            }).DisposeWith(Subscriptions);
-
-        return container.Fill();
     }
 
     private ILayoutNode BuildStatusBar()

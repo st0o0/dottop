@@ -109,11 +109,6 @@ public class ProcessesViewModel : ReactiveViewModel
 
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.UpArrow:
-                SelectedIndex.Value = Math.Max(0, SelectedIndex.Value - 1); break;
-            case ConsoleKey.DownArrow:
-                SelectedIndex.Value = Math.Min(FilteredProcesses.Value.Count - 1, SelectedIndex.Value + 1); break;
-            case ConsoleKey.Enter: OpenOverlay(); break;
             case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
             case ConsoleKey.Tab: CycleSortColumn(); break;
             case ConsoleKey.G: CycleGroupFilter(); break;
@@ -153,16 +148,6 @@ public class ProcessesViewModel : ReactiveViewModel
         }
     }
 
-    private void OpenOverlay()
-    {
-        if (FilteredProcesses.Value.Count == 0) return;
-        var idx = Math.Clamp(SelectedIndex.Value, 0, FilteredProcesses.Value.Count - 1);
-        SelectedProcess.Value = FilteredProcesses.Value[idx];
-        OverlayTabIndex.Value = 0;
-        IsOverlayOpen.Value = true;
-        LoadOverlayTab();
-    }
-
     public void CloseOverlay()
     {
         IsOverlayOpen.Value = false;
@@ -172,7 +157,7 @@ public class ProcessesViewModel : ReactiveViewModel
         ProcessHandles.Value = null;
     }
 
-    private async void LoadOverlayTab()
+    public async void LoadOverlayTab()
     {
         if (SelectedProcess.Value is not { } proc || _processActionActor is null) return;
         try

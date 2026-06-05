@@ -39,6 +39,7 @@ public class ProcessesViewModel : ReactiveViewModel
     public ReactiveProperty<ProcessTreeResult?> ProcessTree { get; } = new(null);
     public ReactiveProperty<IReadOnlyDictionary<string, string>?> ProcessEnv { get; } = new(null);
     public ReactiveProperty<IReadOnlyList<string>?> ProcessHandles { get; } = new(null);
+    public ReactiveProperty<bool> IsKillConfirmPending { get; } = new(false);
 
     public ProcessesViewModel(
         IRequiredActor<ProcessMonitorActor> processMonitor,
@@ -173,7 +174,12 @@ public class ProcessesViewModel : ReactiveViewModel
     {
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.Escape: CloseOverlay(); break;
+            case ConsoleKey.Escape:
+                if (IsKillConfirmPending.Value)
+                    IsKillConfirmPending.Value = false;
+                else
+                    CloseOverlay();
+                break;
             case ConsoleKey.LeftArrow:
                 OverlayListNode = null;
                 OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1);
@@ -189,8 +195,18 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.PageUp: OverlayListNode?.PageUp(); break;
             case ConsoleKey.PageDown: OverlayListNode?.PageDown(); break;
             case ConsoleKey.K:
-                if (SelectedProcess.Value is { } proc && _processActionActor is not null)
-                    _processActionActor.Tell(new KillProcess(proc.Pid));
+                if (SelectedProcess.Value is not null && _processActionActor is not null)
+                    IsKillConfirmPending.Value = true;
+                break;
+            case ConsoleKey.Y:
+                if (IsKillConfirmPending.Value && SelectedProcess.Value is { } killTarget && _processActionActor is not null)
+                {
+                    _processActionActor.Tell(new KillProcess(killTarget.Pid));
+                    IsKillConfirmPending.Value = false;
+                }
+                break;
+            case ConsoleKey.N:
+                IsKillConfirmPending.Value = false;
                 break;
         }
     }
@@ -198,6 +214,7 @@ public class ProcessesViewModel : ReactiveViewModel
     public void CloseOverlay()
     {
         IsOverlayOpen.Value = false;
+        IsKillConfirmPending.Value = false;
         SelectedProcess.Value = null;
         ProcessTree.Value = null;
         ProcessEnv.Value = null;
@@ -280,7 +297,7 @@ public class ProcessesViewModel : ReactiveViewModel
         SortColumn.Dispose();
         IsSearchActive.Dispose(); IsOverlayOpen.Dispose();
         SelectedProcess.Dispose(); OverlayTabIndex.Dispose();
-        StatusMessage.Dispose(); ProcessTree.Dispose();
+        StatusMessage.Dispose(); IsKillConfirmPending.Dispose(); ProcessTree.Dispose();
         ProcessEnv.Dispose(); ProcessHandles.Dispose();
         base.Dispose();
     }

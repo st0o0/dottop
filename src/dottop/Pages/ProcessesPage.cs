@@ -82,6 +82,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         ViewModel.OverlayContentChanged.Subscribe(_ => UpdateOverlayContent())
             .DisposeWith(Subscriptions);
 
+        ViewModel.IsKillConfirmPending.Subscribe(_ => UpdateOverlayContent())
+            .DisposeWith(Subscriptions);
+
         Observable.Interval(TimeSpan.FromSeconds(1))
             .Subscribe(_ =>
             {
@@ -154,7 +157,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         ILayoutNode content = tab switch
         {
-            0 => BuildOverviewTab(proc),
+            0 => BuildOverviewTab(proc, ViewModel.IsKillConfirmPending.Value),
             1 => BuildTreeTab(),
             2 => BuildEnvTab(),
             3 => BuildHandlesTab(),
@@ -163,14 +166,14 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         return Layouts.Vertical().WithChild(content).Fill();
     }
 
-    private static ILayoutNode BuildOverviewTab(ProcessSnapshot proc)
+    private static ILayoutNode BuildOverviewTab(ProcessSnapshot proc, bool isKillConfirmPending)
     {
         var ramMb = proc.WorkingSetBytes / 1024 / 1024;
         var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1} GB" : $"{ramMb} MB";
         var cpuBar = MiniBar(proc.CpuPercent, 20);
         var cpuColor = proc.CpuPercent > 50 ? Color.BrightRed : proc.CpuPercent > 20 ? Color.BrightYellow : Color.BrightGreen;
 
-        return Layouts.Vertical()
+        var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  CPU   {cpuBar}  {proc.CpuPercent:F1}%").WithForeground(cpuColor).Height(1))
             .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Color.BrightBlue).Height(1))
@@ -180,8 +183,19 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(Color.Gray).Height(1))
             .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(Color.Gray).Height(1))
             .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(Color.Gray).Height(1))
-            .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Color.BrightGreen).Height(1));
+            .WithChild(new TextNode("").Height(1));
+
+        if (isKillConfirmPending)
+        {
+            layout.WithChild(new TextNode(string.Format(Strings.KillConfirmFormat, proc.Name, proc.Pid))
+                .WithForeground(Color.BrightRed).Height(1));
+        }
+        else
+        {
+            layout.WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Color.BrightGreen).Height(1));
+        }
+
+        return layout;
     }
 
     private ILayoutNode BuildTreeTab()

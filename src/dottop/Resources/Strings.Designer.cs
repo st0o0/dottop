@@ -78,6 +78,7 @@ internal class Strings
     internal static string OverlayTabEnvironment => ResourceManager.GetString("OverlayTabEnvironment", resourceCulture) ?? "";
     internal static string OverlayTabHandles => ResourceManager.GetString("OverlayTabHandles", resourceCulture) ?? "";
     internal static string OverlayKeyboardHints => ResourceManager.GetString("OverlayKeyboardHints", resourceCulture) ?? "";
+    internal static string KillConfirmFormat => ResourceManager.GetString("KillConfirmFormat", resourceCulture) ?? "";
     internal static string LoadingProcessTree => ResourceManager.GetString("LoadingProcessTree", resourceCulture) ?? "";
     internal static string LoadingEnvironmentVars => ResourceManager.GetString("LoadingEnvironmentVars", resourceCulture) ?? "";
     internal static string LoadingHandles => ResourceManager.GetString("LoadingHandles", resourceCulture) ?? "";

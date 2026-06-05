@@ -119,6 +119,9 @@
   <data name="OverlayKeyboardHints" xml:space="preserve">
     <value> [K] Kill   Tabs   Esc Close</value>
   </data>
+  <data name="KillConfirmFormat" xml:space="preserve">
+    <value>  Kill {0} (PID {1})? [Y] Yes / [N] No</value>
+  </data>
   <data name="LoadingProcessTree" xml:space="preserve">
     <value> Loading process tree...</value>
   </data>

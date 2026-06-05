@@ -54,7 +54,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         ViewModel.SelectedProcess.Subscribe(_ =>
         {
-            if (ViewModel.IsOverlayOpen.Value)
+            if (ViewModel.IsOverlayOpen.Value && ViewModel.OverlayTabIndex.Value == 0)
                 UpdateOverlayContent();
         }).DisposeWith(Subscriptions);
 

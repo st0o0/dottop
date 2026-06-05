@@ -123,4 +123,32 @@ internal class Strings
     internal static string HeaderRemote => ResourceManager.GetString("HeaderRemote", resourceCulture) ?? "";
     internal static string NetworkSearchHint => ResourceManager.GetString("NetworkSearchHint", resourceCulture) ?? "";
     internal static string NetworkStatusFormat => ResourceManager.GetString("NetworkStatusFormat", resourceCulture) ?? "";
+
+    // Settings tab
+    internal static string TabSettings => ResourceManager.GetString("TabSettings", resourceCulture) ?? "";
+    internal static string SettingsTitle => ResourceManager.GetString("SettingsTitle", resourceCulture) ?? "";
+    internal static string SettingsTheme => ResourceManager.GetString("SettingsTheme", resourceCulture) ?? "";
+    internal static string SettingsRefreshRate => ResourceManager.GetString("SettingsRefreshRate", resourceCulture) ?? "";
+    internal static string SettingsDefaultSort => ResourceManager.GetString("SettingsDefaultSort", resourceCulture) ?? "";
+    internal static string SettingsDefaultGroup => ResourceManager.GetString("SettingsDefaultGroup", resourceCulture) ?? "";
+    internal static string SettingsGraphStyle => ResourceManager.GetString("SettingsGraphStyle", resourceCulture) ?? "";
+    internal static string SettingsLanguage => ResourceManager.GetString("SettingsLanguage", resourceCulture) ?? "";
+    internal static string SettingsSaved => ResourceManager.GetString("SettingsSaved", resourceCulture) ?? "";
+    internal static string ThemeDark => ResourceManager.GetString("ThemeDark", resourceCulture) ?? "";
+    internal static string ThemeLight => ResourceManager.GetString("ThemeLight", resourceCulture) ?? "";
+    internal static string ThemeNord => ResourceManager.GetString("ThemeNord", resourceCulture) ?? "";
+    internal static string SortCpu => ResourceManager.GetString("SortCpu", resourceCulture) ?? "";
+    internal static string SortRam => ResourceManager.GetString("SortRam", resourceCulture) ?? "";
+    internal static string SortName => ResourceManager.GetString("SortName", resourceCulture) ?? "";
+    internal static string SortPid => ResourceManager.GetString("SortPid", resourceCulture) ?? "";
+    internal static string GroupApps => ResourceManager.GetString("GroupApps", resourceCulture) ?? "";
+    internal static string GroupBackground => ResourceManager.GetString("GroupBackground", resourceCulture) ?? "";
+    internal static string GroupSystem => ResourceManager.GetString("GroupSystem", resourceCulture) ?? "";
+    internal static string GraphBlocks => ResourceManager.GetString("GraphBlocks", resourceCulture) ?? "";
+    internal static string GraphBraille => ResourceManager.GetString("GraphBraille", resourceCulture) ?? "";
+    internal static string GraphOutline => ResourceManager.GetString("GraphOutline", resourceCulture) ?? "";
+    internal static string GraphAscii => ResourceManager.GetString("GraphAscii", resourceCulture) ?? "";
+    internal static string LangSystem => ResourceManager.GetString("LangSystem", resourceCulture) ?? "";
+    internal static string LangDe => ResourceManager.GetString("LangDe", resourceCulture) ?? "";
+    internal static string LangEn => ResourceManager.GetString("LangEn", resourceCulture) ?? "";
 }

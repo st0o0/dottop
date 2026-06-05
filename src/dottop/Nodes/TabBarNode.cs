@@ -8,10 +8,10 @@ namespace dottop.Nodes;
 public sealed class TabBarNode : LayoutNode
 {
     private static string[] TabLabels =>
-        [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork];
+        [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork, Strings.TabSettings];
 
     private static readonly string[] TabRoutes =
-        ["/", "/performance", "/services", "/network"];
+        ["/", "/performance", "/services", "/network", "/settings"];
 
     private readonly int _activeIndex;
 

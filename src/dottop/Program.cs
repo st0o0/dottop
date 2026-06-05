@@ -5,6 +5,7 @@ using dottop.Pages;
 using dottop.Platform;
 using dottop.Platform.Linux;
 using dottop.Platform.Windows;
+using dottop.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Termina.Hosting;
@@ -47,6 +48,10 @@ if (!gpuMetrics.IsAvailable)
     gpuMetrics = new NoGpuMetrics();
 }
 
+var settingsService = new SettingsService();
+settingsService.Load();
+
+builder.Services.AddSingleton(settingsService);
 builder.Services.AddSingleton(connectionProvider);
 builder.Services.AddSingleton(gpuMetrics);
 
@@ -86,6 +91,7 @@ builder.Services.AddTermina("/", termina =>
     termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
     termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
     termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
+    termina.RegisterRoute<SettingsPage, SettingsViewModel>("/settings", NavigationBehavior.PreserveState);
 });
 
 await builder.Build().RunAsync();

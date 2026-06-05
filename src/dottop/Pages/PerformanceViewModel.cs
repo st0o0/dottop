@@ -170,6 +170,7 @@ public class PerformanceViewModel : ReactiveViewModel
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
+            case ConsoleKey.D5: Navigate("/settings"); break;
 
             case ConsoleKey.Q or ConsoleKey.Escape: Shutdown(); break;
         }

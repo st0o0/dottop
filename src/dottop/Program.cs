@@ -23,6 +23,9 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 
         var serviceActor = system.ActorOf(WindowsServiceActor.Props(), "windows-service");
         registry.Register<WindowsServiceActor>(serviceActor);
+
+        var startupActor = system.ActorOf(StartupActor.Props(), "startup");
+        registry.Register<StartupActor>(startupActor);
     });
 });
 

@@ -1,25 +1,91 @@
+using System.Net.NetworkInformation;
 using R3;
 using Termina.Input;
 using Termina.Reactive;
 
 namespace dottop.Pages;
 
+public record ConnectionInfo(string ProcessName, int Pid, string LocalEndpoint, string RemoteEndpoint, string State);
+
 public class NetworkViewModel : ReactiveViewModel
 {
+    public ReactiveProperty<List<ConnectionInfo>> Connections { get; } = new([]);
+    public ReactiveProperty<List<ConnectionInfo>> FilteredConnections { get; } = new([]);
+    public ReactiveProperty<string> SearchText { get; } = new("");
+    public ReactiveProperty<int> SelectedIndex { get; } = new(0);
+    public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
+    public ReactiveProperty<string> StatusMessage { get; } = new("");
+
     public override void OnActivated()
     {
-        Input.OfType<IInputEvent, KeyPressed>()
-            .Subscribe(key =>
-            {
-                switch (key.KeyInfo.Key)
-                {
-                    case ConsoleKey.D1: Navigate("/"); break;
-                    case ConsoleKey.D2: Navigate("/performance"); break;
-                    case ConsoleKey.D3: Navigate("/services"); break;
-                    case ConsoleKey.D5: Navigate("/autostart"); break;
-                    case ConsoleKey.Q or ConsoleKey.Escape: Shutdown(); break;
-                }
-            })
+        RefreshConnections();
+        SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
+        Observable.Interval(TimeSpan.FromSeconds(2))
+            .Subscribe(_ => RefreshConnections())
             .DisposeWith(Subscriptions);
+        Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
+    }
+
+    private void RefreshConnections()
+    {
+        try
+        {
+            var props = IPGlobalProperties.GetIPGlobalProperties();
+            var tcp = props.GetActiveTcpConnections()
+                .Select(c => new ConnectionInfo("", 0, c.LocalEndPoint.ToString(), c.RemoteEndPoint.ToString(), c.State.ToString()));
+            var listeners = props.GetActiveTcpListeners()
+                .Select(l => new ConnectionInfo("", 0, l.ToString(), "*:*", "LISTEN"));
+            Connections.Value = [..tcp, ..listeners];
+            ApplyFilter();
+        }
+        catch { }
+    }
+
+    private void ApplyFilter()
+    {
+        var source = Connections.Value.AsEnumerable();
+        if (!string.IsNullOrEmpty(SearchText.Value))
+            source = source.Where(c =>
+                c.ProcessName.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase) ||
+                c.LocalEndpoint.Contains(SearchText.Value) ||
+                c.RemoteEndpoint.Contains(SearchText.Value));
+        FilteredConnections.Value = source.ToList();
+        StatusMessage.Value = $" {FilteredConnections.Value.Count} Verbindungen | /: Suche";
+    }
+
+    private void HandleKey(KeyPressed key)
+    {
+        if (IsSearchActive.Value)
+        {
+            switch (key.KeyInfo.Key)
+            {
+                case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
+                case ConsoleKey.Backspace: if (SearchText.Value.Length > 0) SearchText.Value = SearchText.Value[..^1]; break;
+                default: if (key.KeyInfo.KeyChar is >= ' ' and <= '~') SearchText.Value += key.KeyInfo.KeyChar; break;
+            }
+            return;
+        }
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.UpArrow: SelectedIndex.Value = Math.Max(0, SelectedIndex.Value - 1); break;
+            case ConsoleKey.DownArrow: SelectedIndex.Value = Math.Min(FilteredConnections.Value.Count - 1, SelectedIndex.Value + 1); break;
+            case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
+            case ConsoleKey.D1: Navigate("/"); break;
+            case ConsoleKey.D2: Navigate("/performance"); break;
+            case ConsoleKey.D3: Navigate("/services"); break;
+            case ConsoleKey.D5: Navigate("/autostart"); break;
+            case ConsoleKey.Q: Shutdown(); break;
+        }
+    }
+
+    public override void Dispose()
+    {
+        Connections.Dispose();
+        FilteredConnections.Dispose();
+        SearchText.Dispose();
+        SelectedIndex.Dispose();
+        IsSearchActive.Dispose();
+        StatusMessage.Dispose();
+        base.Dispose();
     }
 }

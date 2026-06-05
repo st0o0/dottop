@@ -13,7 +13,12 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
     public override ILayoutNode BuildLayout()
     {
         var list = new DataListNode<ConnectionInfo>(
-            c => $" {c.ProcessName,-16}  {c.Pid,6}  {c.LocalEndpoint,-22}  {c.RemoteEndpoint,-22}  {c.State}",
+            c =>
+            {
+                var local = c.LocalEndpoint.Length > 22 ? c.LocalEndpoint[..21] + "…" : c.LocalEndpoint;
+                var remote = c.RemoteEndpoint.Length > 22 ? c.RemoteEndpoint[..21] + "…" : c.RemoteEndpoint;
+                return $" {local,-22} {remote,-22} {c.State,-12}";
+            },
             c => c.State == "LISTEN" ? Color.Gray : Color.BrightMagenta);
 
         ViewModel.ListNode = list;
@@ -45,7 +50,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {"Prozess",-16}  {"PID",6}  {"Lokal",-22}  {"Remote",-22}  Status")
+        return new TextNode($" {"Lokal",-22} {"Remote",-22} {"Status",-12}")
             .WithForeground(Color.Gray).Height(1);
     }
 

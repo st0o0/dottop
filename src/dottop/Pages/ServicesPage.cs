@@ -16,8 +16,10 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         var list = new DataListNode<WindowsServiceInfo>(
             s =>
             {
+                var name = s.DisplayName.Length > 30 ? s.DisplayName[..29] + "…" : s.DisplayName;
                 var statusIcon = s.Status == ServiceStatus.Running ? "●" : "○";
-                return $" {s.DisplayName,-28}  {statusIcon} {s.Status,-10}  {s.StartType,-14}  {s.Pid?.ToString() ?? "—",6}";
+                var pid = s.Pid?.ToString() ?? "—";
+                return $" {name,-30} {statusIcon} {s.Status,-10} {s.StartType,-12} {pid,6}";
             },
             s => s.Status == ServiceStatus.Running ? Color.BrightCyan : Color.Gray);
 
@@ -50,7 +52,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {"Name",-28}  {"Status",-12}  {"Starttyp",-14}  {"PID",6}")
+        return new TextNode($" {"Name",-30} {"Status",-12} {"Starttyp",-12} {"PID",6}")
             .WithForeground(Color.Gray).Height(1);
     }
 

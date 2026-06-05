@@ -5,7 +5,17 @@ using Termina.Terminal;
 
 namespace dottop.Nodes;
 
-public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode
+public interface IScrollableList
+{
+    void MoveUp();
+    void MoveDown();
+    void MoveToTop();
+    void MoveToEnd();
+    void PageUp();
+    void PageDown();
+}
+
+public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollableList
 {
     private readonly Subject<Unit> _invalidated = new();
     private readonly Func<T, string> _formatter;

@@ -19,6 +19,7 @@ public class ProcessesViewModel : ReactiveViewModel
     private CancellationTokenSource? _cts;
 
     public DataListNode<ProcessSnapshot>? ListNode { get; set; }
+    public IScrollableList? OverlayListNode { get; set; }
 
     public ReactiveProperty<List<ProcessSnapshot>> AllProcesses { get; } = new([]);
     public ReactiveProperty<List<ProcessSnapshot>> FilteredProcesses { get; } = new([]);
@@ -162,9 +163,17 @@ public class ProcessesViewModel : ReactiveViewModel
         {
             case ConsoleKey.Escape: CloseOverlay(); break;
             case ConsoleKey.LeftArrow:
+                OverlayListNode = null;
                 OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1); LoadOverlayTab(); break;
             case ConsoleKey.RightArrow:
+                OverlayListNode = null;
                 OverlayTabIndex.Value = Math.Min(3, OverlayTabIndex.Value + 1); LoadOverlayTab(); break;
+            case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
+            case ConsoleKey.DownArrow: OverlayListNode?.MoveDown(); break;
+            case ConsoleKey.Home: OverlayListNode?.MoveToTop(); break;
+            case ConsoleKey.End: OverlayListNode?.MoveToEnd(); break;
+            case ConsoleKey.PageUp: OverlayListNode?.PageUp(); break;
+            case ConsoleKey.PageDown: OverlayListNode?.PageDown(); break;
             case ConsoleKey.K:
                 if (SelectedProcess.Value is { } proc && _processActionActor is not null)
                     _processActionActor.Tell(new KillProcess(proc.Pid));
@@ -179,6 +188,7 @@ public class ProcessesViewModel : ReactiveViewModel
         ProcessTree.Value = null;
         ProcessEnv.Value = null;
         ProcessHandles.Value = null;
+        OverlayListNode = null;
     }
 
     public async void LoadOverlayTab()

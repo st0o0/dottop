@@ -14,6 +14,8 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 {
     private ModalNode? _overlay;
     private DataListNode<ProcessSnapshot>? _list;
+    private DataListNode<KeyValuePair<string, string>>? _envList;
+    private DataListNode<string>? _handlesList;
 
     public override ILayoutNode BuildLayout()
     {
@@ -186,10 +188,12 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (ViewModel.ProcessEnv.Value is not { } env)
             return new TextNode(" Lade Umgebungsvariablen...").WithForeground(Color.Gray);
-        var layout = Layouts.Vertical();
-        foreach (var (key, value) in env.OrderBy(kv => kv.Key).Take(50))
-            layout.WithChild(new TextNode($" {key}={value}").WithForeground(Color.BrightCyan).Height(1));
-        return new ScrollableContainerNode().WithContent(layout).WithScrollbar(true);
+        _envList = new DataListNode<KeyValuePair<string, string>>(
+            kv => $" {kv.Key}={kv.Value}",
+            _ => Color.BrightCyan);
+        _envList.SetItems(env.OrderBy(kv => kv.Key).ToList());
+        ViewModel.OverlayListNode = _envList;
+        return _envList.Fill();
     }
 
     private ILayoutNode BuildHandlesTab()
@@ -198,10 +202,12 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             return new TextNode(" Lade Handles...").WithForeground(Color.Gray);
         if (handles.Count == 0)
             return new TextNode(" Keine Handle-Informationen verfügbar").WithForeground(Color.Gray);
-        var layout = Layouts.Vertical();
-        foreach (var handle in handles.Take(50))
-            layout.WithChild(new TextNode($" {handle}").WithForeground(Color.BrightCyan).Height(1));
-        return new ScrollableContainerNode().WithContent(layout).WithScrollbar(true);
+        _handlesList = new DataListNode<string>(
+            h => $" {h}",
+            _ => Color.BrightCyan);
+        _handlesList.SetItems(handles.ToList());
+        ViewModel.OverlayListNode = _handlesList;
+        return _handlesList.Fill();
     }
 
     private ILayoutNode BuildStatusBar()

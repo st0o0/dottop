@@ -1,0 +1,1 @@
+public record NetworkInfo(string Name, ulong RxPerSec, ulong TxPerSec);

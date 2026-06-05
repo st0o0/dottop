@@ -3,7 +3,6 @@ using R3;
 using Termina.Layout;
 using Termina.Rendering;
 using Termina.Terminal;
-using Timer = System.Timers.Timer;
 
 namespace dottop;
 
@@ -62,8 +61,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         Start();
     }
 
-    // ── IAnimatedNode ──────────────────────────────────────────────────────
-
     public void Start()
     {
         if (IsAnimating) return;
@@ -79,8 +76,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         _timerSubscription = null;
         IsAnimating = false;
     }
-
-    // ── Fluent builder ─────────────────────────────────────────────────────
 
     public GraphNode WithStyle(GraphStyle style)
     {
@@ -112,8 +107,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
             }
         }
     }
-
-    // ── Measure / Render ───────────────────────────────────────────────────
 
     public override Size Measure(Size available)
     {
@@ -159,10 +152,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         ctx.ResetColors();
     }
 
-    // ── Render implementations ─────────────────────────────────────────────
-    // All coordinates are (0,0)-relative within the sub-context.
-    // bounds is no longer passed in – the sub-context enforces the clip boundary.
-
     private void RenderColumns(IRenderContext ctx, double[] data, int width, int height, char[] chars)
     {
         for (var col = 0; col < width; col++)
@@ -172,7 +161,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
             for (var row = 0; row < height; row++)
             {
-                var x = col;
                 var y = height - 1 - row;
 
                 int charIdx;
@@ -194,7 +182,7 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
                     ctx.SetForeground(_color.Value);
                 }
 
-                ctx.WriteAt(x, y, chars[Math.Min(charIdx, chars.Length - 1)]);
+                ctx.WriteAt(col, y, chars[Math.Min(charIdx, chars.Length - 1)]);
                 ctx.ResetColors();
             }
         }
@@ -210,7 +198,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
             for (var row = 0; row < height; row++)
             {
-                var x = col;
                 var y = height - 1 - row;
 
                 if (row == edgeRow && filledRows > 0)
@@ -220,12 +207,13 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
                     {
                         ctx.SetForeground(_color.Value);
                     }
-                    ctx.WriteAt(x, y, OutlineChars[charIdx]);
+
+                    ctx.WriteAt(col, y, OutlineChars[charIdx]);
                     ctx.ResetColors();
                 }
                 else
                 {
-                    ctx.WriteAt(x, y, ' ');
+                    ctx.WriteAt(col, y, ' ');
                 }
             }
         }
@@ -245,7 +233,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
 
             for (var row = 0; row < height; row++)
             {
-                var x = col;
                 var y = height - 1 - row;
 
                 var botSubRow = row * 2;
@@ -259,7 +246,7 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
                     ctx.SetForeground(_color.Value);
                 }
 
-                ctx.WriteAt(x, y, c);
+                ctx.WriteAt(col, y, c);
                 ctx.ResetColors();
             }
         }
@@ -271,8 +258,6 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         if (range <= 0) return 0;
         return Math.Clamp((value - _minValue) / range, 0.0, 1.0);
     }
-
-    // ── Lifecycle ──────────────────────────────────────────────────────────
 
     public override void OnActivate()
     {

@@ -1,0 +1,1 @@
+public record ProcessInfo(string PId, string Name, long WorkingSet64);

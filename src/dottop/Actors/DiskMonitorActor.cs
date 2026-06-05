@@ -45,6 +45,7 @@ public sealed class DiskMonitorActor : ReceiveActor
                         return new DiskSnapshot(name, v.Size, v.FreeSpace, 0, 0);
                     }))
                 .Where(d => d.TotalBytes > 0)
+                .OrderBy(d => d.Name)
                 .ToList();
             _channel.Writer.TryWrite(disks);
         });

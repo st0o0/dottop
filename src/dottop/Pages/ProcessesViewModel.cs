@@ -74,6 +74,13 @@ public class ProcessesViewModel : ReactiveViewModel
             {
                 AllProcesses.Value = list;
                 ApplyFilter();
+
+                if (IsOverlayOpen.Value && SelectedProcess.Value is { } current)
+                {
+                    var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
+                    if (updated is not null)
+                        SelectedProcess.Value = updated;
+                }
             }
         }
         catch (OperationCanceledException) { }

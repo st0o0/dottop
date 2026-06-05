@@ -39,9 +39,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightCyan)
-            .WithBackdrop(BackdropStyle.Dim)
+            .WithBackdrop(BackdropStyle.Transparent)
             .WithDismissOnEscape(false)
-            .WithPadding(0);
+            .WithPadding(1);
 
         ViewModel.IsOverlayOpen.Subscribe(open =>
         {

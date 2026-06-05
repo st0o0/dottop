@@ -19,12 +19,12 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         _list = new DataListNode<WindowsServiceInfo>(
             s =>
             {
-                var name = s.DisplayName.Length > 30 ? s.DisplayName[..29] + "…" : s.DisplayName;
-                var statusIcon = s.Status == ServiceStatus.Running ? "●" : "○";
-                var pid = s.Pid?.ToString() ?? "—";
-                return $" {name,-30} {statusIcon} {s.Status,-10} {s.StartType,-12} {pid,6}";
+                var name = s.DisplayName.Length > 32 ? s.DisplayName[..31] + "…" : s.DisplayName;
+                var statusIcon = s.Status == ServiceStatus.Running ? "▶" : "■";
+                var statusText = s.Status == ServiceStatus.Running ? "Running" : "Stopped";
+                return $" {statusIcon} {name,-32} {statusText,-8} {s.StartType,-10}";
             },
-            s => s.Status == ServiceStatus.Running ? Color.BrightCyan : Color.Gray);
+            s => s.Status == ServiceStatus.Running ? Color.BrightGreen : Color.BrightRed);
 
         ViewModel.ListNode = _list;
         ViewModel.GetSelectedItem = () => _list.SelectedItem;
@@ -37,8 +37,8 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightYellow)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($" {Strings.HeaderName,-30} {Strings.HeaderStatus,-12} {Strings.HeaderStartType,-12} {"PID",6}")
-                        .WithForeground(Color.Gray).Height(1))
+                    .WithChild(new TextNode($"   {Strings.HeaderName,-32} {Strings.HeaderStatus,-8} {Strings.HeaderStartType,-10}")
+                        .WithForeground(Color.BrightBlack).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
             .WithChild(BuildStatusBar());

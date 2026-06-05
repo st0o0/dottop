@@ -18,11 +18,24 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
         _list = new DataListNode<ConnectionInfo>(
             c =>
             {
-                var local = c.LocalEndpoint.Length > 22 ? c.LocalEndpoint[..21] + "…" : c.LocalEndpoint;
-                var remote = c.RemoteEndpoint.Length > 22 ? c.RemoteEndpoint[..21] + "…" : c.RemoteEndpoint;
-                return $" {local,-22} {remote,-22} {c.State,-12}";
+                var local = c.LocalEndpoint.Length > 24 ? c.LocalEndpoint[..23] + "…" : c.LocalEndpoint;
+                var remote = c.RemoteEndpoint.Length > 24 ? c.RemoteEndpoint[..23] + "…" : c.RemoteEndpoint;
+                var icon = c.State switch
+                {
+                    "Established" => "⬤",
+                    "LISTEN" => "◉",
+                    "TimeWait" or "CloseWait" => "◌",
+                    _ => "○"
+                };
+                return $" {icon} {local,-24} {remote,-24} {c.State}";
             },
-            c => c.State == "LISTEN" ? Color.Gray : Color.BrightMagenta);
+            c => c.State switch
+            {
+                "Established" => Color.BrightGreen,
+                "LISTEN" => Color.BrightBlue,
+                "TimeWait" or "CloseWait" => Color.BrightYellow,
+                _ => Color.Gray
+            });
 
         ViewModel.ListNode = _list;
 
@@ -34,8 +47,8 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Color.BrightMagenta)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($" {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus,-12}")
-                        .WithForeground(Color.Gray).Height(1))
+                    .WithChild(new TextNode($"   {Strings.HeaderLocal,-24} {Strings.HeaderRemote,-24} {Strings.HeaderStatus}")
+                        .WithForeground(Color.BrightBlack).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
             .WithChild(BuildStatusBar());

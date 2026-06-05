@@ -24,15 +24,22 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             p =>
             {
                 var ramMb = p.WorkingSetBytes / 1024 / 1024;
-                var name = p.Name.Length > 18 ? p.Name[..18] : p.Name;
-                return $" {p.Pid,5} {name,-18} {p.CpuPercent,5:F1}% {ramMb,5}MB {p.Group}";
+                var name = p.Name.Length > 20 ? p.Name[..19] + "…" : p.Name;
+                var cpuBar = MiniBar(p.CpuPercent, 8);
+                var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB";
+                return $" {p.Pid,6}  {name,-20} {cpuBar} {p.CpuPercent,5:F1}%  {ramStr,7}  {p.Group}";
             },
-            p => p.Group switch
+            p => p.CpuPercent switch
             {
-                ProcessGroup.Apps => Color.BrightCyan,
-                ProcessGroup.Background => Color.Gray,
-                ProcessGroup.Windows => Color.DarkGray,
-                _ => Color.White,
+                > 50 => Color.BrightRed,
+                > 20 => Color.BrightYellow,
+                > 5 => Color.BrightGreen,
+                _ => p.Group switch
+                {
+                    ProcessGroup.Apps => Color.BrightCyan,
+                    ProcessGroup.Background => Color.Gray,
+                    _ => Color.DarkGray,
+                }
             });
 
         ViewModel.ListNode = _list;
@@ -113,8 +120,8 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {Strings.HeaderPid,5} {Strings.HeaderName,-18} {Strings.HeaderCpuPercent,6} {Strings.HeaderRam,6} {Strings.HeaderGroup}")
-            .WithForeground(Color.Gray)
+        return new TextNode($" {Strings.HeaderPid,6}  {Strings.HeaderName,-20} {"",8} {Strings.HeaderCpuPercent,6}  {Strings.HeaderRam,7}  {Strings.HeaderGroup}")
+            .WithForeground(Color.BrightBlack)
             .Height(1);
     }
 
@@ -159,9 +166,20 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private static ILayoutNode BuildOverviewTab(ProcessSnapshot proc)
     {
         var ramMb = proc.WorkingSetBytes / 1024 / 1024;
+        var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1} GB" : $"{ramMb} MB";
+        var cpuBar = MiniBar(proc.CpuPercent, 20);
+        var cpuColor = proc.CpuPercent > 50 ? Color.BrightRed : proc.CpuPercent > 20 ? Color.BrightYellow : Color.BrightGreen;
+
         return Layouts.Vertical()
-            .WithChild(new TextNode($" CPU: {proc.CpuPercent:F1}%     RAM: {ramMb} MB    Threads: {proc.ThreadCount}    Handles: {proc.HandleCount}").WithForeground(Color.BrightCyan).Height(1))
-            .WithChild(new TextNode($" User: {proc.UserName}    PID: {proc.Pid}    Parent: {proc.ParentPid}    {Strings.HeaderGroup}: {proc.Group}").WithForeground(Color.BrightCyan).Height(1))
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode($"  CPU   {cpuBar}  {proc.CpuPercent:F1}%").WithForeground(cpuColor).Height(1))
+            .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Color.BrightBlue).Height(1))
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(Color.Gray).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Color.BrightGreen).Height(1));
     }
@@ -175,14 +193,15 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         return layout;
     }
 
-    private static void RenderTree(VerticalLayout layout, ProcessTreeResult node, int depth)
+    private static void RenderTree(VerticalLayout layout, ProcessTreeResult node, int depth, bool isLast = true)
     {
-        var indent = new string(' ', depth * 2 + 1);
-        var prefix = depth > 0 ? "├─ " : "● ";
-        layout.WithChild(new TextNode($"{indent}{prefix}{node.Name} (PID {node.Pid})")
-            .WithForeground(Color.BrightCyan).Height(1));
-        foreach (var child in node.Children)
-            RenderTree(layout, child, depth + 1);
+        var indent = new string(' ', depth * 3);
+        var connector = depth == 0 ? " ●" : isLast ? " └─" : " ├─";
+        var color = depth == 0 ? Color.BrightCyan : Color.Gray;
+        layout.WithChild(new TextNode($"{indent}{connector} {node.Name} ({node.Pid})")
+            .WithForeground(color).Height(1));
+        for (var i = 0; i < node.Children.Count; i++)
+            RenderTree(layout, node.Children[i], depth + 1, i == node.Children.Count - 1);
     }
 
     private ILayoutNode BuildEnvTab()
@@ -218,5 +237,25 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 new TextNode($" {msg}").WithForeground(Color.Black).WithBackground(Color.BrightCyan))
             .AsLayout()
             .Height(1);
+    }
+
+    private static string MiniBar(double percent, int width)
+    {
+        var blocks = "░▒▓█";
+        var filled = percent / 100.0 * width;
+        var sb = new System.Text.StringBuilder(width);
+        for (var i = 0; i < width; i++)
+        {
+            var level = filled - i;
+            sb.Append(level switch
+            {
+                >= 1 => '█',
+                >= 0.75 => '▓',
+                >= 0.5 => '▒',
+                >= 0.25 => '░',
+                _ => ' '
+            });
+        }
+        return sb.ToString();
     }
 }

@@ -12,7 +12,6 @@ public sealed class MemoryMonitorActor : ReceiveActor
     private Channel<MemorySnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
-    private bool _initialized;
     private ulong _totalCapacity;
 
     public static Props Props(TimeSpan interval) =>
@@ -41,23 +40,20 @@ public sealed class MemoryMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null)
-            {
-                return;
-            }
-
-            if (!_initialized)
-            {
-                _hw.RefreshMemoryList();
-                _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
-                _initialized = true;
-            }
+            if (_channel is null) return;
 
             _hw.RefreshMemoryStatus();
             var status = _hw.MemoryStatus;
             var used = status.TotalPhysical - status.AvailablePhysical;
             _channel.Writer.TryWrite(new MemorySnapshot(_totalCapacity, used));
         });
+    }
+
+    protected override void PreStart()
+    {
+        _hw.RefreshMemoryList();
+        _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
+        base.PreStart();
     }
 
     private void CleanupPreviousStream()

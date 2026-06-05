@@ -24,18 +24,18 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 var remote = c.RemoteEndpoint.Length > 22 ? c.RemoteEndpoint[..21] + "…" : c.RemoteEndpoint;
                 var icon = c.State switch
                 {
-                    "Established" => "⬤",
-                    "LISTEN" => "◉",
-                    "TimeWait" or "CloseWait" => "◌",
-                    _ => "○"
+                    "Established" => "●",
+                    "LISTEN" => "●",
+                    "TimeWait" or "CloseWait" => "●",
+                    _ => "●"
                 };
                 return $" {icon} {name,-16} {c.Pid,6} {c.Protocol,-4} {local,-22} {remote,-22} {c.State}";
             },
             c => c.State switch
             {
-                "Established" => Color.BrightGreen,
-                "LISTEN" => Color.BrightBlue,
-                "TimeWait" or "CloseWait" => Color.BrightYellow,
+                "Established" => Color.White,
+                "LISTEN" => Color.Gray,
+                "TimeWait" or "CloseWait" => Color.Gray,
                 _ => Color.Gray
             });
 
@@ -47,7 +47,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelNetworkConnections)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.BrightMagenta)
+                .WithBorderColor(Color.Cyan)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderProcess,-16} {Strings.HeaderPid,6} {"Proto",-4} {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus}")
                         .WithForeground(Color.BrightBlack).Height(1))
@@ -75,7 +75,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 }
 
                 return new TextNode(Strings.NetworkSearchHint)
-                    .WithForeground(Color.BrightGreen);
+                    .WithForeground(Color.Gray);
             }).AsLayout().Height(1);
     }
 

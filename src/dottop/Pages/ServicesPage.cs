@@ -25,14 +25,14 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                 var statusText = s.Status == ServiceStatus.Running ? "Running" : "Stopped";
                 return $" {statusIcon} {name,-32} {statusText,-8} {s.StartType,-10}";
             },
-            s => s.Status == ServiceStatus.Running ? Color.BrightGreen : Color.BrightRed);
+            s => s.Status == ServiceStatus.Running ? Color.White : Color.Gray);
 
         ViewModel.ListNode = _list;
         ViewModel.GetSelectedItem = () => _list.SelectedItem;
 
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Color.BrightYellow)
+            .WithBorderColor(Color.Cyan)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -46,7 +46,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelServices)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Color.BrightYellow)
+                .WithBorderColor(Color.Cyan)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderName,-32} {Strings.HeaderStatus,-8} {Strings.HeaderStartType,-10}")
                         .WithForeground(Color.BrightBlack).Height(1))
@@ -74,12 +74,12 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         }
 
         var statusIcon = svc.Status == ServiceStatus.Running ? "▶" : "■";
-        var statusColor = svc.Status == ServiceStatus.Running ? Color.BrightGreen : Color.BrightRed;
+        var statusColor = svc.Status == ServiceStatus.Running ? Color.White : Color.Gray;
         var desc = string.IsNullOrWhiteSpace(svc.Description)
             ? Strings.ServiceNoDescription
             : svc.Description;
 
-        _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(Color.BrightYellow);
+        _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(Color.BrightCyan);
         _detailModal.Content = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.ServiceDetailName}     {svc.Name}").WithForeground(Color.Gray).Height(1))
@@ -90,7 +90,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             .WithChild(new TextNode($"  {Strings.ServiceDetailDescription}").WithForeground(Color.BrightCyan).Height(1))
             .WithChild(new TextNode($"  {desc}").WithForeground(Color.White).Height(1))
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode(Strings.ServiceDetailHints).WithForeground(Color.BrightGreen).Height(1));
+            .WithChild(new TextNode(Strings.ServiceDetailHints).WithForeground(Color.Gray).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()
@@ -105,7 +105,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                 }
 
                 return new TextNode(Strings.ServicesSearchHint)
-                    .WithForeground(Color.BrightGreen);
+                    .WithForeground(Color.Gray);
             }).AsLayout().Height(1);
     }
 

@@ -31,15 +31,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             },
             p => p.CpuPercent switch
             {
-                > 50 => Color.BrightRed,
-                > 20 => Color.BrightYellow,
-                > 5 => Color.BrightGreen,
-                _ => p.Group switch
-                {
-                    ProcessGroup.Apps => Color.BrightCyan,
-                    ProcessGroup.Background => Color.Gray,
-                    _ => Color.DarkGray,
-                }
+                > 80 => Color.BrightRed,
+                > 50 => Color.BrightYellow,
+                _ => Color.White,
             });
 
         ViewModel.ListNode = _list;
@@ -118,7 +112,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 }
 
                 return new TextNode(string.Format(Strings.SearchBarInactiveFormat, groupLabel, t.Sort) + " ↓")
-                    .WithForeground(Color.BrightGreen);
+                    .WithForeground(Color.Gray);
             })
             .AsLayout()
             .Height(1);
@@ -182,12 +176,12 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         var ramMb = proc.WorkingSetBytes / 1024 / 1024;
         var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1} GB" : $"{ramMb} MB";
         var cpuBar = MiniBar(proc.CpuPercent, 20);
-        var cpuColor = proc.CpuPercent > 50 ? Color.BrightRed : proc.CpuPercent > 20 ? Color.BrightYellow : Color.BrightGreen;
+        var cpuColor = proc.CpuPercent > 80 ? Color.BrightRed : proc.CpuPercent > 50 ? Color.BrightYellow : Color.Cyan;
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  CPU   {cpuBar}  {proc.CpuPercent:F1}%").WithForeground(cpuColor).Height(1))
-            .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Color.BrightBlue).Height(1))
+            .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Color.White).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Color.Gray).Height(1))
             .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Color.Gray).Height(1))
@@ -203,7 +197,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         }
         else
         {
-            layout.WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Color.BrightGreen).Height(1));
+            layout.WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Color.Gray).Height(1));
         }
 
         return layout;
@@ -241,7 +235,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         _envList = new DataListNode<KeyValuePair<string, string>>(
             kv => $" {kv.Key}={kv.Value}",
-            _ => Color.BrightCyan);
+            _ => Color.White);
         _envList.SetItems(env.OrderBy(kv => kv.Key).ToList());
         ViewModel.OverlayListNode = _envList;
         return _envList.Fill();
@@ -261,7 +255,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         _handlesList = new DataListNode<string>(
             h => $" {h}",
-            _ => Color.BrightCyan);
+            _ => Color.White);
         _handlesList.SetItems(handles.ToList());
         ViewModel.OverlayListNode = _handlesList;
         return _handlesList.Fill();

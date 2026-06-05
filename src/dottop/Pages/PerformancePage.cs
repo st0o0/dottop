@@ -18,6 +18,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     private GraphNode? _diskTransferGraph;
     private GraphNode? _cpuGraph;
     private GraphNode? _ramGraph;
+    private GraphNode? _gpuGraph;
     private CpuCoresNode? _coresNode;
 
     public override ILayoutNode BuildLayout()
@@ -57,7 +58,22 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithColor(Color.BrightCyan)
             .WithRange(0, 100_000_000);
 
+        _gpuGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(Color.BrightRed)
+            .WithRange(0, 100);
+
         var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
+
+        var bottomRow = Layouts.Horizontal()
+            .WithChild(BuildDiskPanel())
+            .WithSpacing(1)
+            .WithChild(BuildNetworkPanel());
+
+        if (ViewModel.GpuAvailable)
+        {
+            bottomRow.WithSpacing(1).WithChild(BuildGpuPanel());
+        }
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(1))
@@ -67,11 +83,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .WithChild(BuildRamPanel())
                 .HeightPercent(50)
                 .Fill())
-            .WithChild(Layouts.Horizontal()
-                .WithChild(BuildDiskPanel())
-                .WithSpacing(1)
-                .WithChild(BuildNetworkPanel())
-                .Fill())
+            .WithChild(bottomRow.Fill())
             .WithChild(new TextNode(Strings.PerfStatusBar)
                 .WithForeground(Color.Black).WithBackground(Color.BrightCyan).Height(1))
             .WithChild(conditionalDetail);
@@ -89,6 +101,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 var total = ViewModel.RamTotal.Value;
                 var used = ViewModel.RamUsed.Value;
                 _ramGraph?.Push(total > 0 ? (double)used / total * 100 : 0);
+
+                if (ViewModel.GpuAvailable && ViewModel.Gpu.Value is { } gpu)
+                    _gpuGraph?.Push(gpu.UsagePercent);
 
                 if (ViewModel.IsDetailOpen.Value)
                 {
@@ -114,6 +129,12 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                             _diskTransferGraph?.Push(disks[idx].TransferBytesPerSec);
                         }
                     }
+
+                    if (ViewModel.DetailSection.Value == PerfDetailSection.Gpu
+                        && ViewModel.Gpu.Value is { } gpuDetail)
+                    {
+                        _detailGraph?.Push(gpuDetail.UsagePercent);
+                    }
                 }
             })
             .DisposeWith(Subscriptions);
@@ -130,11 +151,13 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         if (_detailModal is null || _detailGraph is null) return;
 
         var section = ViewModel.DetailSection.Value;
-        var sections = new[] { "CPU", "RAM", "Disk", Strings.DetailSectionNetwork };
+        var sections = new List<string> { "CPU", "RAM", "Disk", Strings.DetailSectionNetwork };
+        if (ViewModel.GpuAvailable)
+            sections.Add("GPU");
         var sectionIdx = (int)section;
 
         var tabBar = Layouts.Horizontal();
-        for (var i = 0; i < sections.Length; i++)
+        for (var i = 0; i < sections.Count; i++)
         {
             var node = new TextNode($" {sections[i]} ");
             if (i == sectionIdx)
@@ -150,12 +173,13 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             PerfDetailSection.Ram => (Color.BrightBlue, "RAM", BuildRamDetailInfo()),
             PerfDetailSection.Disk => (Color.BrightYellow, "Disk", BuildDiskDetailInfo()),
             PerfDetailSection.Network => (Color.BrightMagenta, Strings.DetailSectionNetwork, BuildNetworkDetailInfo()),
+            PerfDetailSection.Gpu => (Color.BrightRed, "GPU", BuildGpuDetailInfo()),
             _ => (Color.White, "", Layouts.Vertical() as ILayoutNode)
         };
 
         _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(color).WithBorderColor(color);
 
-        if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram)
+        if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {
             _detailGraph!.WithColor(color).WithRange(0, 100);
             _detailModal.Content = Layouts.Vertical()
@@ -264,6 +288,25 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return layout;
     }
 
+    private ILayoutNode BuildGpuDetailInfo()
+    {
+        var gpu = ViewModel.Gpu.Value;
+        if (gpu is null)
+            return new TextNode(Strings.GpuNoData).WithForeground(Color.Gray);
+
+        var vramUsedMb = gpu.VramUsedBytes / 1024.0 / 1024;
+        var vramTotalMb = gpu.VramTotalBytes / 1024.0 / 1024;
+
+        return Layouts.Vertical()
+            .WithChild(new TextNode($" {gpu.Name}").WithForeground(Color.BrightRed).Height(1))
+            .WithChild(new TextNode($" {Strings.GpuUsage} {gpu.UsagePercent:F0}%  {BuildBar(gpu.UsagePercent, 20)}")
+                .WithForeground(Color.BrightRed).Height(1))
+            .WithChild(new TextNode($" VRAM: {vramUsedMb:F0} / {vramTotalMb:F0} MB  ({gpu.VramUsedPercent:F1}%)  {BuildBar(gpu.VramUsedPercent, 20)}")
+                .WithForeground(Color.BrightYellow).Height(1))
+            .WithChild(new TextNode($" {Strings.GpuTemperature} {gpu.TemperatureCelsius:F0}°C")
+                .WithForeground(gpu.TemperatureCelsius > 80 ? Color.BrightRed : Color.BrightGreen).Height(1));
+    }
+
     private ILayoutNode BuildCpuPanel()
     {
         return new PanelNode()
@@ -351,6 +394,32 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                                     .WithForeground(Color.BrightMagenta).Height(1));
                         return layout;
                     }).AsLayout())
+            .Fill();
+    }
+
+    private ILayoutNode BuildGpuPanel()
+    {
+        return new PanelNode()
+            .WithTitle(Strings.PanelGpu)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Color.BrightRed)
+            .WithContent(
+                Layouts.Vertical()
+                    .WithChild(
+                        ViewModel.Gpu
+                            .Select<GpuSnapshot?, ILayoutNode>(gpu =>
+                            {
+                                if (gpu is null)
+                                    return new TextNode(Strings.GpuNoData).WithForeground(Color.Gray);
+                                var vramMb = gpu.VramUsedBytes / 1024.0 / 1024;
+                                var vramTotalMb = gpu.VramTotalBytes / 1024.0 / 1024;
+                                return Layouts.Vertical()
+                                    .WithChild(new TextNode($" {gpu.UsagePercent:F0}%  {gpu.TemperatureCelsius:F0}°C")
+                                        .WithForeground(Color.BrightRed).Height(1))
+                                    .WithChild(new TextNode($" VRAM {vramMb:F0}/{vramTotalMb:F0}MB")
+                                        .WithForeground(Color.BrightYellow).Height(1));
+                            }).AsLayout())
+                    .WithChild(_gpuGraph!.Fill()))
             .Fill();
     }
 

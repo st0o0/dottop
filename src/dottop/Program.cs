@@ -27,7 +27,14 @@ IProcessClassifier processClassifier = RuntimeInformation.IsOSPlatform(OSPlatfor
 IConnectionProvider connectionProvider = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsConnectionProvider() : new LinuxConnectionProvider();
 
+IGpuMetricsProvider gpuMetrics;
+try { gpuMetrics = new NvmlGpuMetrics(); }
+catch { gpuMetrics = new NoGpuMetrics(); }
+if (!gpuMetrics.IsAvailable)
+    gpuMetrics = new NoGpuMetrics();
+
 builder.Services.AddSingleton<IConnectionProvider>(connectionProvider);
+builder.Services.AddSingleton<IGpuMetricsProvider>(gpuMetrics);
 
 builder.Services.AddAkka("dottop", configurationBuilder =>
 {
@@ -53,6 +60,9 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 
         var serviceActor = system.ActorOf(ServiceActor.Props(serviceManager), "service");
         registry.Register<ServiceActor>(serviceActor);
+
+        var gpuActor = system.ActorOf(GpuMonitorActor.Props(gpuMetrics), "gpu-monitor");
+        registry.Register<GpuMonitorActor>(gpuActor);
     });
 });
 

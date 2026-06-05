@@ -17,7 +17,7 @@ public class ServiceActorTests : TestKit
 
         actor.Tell(new GetServices());
 
-        var result = ExpectMsg<List<WindowsServiceInfo>>(TimeSpan.FromSeconds(5));
+        var result = ExpectMsg<List<ServiceInfo>>(TimeSpan.FromSeconds(5));
         Assert.Equal(2, result.Count);
         Assert.Equal("TestSvc1", result[0].Name);
     }

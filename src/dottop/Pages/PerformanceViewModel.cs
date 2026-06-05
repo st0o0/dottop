@@ -3,12 +3,13 @@ using Akka.Hosting;
 using R3;
 using dottop.Actors;
 using dottop.Models;
+using dottop.Platform;
 using Termina.Input;
 using Termina.Reactive;
 
 namespace dottop.Pages;
 
-public enum PerfDetailSection { Cpu, Ram, Disk, Network }
+public enum PerfDetailSection { Cpu, Ram, Disk, Network, Gpu }
 
 public class PerformanceViewModel : ReactiveViewModel
 {
@@ -16,6 +17,8 @@ public class PerformanceViewModel : ReactiveViewModel
     private readonly IRequiredActor<MemoryMonitorActor> _memRef;
     private readonly IRequiredActor<DiskMonitorActor> _diskRef;
     private readonly IRequiredActor<NetworkMonitorActor> _netRef;
+    private readonly IRequiredActor<GpuMonitorActor> _gpuRef;
+    private readonly IGpuMetricsProvider _gpuMetrics;
     private CancellationTokenSource? _cts;
 
     public ReactiveProperty<double> CpuTotal { get; } = new(0);
@@ -25,6 +28,8 @@ public class PerformanceViewModel : ReactiveViewModel
     public ReactiveProperty<ulong> RamUsed { get; } = new(0);
     public ReactiveProperty<IReadOnlyList<DiskSnapshot>> Disks { get; } = new([]);
     public ReactiveProperty<IReadOnlyList<NetworkSnapshot>> Networks { get; } = new([]);
+    public ReactiveProperty<GpuSnapshot?> Gpu { get; } = new(null);
+    public bool GpuAvailable => _gpuMetrics.IsAvailable;
 
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
     public ReactiveProperty<PerfDetailSection> DetailSection { get; } = new(PerfDetailSection.Cpu);
@@ -37,12 +42,16 @@ public class PerformanceViewModel : ReactiveViewModel
         IRequiredActor<CpuMonitorActor> cpuRef,
         IRequiredActor<MemoryMonitorActor> memRef,
         IRequiredActor<DiskMonitorActor> diskRef,
-        IRequiredActor<NetworkMonitorActor> netRef)
+        IRequiredActor<NetworkMonitorActor> netRef,
+        IRequiredActor<GpuMonitorActor> gpuRef,
+        IGpuMetricsProvider gpuMetrics)
     {
         _cpuRef = cpuRef;
         _memRef = memRef;
         _diskRef = diskRef;
         _netRef = netRef;
+        _gpuRef = gpuRef;
+        _gpuMetrics = gpuMetrics;
     }
 
     public override void OnActivated()
@@ -99,6 +108,18 @@ public class PerformanceViewModel : ReactiveViewModel
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
                 _detailContentChanged.OnNext(Unit.Default);
         });
+
+        if (_gpuMetrics.IsAvailable)
+        {
+            var gpuActor = await _gpuRef.GetAsync(ct);
+            var gpuStream = await gpuActor.Ask<MonitoringStream<GpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(5));
+            _ = ConsumeAsync(gpuStream.Data, ct, snapshot =>
+            {
+                Gpu.Value = snapshot;
+                if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Gpu)
+                    _detailContentChanged.OnNext(Unit.Default);
+            });
+        }
     }
 
     private static async Task ConsumeAsync<T>(IAsyncEnumerable<T> stream, CancellationToken ct, Action<T> handler)
@@ -134,6 +155,32 @@ public class PerformanceViewModel : ReactiveViewModel
         }
     }
 
+    private PerfDetailSection NextSection(PerfDetailSection current)
+    {
+        return current switch
+        {
+            PerfDetailSection.Cpu => PerfDetailSection.Ram,
+            PerfDetailSection.Ram => PerfDetailSection.Disk,
+            PerfDetailSection.Disk => PerfDetailSection.Network,
+            PerfDetailSection.Network => GpuAvailable ? PerfDetailSection.Gpu : PerfDetailSection.Cpu,
+            PerfDetailSection.Gpu => PerfDetailSection.Cpu,
+            _ => PerfDetailSection.Cpu,
+        };
+    }
+
+    private PerfDetailSection PrevSection(PerfDetailSection current)
+    {
+        return current switch
+        {
+            PerfDetailSection.Ram => PerfDetailSection.Cpu,
+            PerfDetailSection.Disk => PerfDetailSection.Ram,
+            PerfDetailSection.Network => PerfDetailSection.Disk,
+            PerfDetailSection.Gpu => PerfDetailSection.Network,
+            PerfDetailSection.Cpu => GpuAvailable ? PerfDetailSection.Gpu : PerfDetailSection.Network,
+            _ => PerfDetailSection.Network,
+        };
+    }
+
     private void HandleDetailKey(KeyPressed key)
     {
         switch (key.KeyInfo.Key)
@@ -142,24 +189,12 @@ public class PerformanceViewModel : ReactiveViewModel
                 IsDetailOpen.Value = false;
                 break;
             case ConsoleKey.Tab or ConsoleKey.RightArrow:
-                DetailSection.Value = DetailSection.Value switch
-                {
-                    PerfDetailSection.Cpu => PerfDetailSection.Ram,
-                    PerfDetailSection.Ram => PerfDetailSection.Disk,
-                    PerfDetailSection.Disk => PerfDetailSection.Network,
-                    _ => PerfDetailSection.Cpu,
-                };
+                DetailSection.Value = NextSection(DetailSection.Value);
                 DiskDetailIndex.Value = 0;
                 _detailContentChanged.OnNext(Unit.Default);
                 break;
             case ConsoleKey.LeftArrow:
-                DetailSection.Value = DetailSection.Value switch
-                {
-                    PerfDetailSection.Ram => PerfDetailSection.Cpu,
-                    PerfDetailSection.Disk => PerfDetailSection.Ram,
-                    PerfDetailSection.Network => PerfDetailSection.Disk,
-                    _ => PerfDetailSection.Network,
-                };
+                DetailSection.Value = PrevSection(DetailSection.Value);
                 DiskDetailIndex.Value = 0;
                 _detailContentChanged.OnNext(Unit.Default);
                 break;
@@ -200,6 +235,7 @@ public class PerformanceViewModel : ReactiveViewModel
         RamUsed.Dispose();
         Disks.Dispose();
         Networks.Dispose();
+        Gpu.Dispose();
         IsDetailOpen.Dispose();
         DetailSection.Dispose();
         DiskDetailIndex.Dispose();

@@ -30,7 +30,7 @@ public sealed class FakeProcessTree : IProcessTreeProvider
 
 public sealed class FakeServiceManager : IServiceManager
 {
-    public List<WindowsServiceInfo> Services { get; set; } =
+    public List<ServiceInfo> Services { get; set; } =
     [
         new("TestSvc1", "Test Service 1", ServiceStatus.Running, ServiceStartType.Automatic, 1234),
         new("TestSvc2", "Test Service 2", ServiceStatus.Stopped, ServiceStartType.Manual, null),
@@ -38,7 +38,7 @@ public sealed class FakeServiceManager : IServiceManager
 
     public string LastAction { get; private set; } = "";
 
-    public List<WindowsServiceInfo> GetServices() => Services;
+    public List<ServiceInfo> GetServices() => Services;
     public string Start(string name) { LastAction = $"start:{name}"; return $"Started {name}"; }
     public string Stop(string name) { LastAction = $"stop:{name}"; return $"Stopped {name}"; }
     public string Restart(string name) { LastAction = $"restart:{name}"; return $"Restarted {name}"; }

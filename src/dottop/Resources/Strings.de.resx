@@ -181,6 +181,18 @@
   <data name="NoActiveAdapters" xml:space="preserve">
     <value> Keine aktiven Adapter</value>
   </data>
+  <data name="PanelGpu" xml:space="preserve">
+    <value> GPU </value>
+  </data>
+  <data name="GpuUsage" xml:space="preserve">
+    <value>Auslastung:</value>
+  </data>
+  <data name="GpuTemperature" xml:space="preserve">
+    <value>Temp:</value>
+  </data>
+  <data name="GpuNoData" xml:space="preserve">
+    <value> Warte auf GPU-Daten...</value>
+  </data>
   <!-- ServicesPage -->
   <data name="PanelServices" xml:space="preserve">
     <value> Dienste </value>

@@ -8,7 +8,7 @@ namespace dottop.Platform.Windows;
 [SupportedOSPlatform("windows")]
 public sealed class WindowsServiceManager : IServiceManager
 {
-    public List<WindowsServiceInfo> GetServices()
+    public List<ServiceInfo> GetServices()
     {
         var descriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
@@ -25,7 +25,7 @@ public sealed class WindowsServiceManager : IServiceManager
         catch { }
 
         return ServiceController.GetServices()
-            .Select(s => new WindowsServiceInfo(
+            .Select(s => new ServiceInfo(
                 s.ServiceName, s.DisplayName,
                 MapStatus(s.Status), ServiceStartType.Manual, null,
                 descriptions.GetValueOrDefault(s.ServiceName, "")))

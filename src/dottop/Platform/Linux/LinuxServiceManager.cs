@@ -5,9 +5,9 @@ namespace dottop.Platform.Linux;
 
 public sealed class LinuxServiceManager : IServiceManager
 {
-    public List<WindowsServiceInfo> GetServices()
+    public List<ServiceInfo> GetServices()
     {
-        var services = new List<WindowsServiceInfo>();
+        var services = new List<ServiceInfo>();
         try
         {
             var output = RunSystemctl("list-units --type=service --all --no-pager --no-legend");
@@ -29,7 +29,7 @@ public sealed class LinuxServiceManager : IServiceManager
 
                 var displayName = parts.Length > 4 ? string.Join(' ', parts[4..]) : name;
                 var description = GetServiceDescription(name);
-                services.Add(new WindowsServiceInfo(name, displayName, status, ServiceStartType.Manual, null, description));
+                services.Add(new ServiceInfo(name, displayName, status, ServiceStartType.Manual, null, description));
             }
         }
         catch { }

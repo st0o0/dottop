@@ -16,18 +16,18 @@ public class ServicesViewModel : ReactiveViewModel
     private IActorRef? _serviceActor;
 
     public IScrollableList? ListNode { get; set; }
-    public Func<WindowsServiceInfo?>? GetSelectedItem { get; set; }
+    public Func<ServiceInfo?>? GetSelectedItem { get; set; }
 
     private readonly Subject<Unit> _detailContentChanged = new();
     public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
 
-    public ReactiveProperty<List<WindowsServiceInfo>> AllServices { get; } = new([]);
-    public ReactiveProperty<List<WindowsServiceInfo>> FilteredServices { get; } = new([]);
+    public ReactiveProperty<List<ServiceInfo>> AllServices { get; } = new([]);
+    public ReactiveProperty<List<ServiceInfo>> FilteredServices { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
-    public ReactiveProperty<WindowsServiceInfo?> SelectedService { get; } = new(null);
+    public ReactiveProperty<ServiceInfo?> SelectedService { get; } = new(null);
 
     public ServicesViewModel(ActorSystem system, IRequiredActor<ServiceActor> serviceActor)
     {
@@ -47,7 +47,7 @@ public class ServicesViewModel : ReactiveViewModel
         if (_serviceActor is null) return;
         try
         {
-            var result = await _serviceActor.Ask<List<WindowsServiceInfo>>(new GetServices(), TimeSpan.FromSeconds(10));
+            var result = await _serviceActor.Ask<List<ServiceInfo>>(new GetServices(), TimeSpan.FromSeconds(10));
             AllServices.Value = result;
             ApplyFilter();
         }

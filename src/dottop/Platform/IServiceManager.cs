@@ -4,7 +4,7 @@ namespace dottop.Platform;
 
 public interface IServiceManager
 {
-    List<WindowsServiceInfo> GetServices();
+    List<ServiceInfo> GetServices();
     string Start(string name);
     string Stop(string name);
     string Restart(string name);

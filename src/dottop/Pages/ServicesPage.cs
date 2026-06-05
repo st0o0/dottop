@@ -12,12 +12,12 @@ namespace dottop.Pages;
 
 public class ServicesPage : ReactivePage<ServicesViewModel>
 {
-    private DataListNode<WindowsServiceInfo>? _list;
+    private DataListNode<ServiceInfo>? _list;
     private ModalNode? _detailModal;
 
     public override ILayoutNode BuildLayout()
     {
-        _list = new DataListNode<WindowsServiceInfo>(
+        _list = new DataListNode<ServiceInfo>(
             s =>
             {
                 var name = s.DisplayName.Length > 32 ? s.DisplayName[..31] + "…" : s.DisplayName;

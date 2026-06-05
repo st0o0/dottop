@@ -99,6 +99,10 @@ internal class Strings
     internal static string PanelActiveTime => ResourceManager.GetString("PanelActiveTime", resourceCulture) ?? "";
     internal static string PanelTransferRate => ResourceManager.GetString("PanelTransferRate", resourceCulture) ?? "";
     internal static string NoActiveAdapters => ResourceManager.GetString("NoActiveAdapters", resourceCulture) ?? "";
+    internal static string PanelGpu => ResourceManager.GetString("PanelGpu", resourceCulture) ?? "";
+    internal static string GpuUsage => ResourceManager.GetString("GpuUsage", resourceCulture) ?? "";
+    internal static string GpuTemperature => ResourceManager.GetString("GpuTemperature", resourceCulture) ?? "";
+    internal static string GpuNoData => ResourceManager.GetString("GpuNoData", resourceCulture) ?? "";
 
     internal static string PanelServices => ResourceManager.GetString("PanelServices", resourceCulture) ?? "";
     internal static string HeaderStatus => ResourceManager.GetString("HeaderStatus", resourceCulture) ?? "";

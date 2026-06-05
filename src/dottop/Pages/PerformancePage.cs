@@ -46,20 +46,19 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Color.BrightGreen)
             .WithContent(
-                Layouts.Horizontal()
+                Layouts.Vertical()
                     .WithChild(
                         ViewModel.CpuCores
                             .Select<IReadOnlyList<double>, ILayoutNode>(cores =>
                             {
-                                var layout = Layouts.Vertical();
+                                var layout = Layouts.Horizontal();
                                 for (var i = 0; i < cores.Count; i++)
                                     layout.WithChild(
-                                        new TextNode($" C{i,-2} {BuildBar(cores[i], 10)} {cores[i],5:F0}%")
-                                            .WithForeground(Color.BrightGreen).Height(1));
+                                        new TextNode($" C{i}:{cores[i],3:F0}%")
+                                            .WithForeground(Color.BrightGreen));
                                 return layout;
-                            }).AsLayout().Width(25))
-                    .WithSpacing(1)
-                    .WithChild(Layouts.Vertical().WithChild(cpuGraph).Fill()))
+                            }).AsLayout().Height(1))
+                    .WithChild(cpuGraph.Fill()))
             .Fill();
     }
 

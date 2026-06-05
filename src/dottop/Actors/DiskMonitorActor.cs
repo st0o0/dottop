@@ -36,9 +36,19 @@ public sealed class DiskMonitorActor : ReceiveActor
             _hw.RefreshDriveList();
             var disks = _hw.DriveList
                 .Where(d => d.PartitionList.Count > 0)
-                .Where(d => d.PartitionList.Any(p => p.VolumeList.Count > 0))
-                .SelectMany(d => d.PartitionList.SelectMany(p => p.VolumeList)
-                    .Select(v => new DiskSnapshot(v.VolumeName, v.Size, v.FreeSpace, 0, 0)))
+                .SelectMany(d => d.PartitionList
+                    .Where(p => p.VolumeList.Count > 0)
+                    .SelectMany(p => p.VolumeList)
+                    .Select(v =>
+                    {
+                        var name = !string.IsNullOrWhiteSpace(v.VolumeName)
+                            ? v.VolumeName
+                            : v.Name;
+                        if (string.IsNullOrWhiteSpace(name))
+                            name = d.Name;
+                        return new DiskSnapshot(name, v.Size, v.FreeSpace, 0, 0);
+                    }))
+                .Where(d => d.TotalBytes > 0)
                 .ToList();
             _channel.Writer.TryWrite(disks);
         });

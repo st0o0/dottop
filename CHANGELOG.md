@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.0](https://github.com/st0o0/dottop/compare/v0.1.0...v0.2.0) (2026-06-05)
+
+
+### Features
+
+* add GPU monitoring with NVML support ([0c094c2](https://github.com/st0o0/dottop/commit/0c094c2c280a78db2c8975e826f242982258daba))
+* add process kill confirmation dialog ([51fe949](https://github.com/st0o0/dottop/commit/51fe949212046e097d770ab67af283aff72d545d))
+* add service detail overlay with description ([b79ca62](https://github.com/st0o0/dottop/commit/b79ca625997651aecaae150d6efc8dad8471963e))
+* show process names in network connections via PID mapping ([c09d70a](https://github.com/st0o0/dottop/commit/c09d70ae1acbb0d7b02eccf6e32feeb2d8d4dd5f))
+
+
+### Bug Fixes
+
+* prevent deadlocks and dead letters on tab navigation ([6ebc2ea](https://github.com/st0o0/dottop/commit/6ebc2ea30ecade5b72e8f775c5931aa9ce9a7c0a))
+
 ## 0.1.0 (2026-06-05)
 
 

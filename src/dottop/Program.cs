@@ -20,6 +20,9 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 
         var processAction = system.ActorOf(ProcessActionActor.Props(), "process-action");
         registry.Register<ProcessActionActor>(processAction);
+
+        var serviceActor = system.ActorOf(WindowsServiceActor.Props(), "windows-service");
+        registry.Register<WindowsServiceActor>(serviceActor);
     });
 });
 

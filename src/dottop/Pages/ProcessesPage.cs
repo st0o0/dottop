@@ -23,7 +23,8 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             p =>
             {
                 var ramMb = p.WorkingSetBytes / 1024 / 1024;
-                return $" {p.Pid,5}  {p.Name,-20}  {p.CpuPercent,5:F1}%  {ramMb,6} MB  {p.Group}";
+                var name = p.Name.Length > 18 ? p.Name[..18] : p.Name;
+                return $" {p.Pid,5} {name,-18} {p.CpuPercent,5:F1}% {ramMb,5}MB {p.Group}";
             },
             p => p.Group switch
             {
@@ -46,45 +47,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithDismissOnEscape(false)
             .WithPadding(1);
 
-        ViewModel.IsOverlayOpen.Subscribe(open =>
-        {
-            if (open)
-                UpdateOverlayContent();
-        }).DisposeWith(Subscriptions);
-
-        ViewModel.AllProcesses.Subscribe(list =>
-        {
-            if (ViewModel.IsOverlayOpen.Value && ViewModel.OverlayTabIndex.Value == 0
-                && ViewModel.SelectedProcess.Value is { } current)
-            {
-                var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
-                if (updated is not null)
-                {
-                    ViewModel.SelectedProcess.Value = updated;
-                    UpdateOverlayContent();
-                }
-            }
-        }).DisposeWith(Subscriptions);
-
-        ViewModel.OverlayTabIndex.Subscribe(_ =>
-        {
-            if (ViewModel.IsOverlayOpen.Value)
-                UpdateOverlayContent();
-        }).DisposeWith(Subscriptions);
-
-        ViewModel.ProcessTree.Subscribe(_ =>
-        {
-            if (ViewModel.IsOverlayOpen.Value)
-                UpdateOverlayContent();
-        }).DisposeWith(Subscriptions);
-
-        ViewModel.ProcessEnv.Subscribe(_ =>
-        {
-            if (ViewModel.IsOverlayOpen.Value)
-                UpdateOverlayContent();
-        }).DisposeWith(Subscriptions);
-
-        ViewModel.ProcessHandles.Subscribe(_ =>
+        ViewModel.OverlayContentChanged.Subscribe(_ =>
         {
             if (ViewModel.IsOverlayOpen.Value)
                 UpdateOverlayContent();
@@ -120,7 +83,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {"PID",5}  {"Name",-20}  {"CPU%",6}  {"RAM",10}  Gruppe")
+        return new TextNode($" {"PID",5} {"Name",-18} {"CPU%",6} {"RAM",6} Gruppe")
             .WithForeground(Color.Gray)
             .Height(1);
     }

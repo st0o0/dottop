@@ -21,6 +21,9 @@ public class ProcessesViewModel : ReactiveViewModel
     public DataListNode<ProcessSnapshot>? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
 
+    private readonly Subject<Unit> _overlayContentChanged = new();
+    public Observable<Unit> OverlayContentChanged => _overlayContentChanged.AsObservable();
+
     public ReactiveProperty<List<ProcessSnapshot>> AllProcesses { get; } = new([]);
     public ReactiveProperty<List<ProcessSnapshot>> FilteredProcesses { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
@@ -80,7 +83,11 @@ public class ProcessesViewModel : ReactiveViewModel
                 {
                     var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
                     if (updated is not null)
+                    {
                         SelectedProcess.Value = updated;
+                        if (OverlayTabIndex.Value == 0)
+                            _overlayContentChanged.OnNext(Unit.Default);
+                    }
                 }
             }
         }
@@ -131,6 +138,7 @@ public class ProcessesViewModel : ReactiveViewModel
                     SelectedProcess.Value = proc;
                     OverlayTabIndex.Value = 0;
                     IsOverlayOpen.Value = true;
+                    _overlayContentChanged.OnNext(Unit.Default);
                     LoadOverlayTab();
                 }
                 break;
@@ -164,10 +172,12 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.Escape: CloseOverlay(); break;
             case ConsoleKey.LeftArrow:
                 OverlayListNode = null;
-                OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1); LoadOverlayTab(); break;
+                OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1);
+                _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
             case ConsoleKey.RightArrow:
                 OverlayListNode = null;
-                OverlayTabIndex.Value = Math.Min(3, OverlayTabIndex.Value + 1); LoadOverlayTab(); break;
+                OverlayTabIndex.Value = Math.Min(3, OverlayTabIndex.Value + 1);
+                _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
             case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
             case ConsoleKey.DownArrow: OverlayListNode?.MoveDown(); break;
             case ConsoleKey.Home: OverlayListNode?.MoveToTop(); break;
@@ -202,16 +212,19 @@ public class ProcessesViewModel : ReactiveViewModel
                     var tree = await _processActionActor.Ask<ProcessTreeResult>(
                         new GetProcessTree(proc.Pid), TimeSpan.FromSeconds(5));
                     ProcessTree.Value = tree;
+                    _overlayContentChanged.OnNext(Unit.Default);
                     break;
                 case 2 when ProcessEnv.Value is null:
                     var env = await _processActionActor.Ask<ProcessEnvironmentResult>(
                         new GetProcessEnvironment(proc.Pid), TimeSpan.FromSeconds(5));
                     ProcessEnv.Value = env.Variables;
+                    _overlayContentChanged.OnNext(Unit.Default);
                     break;
                 case 3 when ProcessHandles.Value is null:
                     var handles = await _processActionActor.Ask<ProcessHandlesResult>(
                         new GetProcessHandles(proc.Pid), TimeSpan.FromSeconds(5));
                     ProcessHandles.Value = handles.Handles;
+                    _overlayContentChanged.OnNext(Unit.Default);
                     break;
             }
         }

@@ -51,9 +51,15 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(0))
-            .WithChild(BuildToolbar())
-            .WithChild(BuildHeader())
-            .WithChild(_list.Fill())
+            .WithChild(BuildSearchBar())
+            .WithChild(new PanelNode()
+                .WithTitle(" Prozesse ")
+                .WithBorder(BorderStyle.Rounded)
+                .WithBorderColor(Color.BrightCyan)
+                .WithContent(Layouts.Vertical()
+                    .WithChild(BuildHeader())
+                    .WithChild(_list.Fill()))
+                .Fill())
             .WithChild(BuildStatusBar())
             .WithChild(conditionalOverlay);
     }
@@ -86,15 +92,17 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         }).DisposeWith(Subscriptions);
     }
 
-    private ILayoutNode BuildToolbar()
+    private ILayoutNode BuildSearchBar()
     {
-        return ViewModel.SortColumn
-            .Select<SortColumn, ILayoutNode>(sort =>
+        return ViewModel.SearchText
+            .Select<string, ILayoutNode>(search =>
             {
                 var groupLabel = ViewModel.SelectedGroup.Value?.ToString() ?? "Alle";
-                var search = ViewModel.SearchText.Value;
-                var searchDisplay = ViewModel.IsSearchActive.Value ? $"/ {search}_" : "";
-                return new TextNode($" {searchDisplay}  Gruppe: [{groupLabel}]  Sort: {sort} ↓")
+                var sort = ViewModel.SortColumn.Value;
+                if (ViewModel.IsSearchActive.Value)
+                    return new TextNode($" / {search}█  Gruppe: [{groupLabel}]  Sort: {sort} ↓")
+                        .WithForeground(Color.BrightYellow);
+                return new TextNode($" /: Suche  Gruppe: [{groupLabel}]  Sort: {sort} ↓  G: Gruppe  Tab: Sort")
                     .WithForeground(Color.BrightGreen);
             })
             .AsLayout()

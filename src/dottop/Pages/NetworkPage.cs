@@ -28,8 +28,15 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
         return Layouts.Vertical()
             .WithChild(new TabBarNode(3))
             .WithChild(BuildSearchBar())
-            .WithChild(BuildHeader())
-            .WithChild(_list.Fill())
+            .WithChild(new PanelNode()
+                .WithTitle(" Netzwerk ")
+                .WithBorder(BorderStyle.Rounded)
+                .WithBorderColor(Color.BrightMagenta)
+                .WithContent(Layouts.Vertical()
+                    .WithChild(new TextNode($" {"Lokal",-22} {"Remote",-22} {"Status",-12}")
+                        .WithForeground(Color.Gray).Height(1))
+                    .WithChild(_list.Fill()))
+                .Fill())
             .WithChild(BuildStatusBar());
     }
 
@@ -45,15 +52,12 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
         return ViewModel.SearchText
             .Select<string, ILayoutNode>(search =>
             {
-                var display = ViewModel.IsSearchActive.Value ? $"/ {search}_" : "";
-                return new TextNode($" {display}").WithForeground(Color.BrightGreen);
+                if (ViewModel.IsSearchActive.Value)
+                    return new TextNode($" / {search}█")
+                        .WithForeground(Color.BrightYellow);
+                return new TextNode(" /: Suche nach IP/Port")
+                    .WithForeground(Color.BrightGreen);
             }).AsLayout().Height(1);
-    }
-
-    private ILayoutNode BuildHeader()
-    {
-        return new TextNode($" {"Lokal",-22} {"Remote",-22} {"Status",-12}")
-            .WithForeground(Color.Gray).Height(1);
     }
 
     private ILayoutNode BuildStatusBar()

@@ -31,8 +31,15 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         return Layouts.Vertical()
             .WithChild(new TabBarNode(2))
             .WithChild(BuildSearchBar())
-            .WithChild(BuildHeader())
-            .WithChild(_list.Fill())
+            .WithChild(new PanelNode()
+                .WithTitle(" Dienste ")
+                .WithBorder(BorderStyle.Rounded)
+                .WithBorderColor(Color.BrightYellow)
+                .WithContent(Layouts.Vertical()
+                    .WithChild(new TextNode($" {"Name",-30} {"Status",-12} {"Starttyp",-12} {"PID",6}")
+                        .WithForeground(Color.Gray).Height(1))
+                    .WithChild(_list.Fill()))
+                .Fill())
             .WithChild(BuildStatusBar());
     }
 
@@ -48,15 +55,12 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         return ViewModel.SearchText
             .Select<string, ILayoutNode>(search =>
             {
-                var display = ViewModel.IsSearchActive.Value ? $"/ {search}_" : "";
-                return new TextNode($" {display}").WithForeground(Color.BrightGreen);
+                if (ViewModel.IsSearchActive.Value)
+                    return new TextNode($" / {search}█")
+                        .WithForeground(Color.BrightYellow);
+                return new TextNode(" /: Suche  S: Start  X: Stop  R: Restart")
+                    .WithForeground(Color.BrightGreen);
             }).AsLayout().Height(1);
-    }
-
-    private ILayoutNode BuildHeader()
-    {
-        return new TextNode($" {"Name",-30} {"Status",-12} {"Starttyp",-12} {"PID",6}")
-            .WithForeground(Color.Gray).Height(1);
     }
 
     private ILayoutNode BuildStatusBar()

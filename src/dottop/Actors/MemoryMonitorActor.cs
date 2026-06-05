@@ -8,7 +8,6 @@ namespace dottop.Actors;
 public sealed class MemoryMonitorActor : ReceiveActor
 {
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
-    private readonly ulong _totalCapacity;
     private Channel<MemorySnapshot>? _channel;
     private ICancelable? _tickSchedule;
 
@@ -17,7 +16,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
     public MemoryMonitorActor()
     {
         _hw.RefreshMemoryList();
-        _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
+        var totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
 
         Receive<StartMonitoring>(_ =>
         {
@@ -42,7 +41,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
             _hw.RefreshMemoryStatus();
             var status = _hw.MemoryStatus;
             var used = status.TotalPhysical - status.AvailablePhysical;
-            _channel.Writer.TryWrite(new MemorySnapshot(_totalCapacity, used));
+            _channel.Writer.TryWrite(new MemorySnapshot(totalCapacity, used));
         });
     }
 

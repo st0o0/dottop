@@ -101,8 +101,10 @@ public sealed class DiskMonitorActor : ReceiveActor
         {
             if (string.IsNullOrWhiteSpace(s)) continue;
             var trimmed = s.TrimEnd('\\', '/');
-            if (trimmed.Length >= 2 && trimmed[1] == ':')
+            if (trimmed is [_, ':', ..])
+            {
                 return trimmed[..2];
+            }
         }
         return !string.IsNullOrWhiteSpace(volumeName) ? volumeName : driveName;
     }
@@ -119,8 +121,12 @@ public sealed class DiskMonitorActor : ReceiveActor
     {
         CleanupPreviousStream();
         if (_counters is not null)
+        {
             foreach (var c in _counters.Values)
+            {
                 c.Dispose();
+            }
+        }
         base.PostStop();
     }
 

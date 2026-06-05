@@ -95,15 +95,17 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildSearchBar()
     {
-        return ViewModel.IsSearchActive.CombineLatest(ViewModel.SearchText,
-            (active, search) =>
+        return ViewModel.IsSearchActive
+            .CombineLatest(ViewModel.SearchText, (a, b) => (a, b))
+            .CombineLatest(ViewModel.SortColumn, (ab, s) => (ab.a, ab.b, s))
+            .CombineLatest(ViewModel.SelectedGroup, (abs, g) => (Active: abs.a, Search: abs.b, Sort: abs.s, Group: g))
+            .Select(t =>
             {
-                var groupLabel = ViewModel.SelectedGroup.Value?.ToString() ?? Strings.GroupAll;
-                var sort = ViewModel.SortColumn.Value;
-                if (active)
-                    return (ILayoutNode)new TextNode(string.Format(Strings.SearchBarActiveFormat, search + "█", groupLabel, sort) + " ↓")
+                var groupLabel = t.Group?.ToString() ?? Strings.GroupAll;
+                if (t.Active)
+                    return (ILayoutNode)new TextNode(string.Format(Strings.SearchBarActiveFormat, t.Search + "█", groupLabel, t.Sort) + " ↓")
                         .WithForeground(Color.BrightYellow);
-                return new TextNode(string.Format(Strings.SearchBarInactiveFormat, groupLabel, sort) + " ↓")
+                return new TextNode(string.Format(Strings.SearchBarInactiveFormat, groupLabel, t.Sort) + " ↓")
                     .WithForeground(Color.BrightGreen);
             })
             .AsLayout()

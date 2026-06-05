@@ -23,10 +23,10 @@ public class AutostartPage : ReactivePage<AutostartViewModel>
             },
             e => e.Enabled ? Color.BrightCyan : Color.Gray);
 
+        ViewModel.ListNode = list;
+
         ViewModel.Entries.Subscribe(entries => list.SetItems(entries))
             .DisposeWith(Subscriptions);
-
-        Focus.PushFocus(list);
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(4))

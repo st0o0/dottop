@@ -16,10 +16,10 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             c => $" {c.ProcessName,-16}  {c.Pid,6}  {c.LocalEndpoint,-22}  {c.RemoteEndpoint,-22}  {c.State}",
             c => c.State == "LISTEN" ? Color.Gray : Color.BrightMagenta);
 
+        ViewModel.ListNode = list;
+
         ViewModel.FilteredConnections.Subscribe(connections => list.SetItems(connections))
             .DisposeWith(Subscriptions);
-
-        Focus.PushFocus(list);
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(3))

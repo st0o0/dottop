@@ -5,11 +5,9 @@ using Termina.Terminal;
 
 namespace dottop.Nodes;
 
-public sealed class DataListNode<T> : LayoutNode, IFocusable, IInvalidatingNode
+public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode
 {
     private readonly Subject<Unit> _invalidated = new();
-    private readonly Subject<T> _itemSelected = new();
-    private readonly Subject<Unit> _cancelled = new();
     private readonly Func<T, string> _formatter;
     private readonly Func<T, Color>? _colorSelector;
 
@@ -17,7 +15,6 @@ public sealed class DataListNode<T> : LayoutNode, IFocusable, IInvalidatingNode
     private int _selectedIndex;
     private int _scrollOffset;
     private int _viewportHeight = 20;
-    private bool _hasFocus;
     private bool _disposed;
 
     private Color _selectedFg = Color.White;
@@ -30,15 +27,9 @@ public sealed class DataListNode<T> : LayoutNode, IFocusable, IInvalidatingNode
     }
 
     public Observable<Unit> Invalidated => _invalidated.AsObservable();
-    public Observable<T> ItemSelected => _itemSelected.AsObservable();
-    public Observable<Unit> Cancelled => _cancelled.AsObservable();
 
     public int SelectedIndex => _selectedIndex;
     public T? SelectedItem => _selectedIndex >= 0 && _selectedIndex < _items.Count ? _items[_selectedIndex] : default;
-
-    public bool CanFocus => true;
-    public bool HasFocus => _hasFocus;
-    public int FocusPriority => 10;
 
     public DataListNode<T> WithHighlightColors(Color fg, Color bg)
     {
@@ -55,76 +46,52 @@ public sealed class DataListNode<T> : LayoutNode, IFocusable, IInvalidatingNode
         Invalidate();
     }
 
-    public void OnFocused()
+    public void MoveUp()
     {
-        _hasFocus = true;
-        Invalidate();
-    }
-
-    public void OnBlurred()
-    {
-        _hasFocus = false;
-        Invalidate();
-    }
-
-    public bool HandleInput(ConsoleKeyInfo key)
-    {
-        switch (key.Key)
+        if (_selectedIndex > 0)
         {
-            case ConsoleKey.UpArrow:
-                if (_selectedIndex > 0)
-                {
-                    _selectedIndex--;
-                    EnsureVisible();
-                    Invalidate();
-                }
-                return true;
-
-            case ConsoleKey.DownArrow:
-                if (_selectedIndex < _items.Count - 1)
-                {
-                    _selectedIndex++;
-                    EnsureVisible();
-                    Invalidate();
-                }
-                return true;
-
-            case ConsoleKey.Home:
-                _selectedIndex = 0;
-                _scrollOffset = 0;
-                Invalidate();
-                return true;
-
-            case ConsoleKey.End:
-                _selectedIndex = Math.Max(0, _items.Count - 1);
-                EnsureVisible();
-                Invalidate();
-                return true;
-
-            case ConsoleKey.PageUp:
-                _selectedIndex = Math.Max(0, _selectedIndex - _viewportHeight);
-                EnsureVisible();
-                Invalidate();
-                return true;
-
-            case ConsoleKey.PageDown:
-                _selectedIndex = Math.Min(_items.Count - 1, _selectedIndex + _viewportHeight);
-                EnsureVisible();
-                Invalidate();
-                return true;
-
-            case ConsoleKey.Enter:
-                if (SelectedItem is { } item)
-                    _itemSelected.OnNext(item);
-                return true;
-
-            case ConsoleKey.Escape:
-                _cancelled.OnNext(Unit.Default);
-                return true;
-
-            default:
-                return false;
+            _selectedIndex--;
+            EnsureVisible();
+            Invalidate();
         }
+    }
+
+    public void MoveDown()
+    {
+        if (_selectedIndex < _items.Count - 1)
+        {
+            _selectedIndex++;
+            EnsureVisible();
+            Invalidate();
+        }
+    }
+
+    public void MoveToTop()
+    {
+        _selectedIndex = 0;
+        _scrollOffset = 0;
+        Invalidate();
+    }
+
+    public void MoveToEnd()
+    {
+        _selectedIndex = Math.Max(0, _items.Count - 1);
+        EnsureVisible();
+        Invalidate();
+    }
+
+    public void PageUp()
+    {
+        _selectedIndex = Math.Max(0, _selectedIndex - _viewportHeight);
+        EnsureVisible();
+        Invalidate();
+    }
+
+    public void PageDown()
+    {
+        _selectedIndex = Math.Min(Math.Max(0, _items.Count - 1), _selectedIndex + _viewportHeight);
+        EnsureVisible();
+        Invalidate();
     }
 
     private void EnsureVisible()
@@ -163,7 +130,7 @@ public sealed class DataListNode<T> : LayoutNode, IFocusable, IInvalidatingNode
             else if (text.Length < contentWidth)
                 text = text.PadRight(contentWidth);
 
-            if (itemIdx == _selectedIndex && _hasFocus)
+            if (itemIdx == _selectedIndex)
             {
                 ctx.SetForeground(_selectedFg);
                 ctx.SetBackground(_selectedBg);
@@ -212,10 +179,6 @@ public sealed class DataListNode<T> : LayoutNode, IFocusable, IInvalidatingNode
         _disposed = true;
         _invalidated.OnCompleted();
         _invalidated.Dispose();
-        _itemSelected.OnCompleted();
-        _itemSelected.Dispose();
-        _cancelled.OnCompleted();
-        _cancelled.Dispose();
         base.Dispose();
     }
 }

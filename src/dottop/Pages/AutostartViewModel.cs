@@ -3,6 +3,7 @@ using Akka.Hosting;
 using R3;
 using dottop.Actors;
 using dottop.Models;
+using dottop.Nodes;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -13,8 +14,9 @@ public class AutostartViewModel : ReactiveViewModel
     private readonly IRequiredActor<StartupActor> _startupActorRef;
     private IActorRef? _startupActor;
 
+    public DataListNode<StartupEntry>? ListNode { get; set; }
+
     public ReactiveProperty<List<StartupEntry>> Entries { get; } = new([]);
-    public ReactiveProperty<int> SelectedIndex { get; } = new(0);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
 
     public AutostartViewModel(IRequiredActor<StartupActor> startupActor)
@@ -24,9 +26,14 @@ public class AutostartViewModel : ReactiveViewModel
 
     public override void OnActivated()
     {
-        _startupActor = _startupActorRef.GetAsync(CancellationToken.None).GetAwaiter().GetResult();
-        RefreshEntries();
+        _ = InitializeAsync();
         Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
+    }
+
+    private async Task InitializeAsync()
+    {
+        _startupActor = await _startupActorRef.GetAsync(CancellationToken.None);
+        RefreshEntries();
     }
 
     private async void RefreshEntries()
@@ -45,8 +52,12 @@ public class AutostartViewModel : ReactiveViewModel
     {
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.UpArrow: SelectedIndex.Value = Math.Max(0, SelectedIndex.Value - 1); break;
-            case ConsoleKey.DownArrow: SelectedIndex.Value = Math.Min(Entries.Value.Count - 1, SelectedIndex.Value + 1); break;
+            case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
+            case ConsoleKey.DownArrow: ListNode?.MoveDown(); break;
+            case ConsoleKey.Home: ListNode?.MoveToTop(); break;
+            case ConsoleKey.End: ListNode?.MoveToEnd(); break;
+            case ConsoleKey.PageUp: ListNode?.PageUp(); break;
+            case ConsoleKey.PageDown: ListNode?.PageDown(); break;
             case ConsoleKey.Spacebar: ToggleSelected(); break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
@@ -58,9 +69,7 @@ public class AutostartViewModel : ReactiveViewModel
 
     private async void ToggleSelected()
     {
-        if (_startupActor is null || Entries.Value.Count == 0) return;
-        var idx = Math.Clamp(SelectedIndex.Value, 0, Entries.Value.Count - 1);
-        var entry = Entries.Value[idx];
+        if (_startupActor is null || ListNode?.SelectedItem is not { } entry) return;
         try
         {
             await _startupActor.Ask<object>(new SetStartupEnabled(entry.Name, !entry.Enabled), TimeSpan.FromSeconds(5));
@@ -71,7 +80,7 @@ public class AutostartViewModel : ReactiveViewModel
 
     public override void Dispose()
     {
-        Entries.Dispose(); SelectedIndex.Dispose(); StatusMessage.Dispose();
+        Entries.Dispose(); StatusMessage.Dispose();
         base.Dispose();
     }
 }

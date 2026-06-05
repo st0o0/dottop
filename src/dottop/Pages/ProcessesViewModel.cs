@@ -3,6 +3,7 @@ using Akka.Hosting;
 using R3;
 using dottop.Actors;
 using dottop.Models;
+using dottop.Nodes;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -17,12 +18,13 @@ public class ProcessesViewModel : ReactiveViewModel
     private IActorRef? _processActionActor;
     private CancellationTokenSource? _cts;
 
+    public DataListNode<ProcessSnapshot>? ListNode { get; set; }
+
     public ReactiveProperty<List<ProcessSnapshot>> AllProcesses { get; } = new([]);
     public ReactiveProperty<List<ProcessSnapshot>> FilteredProcesses { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
     public ReactiveProperty<ProcessGroup?> SelectedGroup { get; } = new((ProcessGroup?)null);
     public ReactiveProperty<SortColumn> SortColumn { get; } = new(Pages.SortColumn.Ram);
-    public ReactiveProperty<int> SelectedIndex { get; } = new(0);
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<bool> IsOverlayOpen { get; } = new(false);
     public ReactiveProperty<ProcessSnapshot?> SelectedProcess { get; } = new(null);
@@ -109,6 +111,21 @@ public class ProcessesViewModel : ReactiveViewModel
 
         switch (key.KeyInfo.Key)
         {
+            case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
+            case ConsoleKey.DownArrow: ListNode?.MoveDown(); break;
+            case ConsoleKey.Home: ListNode?.MoveToTop(); break;
+            case ConsoleKey.End: ListNode?.MoveToEnd(); break;
+            case ConsoleKey.PageUp: ListNode?.PageUp(); break;
+            case ConsoleKey.PageDown: ListNode?.PageDown(); break;
+            case ConsoleKey.Enter:
+                if (ListNode?.SelectedItem is { } proc)
+                {
+                    SelectedProcess.Value = proc;
+                    OverlayTabIndex.Value = 0;
+                    IsOverlayOpen.Value = true;
+                    LoadOverlayTab();
+                }
+                break;
             case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
             case ConsoleKey.Tab: CycleSortColumn(); break;
             case ConsoleKey.G: CycleGroupFilter(); break;
@@ -226,7 +243,7 @@ public class ProcessesViewModel : ReactiveViewModel
         _cts?.Dispose();
         AllProcesses.Dispose(); FilteredProcesses.Dispose();
         SearchText.Dispose(); SelectedGroup.Dispose();
-        SortColumn.Dispose(); SelectedIndex.Dispose();
+        SortColumn.Dispose();
         IsSearchActive.Dispose(); IsOverlayOpen.Dispose();
         SelectedProcess.Dispose(); OverlayTabIndex.Dispose();
         StatusMessage.Dispose(); ProcessTree.Dispose();

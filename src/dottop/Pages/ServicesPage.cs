@@ -21,10 +21,10 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             },
             s => s.Status == ServiceStatus.Running ? Color.BrightCyan : Color.Gray);
 
+        ViewModel.ListNode = list;
+
         ViewModel.FilteredServices.Subscribe(services => list.SetItems(services))
             .DisposeWith(Subscriptions);
-
-        Focus.PushFocus(list);
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(2))

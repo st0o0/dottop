@@ -1,5 +1,6 @@
 using System.Net.NetworkInformation;
 using R3;
+using dottop.Nodes;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -9,10 +10,11 @@ public record ConnectionInfo(string ProcessName, int Pid, string LocalEndpoint, 
 
 public class NetworkViewModel : ReactiveViewModel
 {
+    public DataListNode<ConnectionInfo>? ListNode { get; set; }
+
     public ReactiveProperty<List<ConnectionInfo>> Connections { get; } = new([]);
     public ReactiveProperty<List<ConnectionInfo>> FilteredConnections { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
-    public ReactiveProperty<int> SelectedIndex { get; } = new(0);
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
 
@@ -67,8 +69,12 @@ public class NetworkViewModel : ReactiveViewModel
         }
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.UpArrow: SelectedIndex.Value = Math.Max(0, SelectedIndex.Value - 1); break;
-            case ConsoleKey.DownArrow: SelectedIndex.Value = Math.Min(FilteredConnections.Value.Count - 1, SelectedIndex.Value + 1); break;
+            case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
+            case ConsoleKey.DownArrow: ListNode?.MoveDown(); break;
+            case ConsoleKey.Home: ListNode?.MoveToTop(); break;
+            case ConsoleKey.End: ListNode?.MoveToEnd(); break;
+            case ConsoleKey.PageUp: ListNode?.PageUp(); break;
+            case ConsoleKey.PageDown: ListNode?.PageDown(); break;
             case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
@@ -80,12 +86,8 @@ public class NetworkViewModel : ReactiveViewModel
 
     public override void Dispose()
     {
-        Connections.Dispose();
-        FilteredConnections.Dispose();
-        SearchText.Dispose();
-        SelectedIndex.Dispose();
-        IsSearchActive.Dispose();
-        StatusMessage.Dispose();
+        Connections.Dispose(); FilteredConnections.Dispose();
+        SearchText.Dispose(); IsSearchActive.Dispose(); StatusMessage.Dispose();
         base.Dispose();
     }
 }

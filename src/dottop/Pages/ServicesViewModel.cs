@@ -3,6 +3,7 @@ using Akka.Hosting;
 using R3;
 using dottop.Actors;
 using dottop.Models;
+using dottop.Nodes;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -13,10 +14,11 @@ public class ServicesViewModel : ReactiveViewModel
     private readonly IRequiredActor<WindowsServiceActor> _serviceActorRef;
     private IActorRef? _serviceActor;
 
+    public DataListNode<WindowsServiceInfo>? ListNode { get; set; }
+
     public ReactiveProperty<List<WindowsServiceInfo>> AllServices { get; } = new([]);
     public ReactiveProperty<List<WindowsServiceInfo>> FilteredServices { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
-    public ReactiveProperty<int> SelectedIndex { get; } = new(0);
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
 
@@ -70,12 +72,16 @@ public class ServicesViewModel : ReactiveViewModel
         }
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.UpArrow: SelectedIndex.Value = Math.Max(0, SelectedIndex.Value - 1); break;
-            case ConsoleKey.DownArrow: SelectedIndex.Value = Math.Min(FilteredServices.Value.Count - 1, SelectedIndex.Value + 1); break;
+            case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
+            case ConsoleKey.DownArrow: ListNode?.MoveDown(); break;
+            case ConsoleKey.Home: ListNode?.MoveToTop(); break;
+            case ConsoleKey.End: ListNode?.MoveToEnd(); break;
+            case ConsoleKey.PageUp: ListNode?.PageUp(); break;
+            case ConsoleKey.PageDown: ListNode?.PageDown(); break;
             case ConsoleKey.Oem2: IsSearchActive.Value = true; break;
-            case ConsoleKey.S: ActionOnSelected(s => new StartService(s.Name)); break;
-            case ConsoleKey.X: ActionOnSelected(s => new StopService(s.Name)); break;
-            case ConsoleKey.R: ActionOnSelected(s => new RestartService(s.Name)); break;
+            case ConsoleKey.S: ActionOnSelected(); break;
+            case ConsoleKey.X: ActionOnSelected(ActionType.Stop); break;
+            case ConsoleKey.R: ActionOnSelected(ActionType.Restart); break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
@@ -84,14 +90,20 @@ public class ServicesViewModel : ReactiveViewModel
         }
     }
 
-    private async void ActionOnSelected(Func<WindowsServiceInfo, object> msgFactory)
+    private enum ActionType { Start, Stop, Restart }
+
+    private async void ActionOnSelected(ActionType action = ActionType.Start)
     {
-        if (_serviceActor is null || FilteredServices.Value.Count == 0) return;
-        var idx = Math.Clamp(SelectedIndex.Value, 0, FilteredServices.Value.Count - 1);
-        var svc = FilteredServices.Value[idx];
+        if (_serviceActor is null || ListNode?.SelectedItem is not { } svc) return;
+        object msg = action switch
+        {
+            ActionType.Stop => new StopService(svc.Name),
+            ActionType.Restart => new RestartService(svc.Name),
+            _ => new StartService(svc.Name),
+        };
         try
         {
-            var result = await _serviceActor.Ask<object>(msgFactory(svc), TimeSpan.FromSeconds(10));
+            var result = await _serviceActor.Ask<object>(msg, TimeSpan.FromSeconds(10));
             StatusMessage.Value = result is ActionSuccess s ? $" {s.Message}" : $" {((ActionFailure)result).Error}";
             RefreshServices();
         }
@@ -101,7 +113,7 @@ public class ServicesViewModel : ReactiveViewModel
     public override void Dispose()
     {
         AllServices.Dispose(); FilteredServices.Dispose(); SearchText.Dispose();
-        SelectedIndex.Dispose(); IsSearchActive.Dispose(); StatusMessage.Dispose();
+        IsSearchActive.Dispose(); StatusMessage.Dispose();
         base.Dispose();
     }
 }

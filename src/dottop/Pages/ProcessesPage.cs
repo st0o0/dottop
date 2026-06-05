@@ -31,18 +31,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 _ => Color.White,
             });
 
-        _list.ItemSelected.Subscribe(proc =>
-        {
-            ViewModel.SelectedProcess.Value = proc;
-            ViewModel.OverlayTabIndex.Value = 0;
-            ViewModel.IsOverlayOpen.Value = true;
-            ViewModel.LoadOverlayTab();
-        }).DisposeWith(Subscriptions);
+        ViewModel.ListNode = _list;
 
         ViewModel.FilteredProcesses.Subscribe(list => _list.SetItems(list))
             .DisposeWith(Subscriptions);
-
-        Focus.PushFocus(_list);
 
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)

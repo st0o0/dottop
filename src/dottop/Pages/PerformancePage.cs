@@ -198,6 +198,12 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithBorderColor(Color.BrightGreen)
             .WithContent(
                 Layouts.Vertical()
+                    .WithChild(
+                        ViewModel.CpuTotal
+                            .Select<double, ILayoutNode>(pct =>
+                                new TextNode($" Gesamt: {pct:F1}%")
+                                    .WithForeground(Color.BrightGreen))
+                            .AsLayout().Height(1))
                     .WithChild(coresNode)
                     .WithChild(cpuGraph.Fill()))
             .Fill();

@@ -129,7 +129,7 @@ public class PerformanceViewModel : ReactiveViewModel
         IRequiredActor<TActor> actorRef, CancellationToken ct, Action<TData> handler)
         where TActor : ActorBase
     {
-        for (var attempt = 0; attempt < 3 && !ct.IsCancellationRequested; attempt++)
+        while (!ct.IsCancellationRequested)
         {
             try
             {
@@ -137,12 +137,11 @@ public class PerformanceViewModel : ReactiveViewModel
                 var stream = await actor.Ask<MonitoringStream<TData>>(new StartMonitoring(), TimeSpan.FromSeconds(60));
                 await foreach (var item in stream.Data.WithCancellation(ct))
                     handler(item);
-                return;
             }
             catch (OperationCanceledException) { return; }
             catch
             {
-                await Task.Delay(1000, ct);
+                try { await Task.Delay(2000, ct); } catch { return; }
             }
         }
     }

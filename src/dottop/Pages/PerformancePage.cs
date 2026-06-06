@@ -41,9 +41,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Theme.Primary)
-            .WithBackdrop(BackdropStyle.Dim)
+            .WithBackdrop(BackdropStyle.Transparent)
             .WithDismissOnEscape(false)
-            .WithPadding(1);
+            .WithPadding(0);
 
         _detailGraph = new GraphNode()
             .WithStyle(graphStyle)
@@ -195,6 +195,8 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var graphStyle = ViewModel.GraphStyleSetting;
 
+        var contentHeight = 200;
+
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {
             _detailGraph = new GraphNode()
@@ -204,8 +206,8 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(info)
-                .WithChild(_detailGraph.Height(30))
-                .Height(50).WidthFill();
+                .WithChild(_detailGraph.Height(contentHeight / 2))
+                .Height(contentHeight).WidthFill();
         }
         else if (section == PerfDetailSection.Disk)
         {
@@ -220,14 +222,14 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(Layouts.Vertical().WithChild(info).Fill())
-                .Height(50).WidthFill();
+                .Height(contentHeight).WidthFill();
         }
         else
         {
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(Layouts.Vertical().WithChild(info).Fill())
-                .Height(50).WidthFill();
+                .Height(contentHeight).WidthFill();
         }
     }
 

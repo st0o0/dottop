@@ -1,18 +1,16 @@
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using Akka.Actor;
 using dottop.Models;
-using Hardware.Info;
 
 namespace dottop.Actors;
 
 public sealed class MemoryMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw = new();
     private readonly TimeSpan _interval;
     private Channel<MemorySnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
-    private ulong _totalCapacity;
 
     public static Props Props(TimeSpan interval) =>
         Akka.Actor.Props.Create(() => new MemoryMonitorActor(interval));
@@ -42,15 +40,59 @@ public sealed class MemoryMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            try { _hw.RefreshMemoryStatus(); }
-            catch { }
-
-            var status = _hw.MemoryStatus;
-            if (_totalCapacity == 0)
-                _totalCapacity = status.TotalPhysical;
-            var used = status.TotalPhysical - status.AvailablePhysical;
-            _channel.Writer.TryWrite(new MemorySnapshot(_totalCapacity, used));
+            var (total, used) = GetMemoryInfo();
+            _channel.Writer.TryWrite(new MemorySnapshot(total, used));
         });
+    }
+
+    private static (ulong Total, ulong Used) GetMemoryInfo()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            var status = new MEMORYSTATUSEX { dwLength = 64 };
+            if (GlobalMemoryStatusEx(ref status))
+                return (status.ullTotalPhys, status.ullTotalPhys - status.ullAvailPhys);
+        }
+        else
+        {
+            try
+            {
+                ulong total = 0, available = 0;
+                foreach (var line in File.ReadAllLines("/proc/meminfo"))
+                {
+                    if (line.StartsWith("MemTotal:"))
+                        total = ParseKb(line) * 1024;
+                    else if (line.StartsWith("MemAvailable:"))
+                        available = ParseKb(line) * 1024;
+                }
+                if (total > 0) return (total, total - available);
+            }
+            catch { }
+        }
+        return (0, 0);
+    }
+
+    private static ulong ParseKb(string line)
+    {
+        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2 && ulong.TryParse(parts[1], out var val) ? val : 0;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MEMORYSTATUSEX
+    {
+        public uint dwLength;
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys;
+        public ulong ullAvailPhys;
+        public ulong ullTotalPageFile;
+        public ulong ullAvailPageFile;
+        public ulong ullTotalVirtual;
+        public ulong ullAvailVirtual;
+        public ulong ullAvailExtendedVirtual;
     }
 
     private void CleanupPreviousStream()

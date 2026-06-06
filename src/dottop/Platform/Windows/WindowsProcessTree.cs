@@ -44,12 +44,13 @@ public sealed class WindowsProcessTree : IProcessTreeProvider
         var childrenMap = new Dictionary<int, List<int>>();
         foreach (var (pid, ppid) in parentMap)
         {
-            if (!childrenMap.ContainsKey(ppid))
+            if (!childrenMap.TryGetValue(ppid, out var value))
             {
-                childrenMap[ppid] = [];
+                value = [];
+                childrenMap[ppid] = value;
             }
 
-            childrenMap[ppid].Add(pid);
+            value.Add(pid);
         }
 
         return BuildNode(rootPid, nameMap, childrenMap, depth: 0);

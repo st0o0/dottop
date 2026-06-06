@@ -6,7 +6,6 @@ using dottop.Platform;
 using dottop.Platform.Linux;
 using dottop.Platform.Windows;
 using dottop.Services;
-using dottop.Themes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Termina.Hosting;

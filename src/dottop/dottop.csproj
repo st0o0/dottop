@@ -10,8 +10,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Hardware.Info.AOT" Version="110.0.0.1"/>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8"/>
+        <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.8"/>
         <PackageReference Include="Akka.Hosting" Version="1.5.68"/>
         <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.8"/>
         <PackageReference Include="System.Management" Version="10.0.8"/>

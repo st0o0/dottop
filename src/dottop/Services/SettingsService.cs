@@ -40,10 +40,20 @@ public class SettingsService
         catch { }
     }
 
+    private string _lastTheme = "";
+
     public void ApplyAll()
     {
+        var themeChanged = _lastTheme != Settings.Theme;
+        _lastTheme = Settings.Theme;
+
         Theme.Apply(Settings.Theme);
-        Theme.SetTerminalBackground();
+
+        if (themeChanged)
+        {
+            Theme.SetTerminalBackground();
+            Console.Write("\x1b[2J\x1b[H");
+        }
 
         if (Settings.Language != "system")
         {
@@ -51,8 +61,6 @@ public class SettingsService
             CultureInfo.CurrentUICulture = culture;
             CultureInfo.CurrentCulture = culture;
         }
-
-        Console.Write("\x1b[2J\x1b[H");
 
         OnSettingsApplied?.Invoke();
     }

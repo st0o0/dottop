@@ -77,100 +77,67 @@ public class PerformanceViewModel : ReactiveViewModel
             .DisposeWith(Subscriptions);
     }
 
-    private async Task InitializeAsync()
-    {
-        try
-        {
-            await InitializeStreamsAsync();
-        }
-        catch (OperationCanceledException) { }
-        catch (Exception) { }
-    }
-
-    private async Task InitializeStreamsAsync()
+    private Task InitializeAsync()
     {
         var ct = _cts!.Token;
 
-        var cpuTask = _cpuRef.GetAsync(ct);
-        var memTask = _memRef.GetAsync(ct);
-        var diskTask = _diskRef.GetAsync(ct);
-        var netTask = _netRef.GetAsync(ct);
-        await Task.WhenAll(cpuTask, memTask, diskTask, netTask);
-
-        var askTimeout = TimeSpan.FromSeconds(30);
-        var cpuStreamTask = cpuTask.Result.Ask<MonitoringStream<CpuSnapshot>>(new StartMonitoring(), askTimeout);
-        var memStreamTask = memTask.Result.Ask<MonitoringStream<MemorySnapshot>>(new StartMonitoring(), askTimeout);
-        var diskStreamTask = diskTask.Result.Ask<MonitoringStream<List<DiskSnapshot>>>(new StartMonitoring(), askTimeout);
-        var netStreamTask = netTask.Result.Ask<MonitoringStream<List<NetworkSnapshot>>>(new StartMonitoring(), askTimeout);
-        await Task.WhenAll(cpuStreamTask, memStreamTask, diskStreamTask, netStreamTask);
-
-        var cpuStream = cpuStreamTask.Result;
-        var memStream = memStreamTask.Result;
-        var diskStream = diskStreamTask.Result;
-        var netStream = netStreamTask.Result;
-
-        _ = ConsumeAsync(cpuStream.Data, ct, snapshot =>
+        _ = ConnectStream(_cpuRef, ct, (CpuSnapshot snapshot) =>
         {
             CpuName.Value = snapshot.Name;
             CpuTotal.Value = snapshot.TotalPercent;
             CpuCores.Value = snapshot.CorePercents;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Cpu)
-            {
                 _detailContentChanged.OnNext(Unit.Default);
-            }
         });
 
-        _ = ConsumeAsync(memStream.Data, ct, snapshot =>
+        _ = ConnectStream(_memRef, ct, (MemorySnapshot snapshot) =>
         {
             RamTotal.Value = snapshot.TotalBytes;
             RamUsed.Value = snapshot.UsedBytes;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Ram)
-            {
                 _detailContentChanged.OnNext(Unit.Default);
-            }
         });
 
-        _ = ConsumeAsync(diskStream.Data, ct, disks =>
+        _ = ConnectStream(_diskRef, ct, (List<DiskSnapshot> disks) =>
         {
             Disks.Value = disks;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Disk)
-            {
                 _detailContentChanged.OnNext(Unit.Default);
-            }
         });
 
-        _ = ConsumeAsync(netStream.Data, ct, nets =>
+        _ = ConnectStream(_netRef, ct, (List<NetworkSnapshot> nets) =>
         {
             Networks.Value = nets;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
-            {
                 _detailContentChanged.OnNext(Unit.Default);
-            }
         });
 
         if (_gpuMetrics.IsAvailable)
         {
-            var gpuActor = await _gpuRef.GetAsync(ct);
-            var gpuStream = await gpuActor.Ask<MonitoringStream<GpuSnapshot>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
-            _ = ConsumeAsync(gpuStream.Data, ct, snapshot =>
+            _ = ConnectStream(_gpuRef, ct, (GpuSnapshot snapshot) =>
             {
                 Gpu.Value = snapshot;
                 if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Gpu)
-                {
                     _detailContentChanged.OnNext(Unit.Default);
-                }
             });
         }
+
+        return Task.CompletedTask;
     }
 
-    private static async Task ConsumeAsync<T>(IAsyncEnumerable<T> stream, CancellationToken ct, Action<T> handler)
+    private async Task ConnectStream<TActor, TData>(
+        IRequiredActor<TActor> actorRef, CancellationToken ct, Action<TData> handler)
+        where TActor : ActorBase
     {
         try
         {
-            await foreach (var item in stream.WithCancellation(ct))
+            var actor = await actorRef.GetAsync(ct);
+            var stream = await actor.Ask<MonitoringStream<TData>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
+            await foreach (var item in stream.Data.WithCancellation(ct))
                 handler(item);
         }
         catch (OperationCanceledException) { }
+        catch { }
     }
 
     private void HandleKey(KeyPressed key)

@@ -20,7 +20,8 @@ var builder = Host.CreateApplicationBuilder(args);
 IDiskMetricsProvider diskMetrics = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsDiskMetrics()
     : new LinuxDiskMetrics();
-Task.Run(() => diskMetrics.Initialize());
+// Disk I/O metrics init runs in background (uses PerformanceCounter which may trigger WMI once)
+Task.Run(() => { try { diskMetrics.Initialize(); } catch { } });
 IProcessTreeProvider processTree = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsProcessTree()
     : new LinuxProcessTree();

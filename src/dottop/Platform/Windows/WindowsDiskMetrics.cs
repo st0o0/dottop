@@ -11,6 +11,7 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
 
     public void Initialize()
     {
+        if (_ready) return;
         var counters = InitPerfCounters();
 
         foreach (var c in counters.Values)

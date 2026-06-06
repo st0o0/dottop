@@ -109,11 +109,11 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 if (t.Active)
                 {
                     return (ILayoutNode)new TextNode(string.Format(Strings.SearchBarActiveFormat, t.Search + "█", groupLabel, t.Sort) + " ↓")
-                        .WithForeground(Color.BrightYellow);
+                        .WithForeground(Theme.Warning);
                 }
 
                 return new TextNode(string.Format(Strings.SearchBarInactiveFormat, groupLabel, t.Sort) + " ↓")
-                    .WithForeground(Color.Gray);
+                    .WithForeground(Theme.TextDim);
             })
             .AsLayout()
             .Height(1);
@@ -122,7 +122,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private ILayoutNode BuildHeader()
     {
         return new TextNode($" {Strings.HeaderPid,6}  {Strings.HeaderName,-20} {"",8} {Strings.HeaderCpuPercent,6}  {Strings.HeaderRam,7}  {Strings.HeaderGroup}")
-            .WithForeground(Color.BrightBlack)
+            .WithForeground(Theme.Header)
             .Height(1);
     }
 
@@ -182,23 +182,23 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  CPU   {cpuBar}  {proc.CpuPercent:F1}%").WithForeground(cpuColor).Height(1))
-            .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Color.White).Height(1))
+            .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Color.Gray).Height(1))
-            .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Color.Gray).Height(1))
-            .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(Color.Gray).Height(1))
-            .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(Color.Gray).Height(1))
-            .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(Color.Gray).Height(1))
+            .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode("").Height(1));
 
         if (isKillConfirmPending)
         {
             layout.WithChild(new TextNode(string.Format(Strings.KillConfirmFormat, proc.Name, proc.Pid))
-                .WithForeground(Color.BrightRed).Height(1));
+                .WithForeground(Theme.Error).Height(1));
         }
         else
         {
-            layout.WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Color.Gray).Height(1));
+            layout.WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Theme.TextDim).Height(1));
         }
 
         return layout;
@@ -208,7 +208,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (ViewModel.ProcessTree.Value is not { } tree)
         {
-            return new TextNode(Strings.LoadingProcessTree).WithForeground(Color.Gray);
+            return new TextNode(Strings.LoadingProcessTree).WithForeground(Theme.TextDim);
         }
 
         var layout = Layouts.Vertical();
@@ -220,7 +220,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         var indent = new string(' ', depth * 3);
         var connector = depth == 0 ? " ●" : isLast ? " └─" : " ├─";
-        var color = depth == 0 ? Color.BrightCyan : Color.Gray;
+        var color = depth == 0 ? Theme.Primary : Theme.TextDim;
         layout.WithChild(new TextNode($"{indent}{connector} {node.Name} ({node.Pid})")
             .WithForeground(color).Height(1));
         for (var i = 0; i < node.Children.Count; i++)
@@ -231,12 +231,12 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (ViewModel.ProcessEnv.Value is not { } env)
         {
-            return new TextNode(Strings.LoadingEnvironmentVars).WithForeground(Color.Gray);
+            return new TextNode(Strings.LoadingEnvironmentVars).WithForeground(Theme.TextDim);
         }
 
         _envList = new DataListNode<KeyValuePair<string, string>>(
             kv => $" {kv.Key}={kv.Value}",
-            _ => Color.White);
+            _ => Theme.Text);
         _envList.SetItems(env.OrderBy(kv => kv.Key).ToList());
         ViewModel.OverlayListNode = _envList;
         return _envList.Fill();
@@ -246,17 +246,17 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (ViewModel.ProcessHandles.Value is not { } handles)
         {
-            return new TextNode(Strings.LoadingHandles).WithForeground(Color.Gray);
+            return new TextNode(Strings.LoadingHandles).WithForeground(Theme.TextDim);
         }
 
         if (handles.Count == 0)
         {
-            return new TextNode(Strings.NoHandleInfo).WithForeground(Color.Gray);
+            return new TextNode(Strings.NoHandleInfo).WithForeground(Theme.TextDim);
         }
 
         _handlesList = new DataListNode<string>(
             h => $" {h}",
-            _ => Color.White);
+            _ => Theme.Text);
         _handlesList.SetItems(handles.ToList());
         ViewModel.OverlayListNode = _handlesList;
         return _handlesList.Fill();

@@ -28,12 +28,12 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         _cpuGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Color.Cyan)
+            .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
         _ramGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Color.Cyan)
+            .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
         _coresNode = new CpuCoresNode();
@@ -48,22 +48,22 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         _detailGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Color.Cyan)
+            .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
         _diskActiveGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Color.Cyan)
+            .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
         _diskTransferGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Color.Cyan)
+            .WithColor(Theme.Graph)
             .WithRange(0, 100_000_000);
 
         _gpuGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Color.Cyan)
+            .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
         var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
@@ -185,12 +185,12 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var (color, title, info) = section switch
         {
-            PerfDetailSection.Cpu => (Color.Cyan, "CPU", BuildCpuDetailInfo()),
-            PerfDetailSection.Ram => (Color.Cyan, "RAM", BuildRamDetailInfo()),
-            PerfDetailSection.Disk => (Color.Cyan, "Disk", BuildDiskDetailInfo()),
-            PerfDetailSection.Network => (Color.Cyan, Strings.DetailSectionNetwork, BuildNetworkDetailInfo()),
-            PerfDetailSection.Gpu => (Color.Cyan, "GPU", BuildGpuDetailInfo()),
-            _ => (Color.White, "", Layouts.Vertical())
+            PerfDetailSection.Cpu => (Theme.Graph, "CPU", BuildCpuDetailInfo()),
+            PerfDetailSection.Ram => (Theme.Graph, "RAM", BuildRamDetailInfo()),
+            PerfDetailSection.Disk => (Theme.Graph, "Disk", BuildDiskDetailInfo()),
+            PerfDetailSection.Network => (Theme.Graph, Strings.DetailSectionNetwork, BuildNetworkDetailInfo()),
+            PerfDetailSection.Gpu => (Theme.Graph, "GPU", BuildGpuDetailInfo()),
+            _ => (Theme.Text, "", Layouts.Vertical())
         };
 
         _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(Theme.Primary).WithBorderColor(Theme.Primary);
@@ -225,7 +225,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return Layouts.Vertical()
             .WithChild(new TextNode(
                     $" {ViewModel.CpuName.Value}  —  {Strings.TotalLabel} {ViewModel.CpuTotal.Value:F1}%")
-                .WithForeground(Color.Cyan).Height(1))
+                .WithForeground(Theme.Accent).Height(1))
             .WithChild(coresNode);
     }
 
@@ -237,9 +237,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         return Layouts.Vertical()
             .WithChild(new TextNode(string.Format(Strings.UsedFormat, usedGb, totalGb, pct))
-                .WithForeground(Color.White).Height(1))
+                .WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode($" {BuildBar(pct, 40)}")
-                .WithForeground(Color.Cyan).Height(1));
+                .WithForeground(Theme.Accent).Height(1));
     }
 
     private ILayoutNode BuildDiskDetailInfo()
@@ -247,7 +247,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var disks = ViewModel.Disks.Value;
         if (disks.Count == 0)
         {
-            return new TextNode(Strings.NoDisksFound).WithForeground(Color.Gray);
+            return new TextNode(Strings.NoDisksFound).WithForeground(Theme.TextDim);
         }
 
         var idx = Math.Clamp(ViewModel.DiskDetailIndex.Value, 0, disks.Count - 1);
@@ -262,11 +262,11 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             var label = new TextNode($" {disks[i].Name} ");
             if (i == idx)
             {
-                label.WithForeground(Color.Black).WithBackground(Color.BrightCyan);
+                label.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
             }
             else
             {
-                label.WithForeground(Color.Gray);
+                label.WithForeground(Theme.TextDim);
             }
 
             diskTabs.WithChild(label);
@@ -276,10 +276,10 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithChild(diskTabs.Height(1))
             .WithChild(new TextNode(string.Format(Strings.DiskUsedFormat, disk.Name, usedGb, totalGb, disk.UsedPercent,
                     BuildBar(disk.UsedPercent, 20)))
-                .WithForeground(Color.White).Height(1))
+                .WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode(
                     $" Read: {FormatBytes(disk.ReadBytesPerSec)}  Write: {FormatBytes(disk.WriteBytesPerSec)}  Active: {disk.ActiveTimePercent:F0}%")
-                .WithForeground(Color.White).Height(1))
+                .WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelActiveTime)
@@ -302,16 +302,16 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var layout = Layouts.Vertical();
         if (nets.Count == 0)
         {
-            layout.WithChild(new TextNode(Strings.NoActiveAdapters).WithForeground(Color.Gray).Height(1));
+            layout.WithChild(new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim).Height(1));
             return layout;
         }
 
         foreach (var net in nets)
         {
-            layout.WithChild(new TextNode($" {net.Name}").WithForeground(Color.Cyan).Height(1));
+            layout.WithChild(new TextNode($" {net.Name}").WithForeground(Theme.Accent).Height(1));
             layout.WithChild(
                 new TextNode($"   ↓ {FormatBytes(net.RxBytesPerSec),-14}  ↑ {FormatBytes(net.TxBytesPerSec)}")
-                    .WithForeground(Color.White).Height(1));
+                    .WithForeground(Theme.Text).Height(1));
         }
 
         return layout;
@@ -322,21 +322,21 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var gpu = ViewModel.Gpu.Value;
         if (gpu is null)
         {
-            return new TextNode(Strings.GpuNoData).WithForeground(Color.Gray);
+            return new TextNode(Strings.GpuNoData).WithForeground(Theme.TextDim);
         }
 
         var vramUsedMb = gpu.VramUsedBytes / 1024.0 / 1024;
         var vramTotalMb = gpu.VramTotalBytes / 1024.0 / 1024;
 
         return Layouts.Vertical()
-            .WithChild(new TextNode($" {gpu.Name}").WithForeground(Color.Cyan).Height(1))
+            .WithChild(new TextNode($" {gpu.Name}").WithForeground(Theme.Accent).Height(1))
             .WithChild(new TextNode($" {Strings.GpuUsage} {gpu.UsagePercent:F0}%  {BuildBar(gpu.UsagePercent, 20)}")
-                .WithForeground(Color.White).Height(1))
+                .WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode(
                     $" VRAM: {vramUsedMb:F0} / {vramTotalMb:F0} MB  ({gpu.VramUsedPercent:F1}%)  {BuildBar(gpu.VramUsedPercent, 20)}")
-                .WithForeground(Color.White).Height(1))
+                .WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode($" {Strings.GpuTemperature} {gpu.TemperatureCelsius:F0}°C")
-                .WithForeground(gpu.TemperatureCelsius > 80 ? Color.BrightRed : Color.White).Height(1));
+                .WithForeground(gpu.TemperatureCelsius > 80 ? Color.BrightRed : Theme.Text).Height(1));
     }
 
     private ILayoutNode BuildCpuPanel()
@@ -351,7 +351,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                         ViewModel.CpuTotal
                             .Select<double, ILayoutNode>(pct =>
                                 new TextNode($" {Strings.TotalLabel} {pct:F1}%")
-                                    .WithForeground(Color.Cyan))
+                                    .WithForeground(Theme.Accent))
                             .AsLayout().Height(1))
                     .WithChild(_coresNode!)
                     .WithChild(_cpuGraph!.Fill()))
@@ -374,7 +374,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                                 var totalGb = total / 1024.0 / 1024 / 1024;
                                 var pct = total > 0 ? (double)used / total * 100 : 0;
                                 return new TextNode($" {usedGb:F1} / {totalGb:F1} GiB  {pct:F1}%")
-                                    .WithForeground(Color.White);
+                                    .WithForeground(Theme.Text);
                             }).AsLayout().Height(1))
                     .WithChild(_ramGraph!.Fill())
                     .Fill())
@@ -393,7 +393,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                     {
                         if (disks.Count == 0)
                         {
-                            return new TextNode(Strings.NoDisksFound).WithForeground(Color.Gray);
+                            return new TextNode(Strings.NoDisksFound).WithForeground(Theme.TextDim);
                         }
 
                         var layout = Layouts.Vertical();
@@ -403,7 +403,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                             var totalGb = disk.TotalBytes / 1024.0 / 1024 / 1024;
                             layout.WithChild(
                                 new TextNode($" {disk.Name,-4} {usedGb:F0}/{totalGb:F0}GB {disk.UsedPercent:F0}%")
-                                    .WithForeground(Color.White).Height(1));
+                                    .WithForeground(Theme.Text).Height(1));
                         }
 
                         return layout;
@@ -423,7 +423,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                     {
                         if (nets.Count == 0)
                         {
-                            return new TextNode(Strings.NoActiveAdapters).WithForeground(Color.Gray);
+                            return new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim);
                         }
 
                         var layout = Layouts.Vertical();
@@ -431,7 +431,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                             layout.WithChild(
                                 new TextNode(
                                         $" {net.Name}  ↓{FormatBytes(net.RxBytesPerSec)}  ↑{FormatBytes(net.TxBytesPerSec)}")
-                                    .WithForeground(Color.White).Height(1));
+                                    .WithForeground(Theme.Text).Height(1));
                         return layout;
                     }).AsLayout())
             .Fill();
@@ -451,16 +451,16 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                             {
                                 if (gpu is null)
                                 {
-                                    return new TextNode(Strings.GpuNoData).WithForeground(Color.Gray);
+                                    return new TextNode(Strings.GpuNoData).WithForeground(Theme.TextDim);
                                 }
 
                                 var vramMb = gpu.VramUsedBytes / 1024.0 / 1024;
                                 var vramTotalMb = gpu.VramTotalBytes / 1024.0 / 1024;
                                 return Layouts.Vertical()
                                     .WithChild(new TextNode($" {gpu.UsagePercent:F0}%  {gpu.TemperatureCelsius:F0}°C")
-                                        .WithForeground(Color.White).Height(1))
+                                        .WithForeground(Theme.Text).Height(1))
                                     .WithChild(new TextNode($" VRAM {vramMb:F0}/{vramTotalMb:F0}MB")
-                                        .WithForeground(Color.White).Height(1));
+                                        .WithForeground(Theme.Text).Height(1));
                             }).AsLayout())
                     .WithChild(_gpuGraph!.Fill()))
             .Fill();

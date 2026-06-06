@@ -194,7 +194,7 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
         for (var row = 0; row < height; row++)
         {
             var isThumb = row >= thumbTop && row < thumbTop + thumbSize;
-            ctx.SetForeground(isThumb ? Color.White : Color.BrightBlack);
+            ctx.SetForeground(isThumb ? Theme.Text : Theme.Header);
             ctx.WriteAt(x, row, isThumb ? '█' : '░');
         }
         ctx.ResetColors();

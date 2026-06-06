@@ -34,10 +34,10 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             },
             c => c.State switch
             {
-                "Established" => Color.White,
-                "LISTEN" => Color.Gray,
-                "TimeWait" or "CloseWait" => Color.Gray,
-                _ => Color.Gray
+                "Established" => Theme.Text,
+                "LISTEN" => Theme.TextDim,
+                "TimeWait" or "CloseWait" => Theme.TextDim,
+                _ => Theme.TextDim
             });
 
         ViewModel.ListNode = _list;
@@ -51,7 +51,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 .WithBorderColor(Theme.Primary)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderProcess,-16} {Strings.HeaderPid,6} {"Proto",-4} {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus}")
-                        .WithForeground(Color.BrightBlack).Height(1))
+                        .WithForeground(Theme.Header).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
             .WithChild(BuildStatusBar());
@@ -72,11 +72,11 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 if (active)
                 {
                     return (ILayoutNode)new TextNode($" / {search}█")
-                        .WithForeground(Color.BrightYellow);
+                        .WithForeground(Theme.Warning);
                 }
 
                 return new TextNode(Strings.NetworkSearchHint)
-                    .WithForeground(Color.Gray);
+                    .WithForeground(Theme.TextDim);
             }).AsLayout().Height(1);
     }
 

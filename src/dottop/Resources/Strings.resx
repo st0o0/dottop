@@ -330,4 +330,26 @@
   <data name="LangEn" xml:space="preserve">
     <value>English</value>
   </data>
+  <!-- Update -->
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>Update available: {0}</value>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Downloading update...</value>
+  </data>
+  <data name="UpdateInstalling" xml:space="preserve">
+    <value>Installing update...</value>
+  </data>
+  <data name="UpdateComplete" xml:space="preserve">
+    <value>Update complete! Restarting...</value>
+  </data>
+  <data name="UpdateFailed" xml:space="preserve">
+    <value>Update failed</value>
+  </data>
+  <data name="UpdatePressU" xml:space="preserve">
+    <value>[U] Update</value>
+  </data>
+  <data name="CurrentVersion" xml:space="preserve">
+    <value>Version: {0}</value>
+  </data>
 </root>

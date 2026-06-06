@@ -9,6 +9,7 @@ namespace dottop.Pages;
 public class SettingsViewModel : ReactiveViewModel
 {
     private readonly SettingsService _settingsService;
+    private readonly UpdateService _updateService;
 
     public ReactiveProperty<int> SelectedRow { get; } = new(0);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
@@ -28,9 +29,10 @@ public class SettingsViewModel : ReactiveViewModel
         ["system", "de", "en"],
     ];
 
-    public SettingsViewModel(SettingsService settingsService)
+    public SettingsViewModel(SettingsService settingsService, UpdateService updateService)
     {
         _settingsService = settingsService;
+        _updateService = updateService;
     }
 
     public int RowCount => 6;
@@ -90,8 +92,22 @@ public class SettingsViewModel : ReactiveViewModel
 
     public override void OnActivated()
     {
-        StatusMessage.Value = $" {Strings.SettingsSaved} ({_settingsService.FilePath})";
+        UpdateStatusMessage();
         Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
+    }
+
+    private void UpdateStatusMessage()
+    {
+        var versionInfo = string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
+        if (_updateService.UpdateAvailable)
+        {
+            var updateInfo = string.Format(Strings.UpdateAvailable, _updateService.LatestVersion);
+            StatusMessage.Value = $" {versionInfo} | {updateInfo} | {Strings.UpdatePressU}";
+        }
+        else
+        {
+            StatusMessage.Value = $" {versionInfo} | {_settingsService.FilePath}";
+        }
     }
 
     private void HandleKey(KeyPressed key)
@@ -129,7 +145,38 @@ public class SettingsViewModel : ReactiveViewModel
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
+            case ConsoleKey.U:
+                if (_updateService.UpdateAvailable)
+                {
+                    _ = PerformUpdateAsync();
+                }
+                break;
             case ConsoleKey.Q: Shutdown(); break;
+        }
+    }
+
+    private async Task PerformUpdateAsync()
+    {
+        StatusMessage.Value = $" {Strings.UpdateDownloading}";
+        var success = await _updateService.PerformUpdateAsync(progress =>
+        {
+            StatusMessage.Value = progress switch
+            {
+                "Downloading..." => $" {Strings.UpdateDownloading}",
+                "Extracting..." => $" {Strings.UpdateInstalling}",
+                _ => $" {progress}"
+            };
+        });
+
+        if (success)
+        {
+            StatusMessage.Value = $" {Strings.UpdateComplete}";
+            await Task.Delay(1500);
+            Shutdown();
+        }
+        else
+        {
+            StatusMessage.Value = $" {Strings.UpdateFailed}";
         }
     }
 

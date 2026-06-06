@@ -54,6 +54,10 @@ var settingsService = new SettingsService();
 settingsService.Load();
 settingsService.ApplyAll();
 
+var updateService = new UpdateService();
+builder.Services.AddSingleton(updateService);
+_ = updateService.CheckForUpdatesAsync();
+
 var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
 
 builder.Services.AddSingleton(settingsService);

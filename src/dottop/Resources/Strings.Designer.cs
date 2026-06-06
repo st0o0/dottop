@@ -151,4 +151,13 @@ internal class Strings
     internal static string LangSystem => ResourceManager.GetString("LangSystem", resourceCulture) ?? "";
     internal static string LangDe => ResourceManager.GetString("LangDe", resourceCulture) ?? "";
     internal static string LangEn => ResourceManager.GetString("LangEn", resourceCulture) ?? "";
+
+    // Update
+    internal static string UpdateAvailable => ResourceManager.GetString("UpdateAvailable", resourceCulture) ?? "";
+    internal static string UpdateDownloading => ResourceManager.GetString("UpdateDownloading", resourceCulture) ?? "";
+    internal static string UpdateInstalling => ResourceManager.GetString("UpdateInstalling", resourceCulture) ?? "";
+    internal static string UpdateComplete => ResourceManager.GetString("UpdateComplete", resourceCulture) ?? "";
+    internal static string UpdateFailed => ResourceManager.GetString("UpdateFailed", resourceCulture) ?? "";
+    internal static string UpdatePressU => ResourceManager.GetString("UpdatePressU", resourceCulture) ?? "";
+    internal static string CurrentVersion => ResourceManager.GetString("CurrentVersion", resourceCulture) ?? "";
 }

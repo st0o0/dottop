@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.4.0](https://github.com/st0o0/dottop/compare/v0.3.0...v0.4.0) (2026-06-06)
+
+
+### Features
+
+* real per-core CPU via NtQuerySystemInformation (Win) and /proc/stat (Linux) ([58a32a0](https://github.com/st0o0/dottop/commit/58a32a0e50257f157bbaa67fbaba3f819675a74a))
+
+
+### Bug Fixes
+
+* catch without return so tick continues to write data after HW failure ([d2835a0](https://github.com/st0o0/dottop/commit/d2835a0f111a32aae7f64cbff7cf9812d8a3b947))
+* ensure disk metrics initialize only once, guard with try-catch ([75881df](https://github.com/st0o0/dottop/commit/75881dfe02780bf25c01afc10abd65357ec8c966))
+* force ModalNode fullscreen with Height(999) on content ([54bcc8b](https://github.com/st0o0/dottop/commit/54bcc8b888e752a381d52a7d008abc791e3eaad4))
+* infinite retry with 2s backoff for ConnectStream, resilient tick handlers ([d4a6212](https://github.com/st0o0/dottop/commit/d4a621281f94e1af7c20c6ffc910dab5ef5af121))
+* inject release version into all assembly version fields in CI ([86cf271](https://github.com/st0o0/dottop/commit/86cf2714efa73ec6b4bc44195bead85371a9feeb))
+* inject release version into all assembly version fields in CI ([#7](https://github.com/st0o0/dottop/issues/7)) ([4bb10f4](https://github.com/st0o0/dottop/commit/4bb10f44b687127329f0056692e9c275ca5a4242))
+* make WindowsCpuMetrics robust against PerformanceCounter failures ([8049bfd](https://github.com/st0o0/dottop/commit/8049bfdad3c7c782eba040fb30e2b398571c23e3))
+* Performance detail modal uses full screen, no double border ([fbb9ba8](https://github.com/st0o0/dottop/commit/fbb9ba8df460c13f89f202e44b8e5a189d144051))
+* remove blocking PreStart, increase Ask timeout to 60s ([237bafa](https://github.com/st0o0/dottop/commit/237bafa6b7195d0273942b3e09da1bcd08b693e3))
+* restore CPU baseline measurement on first tick for correct core values ([ae2f753](https://github.com/st0o0/dottop/commit/ae2f753786c8a827f623e2fffada1e7ea0f0fb69))
+* retry ConnectStream up to 3 times on timeout with 1s delay ([6d1a01d](https://github.com/st0o0/dottop/commit/6d1a01d6a0ae2f666f7815ba88504ecc84669802))
+* revert row position, reuse graph nodes to prevent history reset ([1439671](https://github.com/st0o0/dottop/commit/1439671fd08ac63a14244344b66d7313fda5ef8c))
+* share HardwareInfo via constructor, fix CPU baseline, fix Linux CI hang ([43d9553](https://github.com/st0o0/dottop/commit/43d955378aa75e192a87f8ec9e6f31f2ac2b32a2))
+* skip DiskMonitorActor test on Linux, increase WMI test timeouts ([59545a7](https://github.com/st0o0/dottop/commit/59545a7c414a18af66424f9d65c8a5dce884515c))
+* skip Hardware.Info and WMI tests on Linux to prevent CI hang ([16c89ea](https://github.com/st0o0/dottop/commit/16c89eac8229c122c3c69a6b2edf8dd03e2c3376))
+* use Layouts.Stack for modal overlays to get full screen bounds ([3057280](https://github.com/st0o0/dottop/commit/3057280e7df3ff02f99609443313bb607e27c660))
+* wrap all Hardware.Info calls in try-catch to prevent actor crashes ([523ecfb](https://github.com/st0o0/dottop/commit/523ecfb44a8904f55d34aaa4ed6b2080cfa157f4))
+
+
+### Performance Improvements
+
+* all 4 HW actors share single HardwareInfo - eliminates 3 WMI connections ([31002fa](https://github.com/st0o0/dottop/commit/31002fa0eed1c8f7c75f4109b3f291af6eaf1881))
+* eliminate ALL WMI usage - zero WMI Provider Host overhead ([d8844ad](https://github.com/st0o0/dottop/commit/d8844adb50057606951c4c1dcaf036a8906ce226))
+* reduce CPU WMI overhead with 100ms measurement delay and lazy baseline ([0487cb9](https://github.com/st0o0/dottop/commit/0487cb9363d6e4acc143583bdd13ea28534b1b13))
+* remove Hardware.Info completely, zero WMI usage ([eaf6728](https://github.com/st0o0/dottop/commit/eaf672824e0e931540822a8a25f33166e3445abe))
+* replace WMI CPU measurement with GetSystemTimes kernel API ([7e5017d](https://github.com/st0o0/dottop/commit/7e5017d79ed4461e218271655d8ca5aff3a47d1a))
+
+
+### Reverts
+
+* remove PerformanceCounter CPU metrics, back to HardwareInfo ([1f1393e](https://github.com/st0o0/dottop/commit/1f1393efd7c70a1773e226ee760f1f25f9a4e9e2))
+* restore working ModalNode for Performance detail, fix status bar position ([5c60918](https://github.com/st0o0/dottop/commit/5c60918dc8704a4a266626a0732def9430763777))
+
 ## [0.3.0](https://github.com/st0o0/dottop/compare/v0.2.0...v0.3.0) (2026-06-06)
 
 

@@ -6,19 +6,27 @@ namespace dottop.Platform.Windows;
 [SupportedOSPlatform("windows")]
 public sealed class WindowsDiskMetrics : IDiskMetricsProvider
 {
-    private Dictionary<string, DiskPerfCounters>? _counters;
+    private volatile Dictionary<string, DiskPerfCounters>? _counters;
+    private volatile bool _ready;
 
     public void Initialize()
     {
-        _counters ??= InitPerfCounters();
+        var counters = InitPerfCounters();
+
+        foreach (var c in counters.Values)
+        {
+            try { c.Read.NextValue(); c.Write.NextValue(); c.Active.NextValue(); }
+            catch { }
+        }
+
+        _counters = counters;
+        _ready = true;
     }
 
     public (ulong ReadBytesPerSec, ulong WriteBytesPerSec, double ActivePercent) GetMetrics(string diskName)
     {
-        if (_counters is null || !_counters.TryGetValue(diskName, out var c))
-        {
+        if (!_ready || _counters is null || !_counters.TryGetValue(diskName, out var c))
             return (0, 0, 0);
-        }
 
         try
         {
@@ -33,10 +41,8 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
     public void Dispose()
     {
         if (_counters is not null)
-        {
             foreach (var c in _counters.Values)
                 c.Dispose();
-        }
     }
 
     private static Dictionary<string, DiskPerfCounters> InitPerfCounters()
@@ -48,10 +54,7 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
             foreach (var instance in category.GetInstanceNames())
             {
                 if (instance == "_Total" || instance.Length < 2 || instance[1] != ':')
-                {
                     continue;
-                }
-
                 try
                 {
                     counters[instance[..2]] = new DiskPerfCounters(

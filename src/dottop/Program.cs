@@ -22,6 +22,7 @@ var builder = Host.CreateApplicationBuilder(args);
 IDiskMetricsProvider diskMetrics = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsDiskMetrics()
     : new LinuxDiskMetrics();
+Task.Run(() => diskMetrics.Initialize());
 IProcessTreeProvider processTree = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsProcessTree()
     : new LinuxProcessTree();

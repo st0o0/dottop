@@ -84,12 +84,6 @@ public sealed class DiskMonitorActor : ReceiveActor
         return !string.IsNullOrWhiteSpace(volumeName) ? volumeName : driveName;
     }
 
-    protected override void PreStart()
-    {
-        _diskMetrics.Initialize();
-        base.PreStart();
-    }
-
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();

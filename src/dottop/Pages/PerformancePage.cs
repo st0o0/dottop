@@ -80,14 +80,16 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         return Layouts.Vertical()
             .WithChild(new TabBarNode(1))
-            .WithChild(Layouts.Horizontal()
-                .WithChild(BuildCpuPanel())
-                .WithSpacing(1)
-                .WithChild(BuildRamPanel())
-                .HeightPercent(50)
+            .WithChild(Layouts.Vertical()
+                .WithChild(Layouts.Horizontal()
+                    .WithChild(BuildCpuPanel())
+                    .WithSpacing(1)
+                    .WithChild(BuildRamPanel())
+                    .HeightPercent(50)
+                    .Fill())
+                .WithChild(bottomRow.Fill())
                 .Fill())
-            .WithChild(bottomRow.Fill())
-            .WithChild(new TextNode(Strings.PerfStatusBar)
+            .WithChild(new TextNode($" {Strings.PerfStatusBar}")
                 .WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar).Height(1))
             .WithChild(conditionalDetail);
     }

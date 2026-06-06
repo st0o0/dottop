@@ -4,6 +4,7 @@ namespace dottop.Themes;
 
 public static class Theme
 {
+    public static Color Background { get; private set; } = Color.Default;
     public static Color Primary { get; private set; } = Color.BrightCyan;
     public static Color Text { get; private set; } = Color.White;
     public static Color TextDim { get; private set; } = Color.Gray;
@@ -21,11 +22,24 @@ public static class Theme
     public static Color Header { get; private set; } = Color.BrightBlack;
     public static Color Accent { get; private set; } = Color.Cyan;
 
+    public static void SetTerminalBackground()
+    {
+        if (Background == Color.Default) return;
+        var code = Background == Color.White ? "47" : "40";
+        Console.Write($"\x1b[{code}m\x1b[2J\x1b[H");
+    }
+
+    public static void ResetTerminalBackground()
+    {
+        Console.Write("\x1b[0m\x1b[2J\x1b[H");
+    }
+
     public static void Apply(string theme)
     {
         switch (theme)
         {
             case "light":
+                Background = Color.White;
                 Primary = Color.Blue;
                 Text = Color.Black;
                 TextDim = Color.DarkGray;
@@ -44,6 +58,7 @@ public static class Theme
                 Accent = Color.Blue;
                 break;
             case "nord":
+                Background = Color.Default;
                 Primary = Color.Cyan;
                 Text = Color.White;
                 TextDim = Color.BrightBlack;
@@ -62,6 +77,7 @@ public static class Theme
                 Accent = Color.BrightCyan;
                 break;
             default: // dark
+                Background = Color.Default;
                 Primary = Color.BrightCyan;
                 Text = Color.White;
                 TextDim = Color.Gray;

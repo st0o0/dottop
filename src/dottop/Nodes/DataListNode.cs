@@ -136,6 +136,13 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
 
         _viewportHeight = bounds.Height;
         var ctx = context.CreateSubContext(bounds);
+
+        if (Theme.Background != Color.Default)
+        {
+            ctx.SetBackground(Theme.Background);
+            ctx.Fill(0, 0, bounds.Width, bounds.Height);
+        }
+
         var showScrollbar = _items.Count > _viewportHeight;
         var contentWidth = showScrollbar ? bounds.Width - 1 : bounds.Width;
 

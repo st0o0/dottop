@@ -56,6 +56,8 @@ settingsService.Load();
 
 Theme.Apply(settingsService.Settings.Theme);
 
+Theme.SetTerminalBackground();
+
 if (settingsService.Settings.Language != "system")
 {
     var culture = new CultureInfo(settingsService.Settings.Language);

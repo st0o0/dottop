@@ -33,8 +33,6 @@ public sealed class DiskMonitorActor : ReceiveActor
                 FullMode = BoundedChannelFullMode.DropOldest
             });
 
-            _diskMetrics.Initialize();
-
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
                 TimeSpan.Zero, _interval, Self, new Tick(), Self);
 
@@ -84,6 +82,12 @@ public sealed class DiskMonitorActor : ReceiveActor
             }
         }
         return !string.IsNullOrWhiteSpace(volumeName) ? volumeName : driveName;
+    }
+
+    protected override void PreStart()
+    {
+        _diskMetrics.Initialize();
+        base.PreStart();
     }
 
     private void CleanupPreviousStream()

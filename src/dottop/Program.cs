@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Runtime.InteropServices;
 using Akka.Hosting;
 using dottop.Actors;
@@ -53,17 +52,7 @@ if (!gpuMetrics.IsAvailable)
 
 var settingsService = new SettingsService();
 settingsService.Load();
-
-Theme.Apply(settingsService.Settings.Theme);
-
-Theme.SetTerminalBackground();
-
-if (settingsService.Settings.Language != "system")
-{
-    var culture = new CultureInfo(settingsService.Settings.Language);
-    CultureInfo.CurrentUICulture = culture;
-    CultureInfo.CurrentCulture = culture;
-}
+settingsService.ApplyAll();
 
 var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
 

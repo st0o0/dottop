@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Text.Json;
 using dottop.Models;
+using dottop.Themes;
 
 namespace dottop.Services;
 
@@ -10,8 +12,9 @@ public class SettingsService
     private static readonly string SettingsPath = Path.Combine(SettingsDir, "settings.json");
 
     public AppSettings Settings { get; private set; } = new();
-
     public string FilePath => SettingsPath;
+
+    public event Action? OnSettingsApplied;
 
     public void Load()
     {
@@ -35,5 +38,20 @@ public class SettingsService
             File.WriteAllText(SettingsPath, json);
         }
         catch { }
+    }
+
+    public void ApplyAll()
+    {
+        Theme.Apply(Settings.Theme);
+        Theme.SetTerminalBackground();
+
+        if (Settings.Language != "system")
+        {
+            var culture = new CultureInfo(Settings.Language);
+            CultureInfo.CurrentUICulture = culture;
+            CultureInfo.CurrentCulture = culture;
+        }
+
+        OnSettingsApplied?.Invoke();
     }
 }

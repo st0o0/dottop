@@ -82,7 +82,8 @@ public class SettingsViewModel : ReactiveViewModel
             case 5: settings.Language = key; break;
         }
         _settingsService.Save();
-        StatusMessage.Value = $" {Strings.SettingsSaved} ({_settingsService.FilePath})";
+        _settingsService.ApplyAll();
+        StatusMessage.Value = $" ✓ {Strings.SettingsSaved}";
         _settingsChanged.OnNext(Unit.Default);
     }
 
@@ -115,6 +116,12 @@ public class SettingsViewModel : ReactiveViewModel
                 break;
             case ConsoleKey.RightArrow:
                 CycleOption(1);
+                break;
+            case ConsoleKey.S:
+                _settingsService.Save();
+                _settingsService.ApplyAll();
+                StatusMessage.Value = $" ✓ {Strings.SettingsSaved}";
+                _settingsChanged.OnNext(Unit.Default);
                 break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;

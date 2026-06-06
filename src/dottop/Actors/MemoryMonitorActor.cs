@@ -7,19 +7,18 @@ namespace dottop.Actors;
 
 public sealed class MemoryMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw;
+    private readonly HardwareInfo _hw = new();
     private readonly TimeSpan _interval;
     private Channel<MemorySnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
     private ulong _totalCapacity;
 
-    public static Props Props(HardwareInfo hw, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new MemoryMonitorActor(hw, interval));
+    public static Props Props(TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new MemoryMonitorActor(interval));
 
-    public MemoryMonitorActor(HardwareInfo hw, TimeSpan interval)
+    public MemoryMonitorActor(TimeSpan interval)
     {
-        _hw = hw;
         _interval = interval;
 
         Receive<StartMonitoring>(_ =>
@@ -43,20 +42,12 @@ public sealed class MemoryMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            if (_totalCapacity == 0)
-            {
-                try
-                {
-                    _hw.RefreshMemoryList();
-                    _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
-                }
-                catch { }
-            }
-
             try { _hw.RefreshMemoryStatus(); }
             catch { }
 
             var status = _hw.MemoryStatus;
+            if (_totalCapacity == 0)
+                _totalCapacity = status.TotalPhysical;
             var used = status.TotalPhysical - status.AvailablePhysical;
             _channel.Writer.TryWrite(new MemorySnapshot(_totalCapacity, used));
         });

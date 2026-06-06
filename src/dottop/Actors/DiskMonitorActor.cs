@@ -2,25 +2,22 @@ using System.Threading.Channels;
 using Akka.Actor;
 using dottop.Models;
 using dottop.Platform;
-using Hardware.Info;
 
 namespace dottop.Actors;
 
 public sealed class DiskMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw;
     private readonly IDiskMetricsProvider _diskMetrics;
     private readonly TimeSpan _interval;
     private Channel<List<DiskSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
 
-    public static Props Props(HardwareInfo hw, IDiskMetricsProvider diskMetrics, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new DiskMonitorActor(hw, diskMetrics, interval));
+    public static Props Props(IDiskMetricsProvider diskMetrics, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new DiskMonitorActor(diskMetrics, interval));
 
-    public DiskMonitorActor(HardwareInfo hw, IDiskMetricsProvider diskMetrics, TimeSpan interval)
+    public DiskMonitorActor(IDiskMetricsProvider diskMetrics, TimeSpan interval)
     {
-        _hw = hw;
         _diskMetrics = diskMetrics;
         _interval = interval;
 
@@ -45,44 +42,21 @@ public sealed class DiskMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            try { _hw.RefreshDriveList(); }
-            catch { }
-
-            var disks = _hw.DriveList
-                .Where(d => d.PartitionList.Count > 0)
-                .SelectMany(d => d.PartitionList
-                    .Where(p => p.VolumeList.Count > 0)
-                    .SelectMany(p => p.VolumeList)
-                    .Select(v =>
-                    {
-                        var name = ExtractDriveLetter(v.Name, d.Name);
-                        var (read, write, active) = _diskMetrics.GetMetrics(name);
-                        return new DiskSnapshot(name, v.Size, v.FreeSpace, read, write, active);
-                    }))
-                .Where(d => d.TotalBytes > 0)
+            var disks = DriveInfo.GetDrives()
+                .Where(d => d.IsReady && d.TotalSize > 0)
+                .Select(d =>
+                {
+                    var name = d.Name.TrimEnd('\\', '/');
+                    if (name.Length >= 2 && name[1] == ':') name = name[..2];
+                    var (read, write, active) = _diskMetrics.GetMetrics(name);
+                    return new DiskSnapshot(name, (ulong)d.TotalSize, (ulong)d.AvailableFreeSpace, read, write, active);
+                })
                 .OrderBy(d => d.Name)
                 .ToList();
             _channel.Writer.TryWrite(disks);
         });
     }
 
-    private static string ExtractDriveLetter(string volumeName, string driveName)
-    {
-        foreach (var s in new[] { volumeName, driveName })
-        {
-            if (string.IsNullOrWhiteSpace(s))
-            {
-                continue;
-            }
-
-            var trimmed = s.TrimEnd('\\', '/');
-            if (trimmed is [_, ':', ..])
-            {
-                return trimmed[..2];
-            }
-        }
-        return !string.IsNullOrWhiteSpace(volumeName) ? volumeName : driveName;
-    }
 
     private void CleanupPreviousStream()
     {

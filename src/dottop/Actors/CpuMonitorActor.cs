@@ -12,6 +12,7 @@ public sealed class CpuMonitorActor : ReceiveActor
     private Channel<CpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
+    private bool _baselined;
 
     public static Props Props(TimeSpan interval) =>
         Akka.Actor.Props.Create(() => new CpuMonitorActor(interval));
@@ -40,6 +41,12 @@ public sealed class CpuMonitorActor : ReceiveActor
         Receive<Tick>(_ =>
         {
             if (_channel is null) return;
+
+            if (!_baselined)
+            {
+                _hw.RefreshCPUList(includePercentProcessorTime: false, 250, false);
+                _baselined = true;
+            }
 
             _hw.RefreshCPUList(includePercentProcessorTime: true, 250, false);
             var totalPercent = _hw.CpuList.Count > 0

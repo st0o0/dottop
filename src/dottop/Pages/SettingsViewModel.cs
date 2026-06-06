@@ -83,6 +83,7 @@ public class SettingsViewModel : ReactiveViewModel
         }
         _settingsService.Save();
         _settingsService.ApplyAll();
+        RequestRedraw();
         StatusMessage.Value = $" ✓ {Strings.SettingsSaved}";
         _settingsChanged.OnNext(Unit.Default);
     }
@@ -120,6 +121,7 @@ public class SettingsViewModel : ReactiveViewModel
             case ConsoleKey.S:
                 _settingsService.Save();
                 _settingsService.ApplyAll();
+                RequestRedraw();
                 StatusMessage.Value = $" ✓ {Strings.SettingsSaved}";
                 _settingsChanged.OnNext(Unit.Default);
                 break;

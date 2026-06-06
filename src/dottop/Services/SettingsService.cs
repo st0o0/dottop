@@ -52,6 +52,8 @@ public class SettingsService
             CultureInfo.CurrentCulture = culture;
         }
 
+        Console.Write("\x1b[2J\x1b[H");
+
         OnSettingsApplied?.Invoke();
     }
 }

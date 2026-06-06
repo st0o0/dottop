@@ -41,7 +41,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
         var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
 
-        return Layouts.Vertical()
+        var mainLayout = Layouts.Vertical()
             .WithChild(new TabBarNode(2))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
@@ -53,8 +53,9 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                         .WithForeground(Theme.Header).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
-            .WithChild(BuildStatusBar())
-            .WithChild(conditionalDetail);
+            .WithChild(BuildStatusBar());
+
+        return Layouts.Stack(mainLayout, conditionalDetail);
     }
 
     public override void OnNavigatedTo()

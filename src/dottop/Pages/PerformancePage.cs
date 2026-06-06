@@ -78,7 +78,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             bottomRow.WithSpacing(1).WithChild(BuildGpuPanel());
         }
 
-        return Layouts.Vertical()
+        var mainLayout = Layouts.Vertical()
             .WithChild(new TabBarNode(1))
             .WithChild(Layouts.Horizontal()
                 .WithChild(BuildCpuPanel())
@@ -87,8 +87,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .HeightPercent(50))
             .WithChild(bottomRow.Fill())
             .WithChild(new TextNode($" {Strings.PerfStatusBar}")
-                .WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar).Height(1))
-            .WithChild(conditionalDetail);
+                .WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar).Height(1));
+
+        return Layouts.Stack(mainLayout, conditionalDetail);
     }
 
     public override void OnNavigatedTo()

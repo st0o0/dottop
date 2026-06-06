@@ -45,7 +45,8 @@ public sealed class DiskMonitorActor : ReceiveActor
             if (_channel is null) return;
 
             try { _hw.RefreshDriveList(); }
-            catch { return; }
+            catch { }
+
             var disks = _hw.DriveList
                 .Where(d => d.PartitionList.Count > 0)
                 .SelectMany(d => d.PartitionList

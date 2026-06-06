@@ -42,17 +42,18 @@ public sealed class MemoryMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            try
+            if (_totalCapacity == 0)
             {
-                if (_totalCapacity == 0)
+                try
                 {
                     _hw.RefreshMemoryList();
                     _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
                 }
-
-                _hw.RefreshMemoryStatus();
+                catch { }
             }
-            catch { return; }
+
+            try { _hw.RefreshMemoryStatus(); }
+            catch { }
 
             var status = _hw.MemoryStatus;
             var used = status.TotalPhysical - status.AvailablePhysical;

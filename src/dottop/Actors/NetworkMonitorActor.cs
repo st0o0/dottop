@@ -42,7 +42,7 @@ public sealed class NetworkMonitorActor : ReceiveActor
             if (_channel is null) return;
 
             try { _hw.RefreshNetworkAdapterList(); }
-            catch { return; }
+            catch { }
             var nets = _hw.NetworkAdapterList
                 .Where(n => n.Speed > 0)
                 .Select(n => new NetworkSnapshot(

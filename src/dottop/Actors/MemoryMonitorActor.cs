@@ -42,18 +42,17 @@ public sealed class MemoryMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
+            if (_totalCapacity == 0)
+            {
+                _hw.RefreshMemoryList();
+                _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
+            }
+
             _hw.RefreshMemoryStatus();
             var status = _hw.MemoryStatus;
             var used = status.TotalPhysical - status.AvailablePhysical;
             _channel.Writer.TryWrite(new MemorySnapshot(_totalCapacity, used));
         });
-    }
-
-    protected override void PreStart()
-    {
-        _hw.RefreshMemoryList();
-        _totalCapacity = _hw.MemoryList.Aggregate(0UL, (sum, m) => sum + m.Capacity);
-        base.PreStart();
     }
 
     private void CleanupPreviousStream()

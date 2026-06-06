@@ -51,12 +51,6 @@ public sealed class CpuMonitorActor : ReceiveActor
         });
     }
 
-    protected override void PreStart()
-    {
-        _hw.RefreshCPUList(includePercentProcessorTime: false, 250, false);
-        base.PreStart();
-    }
-
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();

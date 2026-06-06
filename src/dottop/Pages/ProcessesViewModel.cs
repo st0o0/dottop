@@ -97,7 +97,7 @@ public class ProcessesViewModel : ReactiveViewModel
             _processActionActor = actionTask.Result;
 
             var stream = await monitorTask.Result.Ask<MonitoringStream<List<ProcessSnapshot>>>(
-                new StartMonitoring(), TimeSpan.FromSeconds(30));
+                new StartMonitoring(), TimeSpan.FromSeconds(60));
             await foreach (var list in stream.Data.WithCancellation(ct))
             {
                 AllProcesses.Value = list;

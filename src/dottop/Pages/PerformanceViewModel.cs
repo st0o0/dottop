@@ -134,7 +134,7 @@ public class PerformanceViewModel : ReactiveViewModel
             try
             {
                 var actor = await actorRef.GetAsync(ct);
-                var stream = await actor.Ask<MonitoringStream<TData>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
+                var stream = await actor.Ask<MonitoringStream<TData>>(new StartMonitoring(), TimeSpan.FromSeconds(60));
                 await foreach (var item in stream.Data.WithCancellation(ct))
                     handler(item);
                 return;

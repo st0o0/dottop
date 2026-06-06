@@ -205,7 +205,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(info)
-                .WithChild(_detailGraph.Fill());
+                .WithChild(_detailGraph.Height(999));
         }
         else if (section == PerfDetailSection.Disk)
         {
@@ -219,13 +219,13 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .WithRange(0, 100_000_000);
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
-                .WithChild(Layouts.Vertical().WithChild(info).Fill());
+                .WithChild(Layouts.Vertical().WithChild(info).Height(999));
         }
         else
         {
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
-                .WithChild(Layouts.Vertical().WithChild(info).Fill());
+                .WithChild(Layouts.Vertical().WithChild(info).Height(999));
         }
     }
 

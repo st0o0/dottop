@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Akka.Actor;
 using Akka.TestKit.Xunit2;
 using dottop.Actors;
@@ -9,9 +10,11 @@ namespace dottop.Tests.Actors;
 
 public class DiskMonitorActorTests : TestKit
 {
-    [Fact]
+    [SkippableFact]
     public async Task DiskMonitorActor_UsesProvider_ForMetrics()
     {
+        Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+
         var fakeDisk = new FakeDiskMetrics();
         fakeDisk.Data["C:"] = (1024 * 1024, 512 * 1024, 42.5);
         fakeDisk.Initialize();

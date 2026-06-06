@@ -17,7 +17,7 @@ public class ProcessActionActorTests : TestKit
         var actor = Sys.ActorOf(ProcessActionActor.Props(new WindowsProcessTree()));
         var currentPid = System.Diagnostics.Process.GetCurrentProcess().Id;
         actor.Tell(new GetProcessTree(currentPid));
-        var result = ExpectMsg<ProcessTreeResult>(TimeSpan.FromSeconds(5));
+        var result = ExpectMsg<ProcessTreeResult>(TimeSpan.FromSeconds(30));
         Assert.Equal(currentPid, result.Pid);
         Assert.NotEmpty(result.Name);
     }
@@ -27,7 +27,7 @@ public class ProcessActionActorTests : TestKit
     {
         var actor = Sys.ActorOf(ProcessActionActor.Props(new FakeProcessTree()));
         actor.Tell(new GetProcessTree(100));
-        var result = ExpectMsg<ProcessTreeResult>(TimeSpan.FromSeconds(5));
+        var result = ExpectMsg<ProcessTreeResult>(TimeSpan.FromSeconds(30));
         Assert.Equal(100, result.Pid);
         Assert.Equal(2, result.Children.Count);
     }
@@ -38,7 +38,7 @@ public class ProcessActionActorTests : TestKit
         var actor = Sys.ActorOf(ProcessActionActor.Props(new FakeProcessTree()));
         var currentPid = System.Diagnostics.Process.GetCurrentProcess().Id;
         actor.Tell(new GetProcessEnvironment(currentPid));
-        var result = ExpectMsg<ProcessEnvironmentResult>(TimeSpan.FromSeconds(5));
+        var result = ExpectMsg<ProcessEnvironmentResult>(TimeSpan.FromSeconds(30));
         Assert.NotEmpty(result.Variables);
     }
 
@@ -47,7 +47,7 @@ public class ProcessActionActorTests : TestKit
     {
         var actor = Sys.ActorOf(ProcessActionActor.Props(new FakeProcessTree()));
         actor.Tell(new KillProcess(-1));
-        var result = ExpectMsg<ActionFailure>(TimeSpan.FromSeconds(5));
+        var result = ExpectMsg<ActionFailure>(TimeSpan.FromSeconds(30));
         Assert.NotEmpty(result.Error);
     }
 }

@@ -7,7 +7,6 @@ using dottop.Platform.Linux;
 using dottop.Platform.Windows;
 using dottop.Services;
 using dottop.Themes;
-using Hardware.Info;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Termina.Hosting;
@@ -61,13 +60,6 @@ _ = updateService.CheckForUpdatesAsync();
 
 var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
 
-ICpuMetricsProvider cpuMetrics = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-    ? new WindowsCpuMetrics()
-    : new LinuxCpuMetrics();
-
-// Disk+Network share HardwareInfo (for drive/network enumeration only — no CPU WMI)
-var sharedHw = new HardwareInfo(TimeSpan.FromSeconds(2));
-
 builder.Services.AddSingleton(settingsService);
 builder.Services.AddSingleton(connectionProvider);
 builder.Services.AddSingleton(gpuMetrics);
@@ -76,16 +68,16 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 {
     configurationBuilder.WithActors((system, registry) =>
     {
-        var cpu = system.ActorOf(CpuMonitorActor.Props(cpuMetrics, refreshInterval), "cpu-monitor");
+        var cpu = system.ActorOf(CpuMonitorActor.Props(refreshInterval), "cpu-monitor");
         registry.Register<CpuMonitorActor>(cpu);
 
-        var memory = system.ActorOf(MemoryMonitorActor.Props(sharedHw, refreshInterval), "memory-monitor");
+        var memory = system.ActorOf(MemoryMonitorActor.Props(refreshInterval), "memory-monitor");
         registry.Register<MemoryMonitorActor>(memory);
 
-        var disk = system.ActorOf(DiskMonitorActor.Props(sharedHw, diskMetrics, refreshInterval), "disk-monitor");
+        var disk = system.ActorOf(DiskMonitorActor.Props(diskMetrics, refreshInterval), "disk-monitor");
         registry.Register<DiskMonitorActor>(disk);
 
-        var network = system.ActorOf(NetworkMonitorActor.Props(sharedHw, refreshInterval), "network-monitor");
+        var network = system.ActorOf(NetworkMonitorActor.Props(refreshInterval), "network-monitor");
         registry.Register<NetworkMonitorActor>(network);
 
         var process = system.ActorOf(ProcessMonitorActor.Props(processClassifier, refreshInterval), "process-monitor");

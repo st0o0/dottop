@@ -8,19 +8,18 @@ namespace dottop.Actors;
 
 public sealed class DiskMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw;
+    private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private readonly IDiskMetricsProvider _diskMetrics;
     private readonly TimeSpan _interval;
     private Channel<List<DiskSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
 
-    public static Props Props(HardwareInfo hw, IDiskMetricsProvider diskMetrics, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new DiskMonitorActor(hw, diskMetrics, interval));
+    public static Props Props(IDiskMetricsProvider diskMetrics, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new DiskMonitorActor(diskMetrics, interval));
 
-    public DiskMonitorActor(HardwareInfo hw, IDiskMetricsProvider diskMetrics, TimeSpan interval)
+    public DiskMonitorActor(IDiskMetricsProvider diskMetrics, TimeSpan interval)
     {
-        _hw = hw;
         _diskMetrics = diskMetrics;
         _interval = interval;
 

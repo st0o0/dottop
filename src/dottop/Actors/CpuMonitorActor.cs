@@ -1,24 +1,23 @@
 using System.Threading.Channels;
 using Akka.Actor;
 using dottop.Models;
-using dottop.Platform;
+using Hardware.Info;
 
 namespace dottop.Actors;
 
 public sealed class CpuMonitorActor : ReceiveActor
 {
-    private readonly ICpuMetricsProvider _cpuMetrics;
+    private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private readonly TimeSpan _interval;
     private Channel<CpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
 
-    public static Props Props(ICpuMetricsProvider cpuMetrics, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new CpuMonitorActor(cpuMetrics, interval));
+    public static Props Props(TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new CpuMonitorActor(interval));
 
-    public CpuMonitorActor(ICpuMetricsProvider cpuMetrics, TimeSpan interval)
+    public CpuMonitorActor(TimeSpan interval)
     {
-        _cpuMetrics = cpuMetrics;
         _interval = interval;
 
         Receive<StartMonitoring>(_ =>
@@ -42,8 +41,13 @@ public sealed class CpuMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            var (name, total, cores) = _cpuMetrics.GetSnapshot();
-            _channel.Writer.TryWrite(new CpuSnapshot(name, total, cores));
+            _hw.RefreshCPUList(includePercentProcessorTime: true, 250, false);
+            var totalPercent = _hw.CpuList.Count > 0
+                ? _hw.CpuList.Average(c => (double)c.PercentProcessorTime) : 0;
+            var cores = _hw.CpuList.SelectMany(c => c.CpuCoreList)
+                .Select(c => (double)c.PercentProcessorTime).ToList();
+            var name = _hw.CpuList.FirstOrDefault()?.Name ?? "Unknown";
+            _channel.Writer.TryWrite(new CpuSnapshot(name, totalPercent, cores));
         });
     }
 

@@ -7,19 +7,18 @@ namespace dottop.Actors;
 
 public sealed class MemoryMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw;
+    private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private readonly TimeSpan _interval;
     private Channel<MemorySnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
     private ulong _totalCapacity;
 
-    public static Props Props(HardwareInfo hw, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new MemoryMonitorActor(hw, interval));
+    public static Props Props(TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new MemoryMonitorActor(interval));
 
-    public MemoryMonitorActor(HardwareInfo hw, TimeSpan interval)
+    public MemoryMonitorActor(TimeSpan interval)
     {
-        _hw = hw;
         _interval = interval;
 
         Receive<StartMonitoring>(_ =>

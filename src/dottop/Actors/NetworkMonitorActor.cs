@@ -7,18 +7,17 @@ namespace dottop.Actors;
 
 public sealed class NetworkMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw;
+    private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private readonly TimeSpan _interval;
     private Channel<List<NetworkSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
 
-    public static Props Props(HardwareInfo hw, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new NetworkMonitorActor(hw, interval));
+    public static Props Props(TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new NetworkMonitorActor(interval));
 
-    public NetworkMonitorActor(HardwareInfo hw, TimeSpan interval)
+    public NetworkMonitorActor(TimeSpan interval)
     {
-        _hw = hw;
         _interval = interval;
 
         Receive<StartMonitoring>(_ =>

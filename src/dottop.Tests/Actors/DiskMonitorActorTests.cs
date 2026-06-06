@@ -4,7 +4,6 @@ using Akka.TestKit.Xunit2;
 using dottop.Actors;
 using dottop.Models;
 using dottop.Tests.Platform;
-using Hardware.Info;
 using Xunit;
 
 namespace dottop.Tests.Actors;
@@ -20,8 +19,7 @@ public class DiskMonitorActorTests : TestKit
         fakeDisk.Data["C:"] = (1024 * 1024, 512 * 1024, 42.5);
         fakeDisk.Initialize();
 
-        var hw = new HardwareInfo(TimeSpan.FromSeconds(2));
-        var actor = Sys.ActorOf(DiskMonitorActor.Props(hw, fakeDisk, TimeSpan.FromSeconds(1)));
+        var actor = Sys.ActorOf(DiskMonitorActor.Props(fakeDisk, TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<List<DiskSnapshot>>>(
             new StartMonitoring(), TimeSpan.FromSeconds(5));

@@ -205,7 +205,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(info)
-                .WithChild(_detailGraph.Fill());
+                .WithChild(_detailGraph.Height(15));
         }
         else if (section == PerfDetailSection.Disk)
         {

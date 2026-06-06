@@ -129,15 +129,22 @@ public class PerformanceViewModel : ReactiveViewModel
         IRequiredActor<TActor> actorRef, CancellationToken ct, Action<TData> handler)
         where TActor : ActorBase
     {
-        try
+        for (var attempt = 0; attempt < 3 && !ct.IsCancellationRequested; attempt++)
         {
-            var actor = await actorRef.GetAsync(ct);
-            var stream = await actor.Ask<MonitoringStream<TData>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
-            await foreach (var item in stream.Data.WithCancellation(ct))
-                handler(item);
+            try
+            {
+                var actor = await actorRef.GetAsync(ct);
+                var stream = await actor.Ask<MonitoringStream<TData>>(new StartMonitoring(), TimeSpan.FromSeconds(30));
+                await foreach (var item in stream.Data.WithCancellation(ct))
+                    handler(item);
+                return;
+            }
+            catch (OperationCanceledException) { return; }
+            catch
+            {
+                await Task.Delay(1000, ct);
+            }
         }
-        catch (OperationCanceledException) { }
-        catch { }
     }
 
     private void HandleKey(KeyPressed key)

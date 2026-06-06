@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.3.0](https://github.com/st0o0/dottop/compare/v0.2.0...v0.3.0) (2026-06-06)
+
+
+### Features
+
+* add Settings tab with theme, refresh rate, sort, group, graph style, language ([a414e35](https://github.com/st0o0/dottop/commit/a414e352fc75694ceddeeed5f026faf5db0fbaa0))
+* apply settings (theme, refresh rate, graph style, sort, language) ([de19321](https://github.com/st0o0/dottop/commit/de1932142f032e36f6a57ddd360459497f28966f))
+* Light mode sets white terminal background via ANSI escape ([5ab97e5](https://github.com/st0o0/dottop/commit/5ab97e524083ade2c43d85f69efbceb99d458d38))
+* monochrome Cyan/Blue visual redesign for cleaner look ([b544673](https://github.com/st0o0/dottop/commit/b5446734509fdc89e62d0e09c0c20b8832b5ee37))
+* settings apply live on change (theme, language, graph style) ([b56177c](https://github.com/st0o0/dottop/commit/b56177c605f18b8d625f05996e5bbf68963e37dd))
+
+
+### Bug Fixes
+
+* clear unused rows to prevent ghost rendering and layout shift ([40f53de](https://github.com/st0o0/dottop/commit/40f53de08f4c8cb547f9ca139a7ff0b63a47fce2))
+* full screen clear + redraw on theme change to prevent gray artifacts ([c0c5ca9](https://github.com/st0o0/dottop/commit/c0c5ca9c5c491e6cb34743379a7c344abe9c8a06))
+* give detail graph fixed height so ModalNode sizes correctly ([8782e9f](https://github.com/st0o0/dottop/commit/8782e9fa0e9d4ce43c0c61677b8846014aa28968))
+* only clear screen on theme change, not on language/graph changes ([bdc30ac](https://github.com/st0o0/dottop/commit/bdc30ac92e2f9279eb6b4ce99cf6ce380f95361c))
+* Performance detail modal fills screen with large content + dim backdrop ([ed1add8](https://github.com/st0o0/dottop/commit/ed1add80a298fdf2973368abc00d9d33c64a12df))
+* Performance status bar alignment - wrap panels in Fill container ([d44937e](https://github.com/st0o0/dottop/commit/d44937ebef2f02e8f2370a4825f43dc4842383c1))
+* recreate detail graphs on each modal update to prevent disposed nodes ([5d303c1](https://github.com/st0o0/dottop/commit/5d303c1ecffe09ec1109a4b98bd6fad960b2a756))
+* remove extra row gap between panels and status bar on Performance ([2980206](https://github.com/st0o0/dottop/commit/2980206001faa6e4c2d39bfb7f1acf0f53937feb))
+
+
+### Performance Improvements
+
+* each monitor stream connects independently, no Task.WhenAll ([7e614ea](https://github.com/st0o0/dottop/commit/7e614ea2ae0199ac57cacb74cefe7684980785ea))
+* initialize disk PerformanceCounters in background thread at startup ([b3f22fe](https://github.com/st0o0/dottop/commit/b3f22fe68084c4073b3160dc80b5588e5d7ee9ca))
+* move DiskMetrics.Initialize to PreStart to unblock StartMonitoring ([ac426a4](https://github.com/st0o0/dottop/commit/ac426a426d029dc0bd6b7cf0739e4e2f363951cb))
+* move hardware init to PreStart for non-blocking actor creation ([daa0ad7](https://github.com/st0o0/dottop/commit/daa0ad7cc1dcb826f85e914556b91c371a7f9a85))
+* parallelize actor initialization for faster page load ([9f2a058](https://github.com/st0o0/dottop/commit/9f2a058508d4551dec1221251ed47c2adfa560d0))
+
 ## [0.2.0](https://github.com/st0o0/dottop/compare/v0.1.0...v0.2.0) (2026-06-05)
 
 

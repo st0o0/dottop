@@ -1,24 +1,24 @@
 using System.Threading.Channels;
 using Akka.Actor;
 using dottop.Models;
-using Hardware.Info;
+using dottop.Platform;
 
 namespace dottop.Actors;
 
 public sealed class CpuMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
+    private readonly ICpuMetricsProvider _cpuMetrics;
     private readonly TimeSpan _interval;
     private Channel<CpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
-    private bool _baselined;
 
-    public static Props Props(TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new CpuMonitorActor(interval));
+    public static Props Props(ICpuMetricsProvider cpuMetrics, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new CpuMonitorActor(cpuMetrics, interval));
 
-    public CpuMonitorActor(TimeSpan interval)
+    public CpuMonitorActor(ICpuMetricsProvider cpuMetrics, TimeSpan interval)
     {
+        _cpuMetrics = cpuMetrics;
         _interval = interval;
 
         Receive<StartMonitoring>(_ =>
@@ -42,19 +42,8 @@ public sealed class CpuMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            if (!_baselined)
-            {
-                _hw.RefreshCPUList(includePercentProcessorTime: false, 250, false);
-                _baselined = true;
-            }
-
-            _hw.RefreshCPUList(includePercentProcessorTime: true, 250, false);
-            var totalPercent = _hw.CpuList.Count > 0
-                ? _hw.CpuList.Average(c => (double)c.PercentProcessorTime) : 0;
-            var cores = _hw.CpuList.SelectMany(c => c.CpuCoreList)
-                .Select(c => (double)c.PercentProcessorTime).ToList();
-            var name = _hw.CpuList.FirstOrDefault()?.Name ?? "Unknown";
-            _channel.Writer.TryWrite(new CpuSnapshot(name, totalPercent, cores));
+            var (name, total, cores) = _cpuMetrics.GetSnapshot();
+            _channel.Writer.TryWrite(new CpuSnapshot(name, total, cores));
         });
     }
 

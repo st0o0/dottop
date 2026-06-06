@@ -14,7 +14,8 @@ public class CpuMonitorActorTests : TestKit
     {
         Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
 
-        var actor = Sys.ActorOf(CpuMonitorActor.Props(TimeSpan.FromSeconds(1)));
+        var hw = new HardwareInfo(TimeSpan.FromSeconds(2));
+        var actor = Sys.ActorOf(CpuMonitorActor.Props(hw, TimeSpan.FromSeconds(1)));
 
         var response = await actor.Ask<MonitoringStream<CpuSnapshot>>(
             new StartMonitoring(), TimeSpan.FromSeconds(10));

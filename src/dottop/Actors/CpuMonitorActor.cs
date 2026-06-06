@@ -7,17 +7,18 @@ namespace dottop.Actors;
 
 public sealed class CpuMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
+    private readonly HardwareInfo _hw;
     private Channel<CpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
     private bool _baselined;
 
-    public static Props Props(TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new CpuMonitorActor(interval));
+    public static Props Props(HardwareInfo hw, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new CpuMonitorActor(hw, interval));
 
-    public CpuMonitorActor(TimeSpan interval)
+    public CpuMonitorActor(HardwareInfo hw, TimeSpan interval)
     {
+        _hw = hw;
         var interval1 = interval;
 
         Receive<StartMonitoring>(_ =>

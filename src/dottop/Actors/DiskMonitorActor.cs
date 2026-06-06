@@ -42,12 +42,10 @@ public sealed class DiskMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null)
-            {
-                return;
-            }
+            if (_channel is null) return;
 
-            _hw.RefreshDriveList();
+            try { _hw.RefreshDriveList(); }
+            catch { return; }
             var disks = _hw.DriveList
                 .Where(d => d.PartitionList.Count > 0)
                 .SelectMany(d => d.PartitionList

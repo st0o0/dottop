@@ -8,7 +8,6 @@ namespace dottop.Actors;
 public sealed class CpuMonitorActor : ReceiveActor
 {
     private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
-    private readonly TimeSpan _interval;
     private Channel<CpuSnapshot>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
@@ -19,7 +18,7 @@ public sealed class CpuMonitorActor : ReceiveActor
 
     public CpuMonitorActor(TimeSpan interval)
     {
-        _interval = interval;
+        var interval1 = interval;
 
         Receive<StartMonitoring>(_ =>
         {
@@ -32,7 +31,7 @@ public sealed class CpuMonitorActor : ReceiveActor
             });
 
             _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, _interval, Self, new Tick(), Self);
+                TimeSpan.Zero, interval1, Self, new Tick(), Self);
 
             var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
             Sender.Tell(new MonitoringStream<CpuSnapshot>(stream, _streamCts));
@@ -42,13 +41,17 @@ public sealed class CpuMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            if (!_baselined)
+            try
             {
-                _hw.RefreshCPUList(includePercentProcessorTime: false, 100, false);
-                _baselined = true;
-            }
+                if (!_baselined)
+                {
+                    _hw.RefreshCPUList(includePercentProcessorTime: false);
+                    _baselined = true;
+                }
 
-            _hw.RefreshCPUList(includePercentProcessorTime: true, 100, false);
+                _hw.RefreshCPUList(includePercentProcessorTime: true, 100, false);
+            }
+            catch { return; }
             var totalPercent = _hw.CpuList.Count > 0
                 ? _hw.CpuList.Average(c => (double)c.PercentProcessorTime) : 0;
             var cores = _hw.CpuList.SelectMany(c => c.CpuCoreList)

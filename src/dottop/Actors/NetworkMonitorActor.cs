@@ -39,12 +39,10 @@ public sealed class NetworkMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null)
-            {
-                return;
-            }
+            if (_channel is null) return;
 
-            _hw.RefreshNetworkAdapterList();
+            try { _hw.RefreshNetworkAdapterList(); }
+            catch { return; }
             var nets = _hw.NetworkAdapterList
                 .Where(n => n.Speed > 0)
                 .Select(n => new NetworkSnapshot(

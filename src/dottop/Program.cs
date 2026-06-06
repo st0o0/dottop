@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hardware.Info;
 using Akka.Hosting;
 using dottop.Actors;
 using dottop.Pages;
@@ -64,6 +65,8 @@ builder.Services.AddSingleton(settingsService);
 builder.Services.AddSingleton(connectionProvider);
 builder.Services.AddSingleton(gpuMetrics);
 
+var sharedHw = new HardwareInfo(TimeSpan.FromSeconds(2));
+
 builder.Services.AddAkka("dottop", configurationBuilder =>
 {
     configurationBuilder.WithActors((system, registry) =>
@@ -74,10 +77,10 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
         var memory = system.ActorOf(MemoryMonitorActor.Props(refreshInterval), "memory-monitor");
         registry.Register<MemoryMonitorActor>(memory);
 
-        var disk = system.ActorOf(DiskMonitorActor.Props(diskMetrics, refreshInterval), "disk-monitor");
+        var disk = system.ActorOf(DiskMonitorActor.Props(sharedHw, diskMetrics, refreshInterval), "disk-monitor");
         registry.Register<DiskMonitorActor>(disk);
 
-        var network = system.ActorOf(NetworkMonitorActor.Props(refreshInterval), "network-monitor");
+        var network = system.ActorOf(NetworkMonitorActor.Props(sharedHw, refreshInterval), "network-monitor");
         registry.Register<NetworkMonitorActor>(network);
 
         var process = system.ActorOf(ProcessMonitorActor.Props(processClassifier, refreshInterval), "process-monitor");

@@ -41,16 +41,13 @@ public sealed class CpuMonitorActor : ReceiveActor
         {
             if (_channel is null) return;
 
-            try
+            if (!_baselined)
             {
-                if (!_baselined)
-                {
-                    _hw.RefreshCPUList(includePercentProcessorTime: false);
-                    _baselined = true;
-                }
-                _hw.RefreshCPUList(includePercentProcessorTime: true, 100, false);
+                _hw.RefreshCPUList(includePercentProcessorTime: false, 100, false);
+                _baselined = true;
+                return;
             }
-            catch { }
+            _hw.RefreshCPUList(includePercentProcessorTime: true, 100, false);
 
             var totalPercent = _hw.CpuList.Count > 0
                 ? _hw.CpuList.Average(c => (double)c.PercentProcessorTime) : 0;

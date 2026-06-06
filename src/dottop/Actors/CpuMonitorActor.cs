@@ -13,6 +13,8 @@ public sealed class CpuMonitorActor : ReceiveActor
     private CancellationTokenSource? _streamCts;
     private long _prevIdle;
     private long _prevTotal;
+    private long[]? _prevCoreIdle;
+    private long[]? _prevCoreTotal;
     private string? _cpuName;
 
     public static Props Props(TimeSpan interval) =>
@@ -87,39 +89,92 @@ public sealed class CpuMonitorActor : ReceiveActor
         totalPercent = Math.Clamp(totalPercent, 0, 100);
 
         var coreCount = Environment.ProcessorCount;
-        var cores = Enumerable.Repeat(totalPercent, coreCount).ToList();
+        var cores = GetPerCoreCpuWindows(coreCount);
 
         return (totalPercent, cores);
+    }
+
+    private List<double> GetPerCoreCpuWindows(int coreCount)
+    {
+        try
+        {
+            var size = Marshal.SizeOf<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION>() * coreCount;
+            var buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                var status = NtQuerySystemInformation(8, buffer, size, out _);
+                if (status != 0) return Enumerable.Repeat(0.0, coreCount).ToList();
+
+                _prevCoreIdle ??= new long[coreCount];
+                _prevCoreTotal ??= new long[coreCount];
+
+                var cores = new List<double>(coreCount);
+                for (var i = 0; i < coreCount; i++)
+                {
+                    var ptr = buffer + i * Marshal.SizeOf<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION>();
+                    var info = Marshal.PtrToStructure<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION>(ptr);
+                    var coreIdle = info.IdleTime;
+                    var coreTotal = info.KernelTime + info.UserTime;
+
+                    var idleDelta = coreIdle - _prevCoreIdle[i];
+                    var totalDelta = coreTotal - _prevCoreTotal[i];
+                    _prevCoreIdle[i] = coreIdle;
+                    _prevCoreTotal[i] = coreTotal;
+
+                    var pct = totalDelta > 0 ? (1.0 - (double)idleDelta / totalDelta) * 100 : 0;
+                    cores.Add(Math.Clamp(pct, 0, 100));
+                }
+                return cores;
+            }
+            finally { Marshal.FreeHGlobal(buffer); }
+        }
+        catch { return Enumerable.Repeat(0.0, coreCount).ToList(); }
     }
 
     private (double, List<double>) MeasureCpuLinux()
     {
         try
         {
-            var line = File.ReadAllLines("/proc/stat")[0];
-            var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 5)
-                return (0, []);
-
-            long user = long.Parse(parts[1]), nice = long.Parse(parts[2]);
-            long system = long.Parse(parts[3]), idleVal = long.Parse(parts[4]);
-            var total = user + nice + system + idleVal;
-            if (parts.Length > 5) total += long.Parse(parts[5]);
-            if (parts.Length > 6) total += long.Parse(parts[6]);
-            if (parts.Length > 7) total += long.Parse(parts[7]);
-
-            var idleDelta = idleVal - _prevIdle;
-            var totalDelta = total - _prevTotal;
-            _prevIdle = idleVal;
-            _prevTotal = total;
-
-            var pct = totalDelta > 0 ? (1.0 - (double)idleDelta / totalDelta) * 100 : 0;
-            pct = Math.Clamp(pct, 0, 100);
+            var lines = File.ReadAllLines("/proc/stat");
+            var totalPct = ParseProcStatLine(lines[0], ref _prevIdle, ref _prevTotal);
 
             var coreCount = Environment.ProcessorCount;
-            return (pct, Enumerable.Repeat(pct, coreCount).ToList());
+            _prevCoreIdle ??= new long[coreCount];
+            _prevCoreTotal ??= new long[coreCount];
+
+            var cores = new List<double>(coreCount);
+            for (var i = 0; i < coreCount; i++)
+            {
+                var lineIdx = i + 1;
+                if (lineIdx < lines.Length && lines[lineIdx].StartsWith("cpu"))
+                    cores.Add(ParseProcStatLine(lines[lineIdx], ref _prevCoreIdle[i], ref _prevCoreTotal[i]));
+                else
+                    cores.Add(totalPct);
+            }
+
+            return (totalPct, cores);
         }
         catch { return (0, []); }
+    }
+
+    private static double ParseProcStatLine(string line, ref long prevIdle, ref long prevTotal)
+    {
+        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 5) return 0;
+
+        long user = long.Parse(parts[1]), nice = long.Parse(parts[2]);
+        long system = long.Parse(parts[3]), idle = long.Parse(parts[4]);
+        var total = user + nice + system + idle;
+        for (var j = 5; j < Math.Min(parts.Length, 8); j++)
+            if (long.TryParse(parts[j], out var v)) total += v;
+
+        var idleDelta = idle - prevIdle;
+        var totalDelta = total - prevTotal;
+        prevIdle = idle;
+        prevTotal = total;
+
+        var pct = totalDelta > 0 ? (1.0 - (double)idleDelta / totalDelta) * 100 : 0;
+        return Math.Clamp(pct, 0, 100);
     }
 
     private static string ReadCpuName()
@@ -141,6 +196,20 @@ public sealed class CpuMonitorActor : ReceiveActor
 
     [DllImport("kernel32.dll")]
     private static extern bool GetSystemTimes(out FILETIME idle, out FILETIME kernel, out FILETIME user);
+
+    [DllImport("ntdll.dll")]
+    private static extern int NtQuerySystemInformation(int infoClass, IntPtr buffer, int size, out int returnLength);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION
+    {
+        public long IdleTime;
+        public long KernelTime;
+        public long UserTime;
+        public long DpcTime;
+        public long InterruptTime;
+        public int InterruptCount;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct FILETIME

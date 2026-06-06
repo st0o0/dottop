@@ -104,6 +104,12 @@ internal class Strings
     internal static string GpuTemperature => ResourceManager.GetString("GpuTemperature", resourceCulture) ?? "";
     internal static string GpuNoData => ResourceManager.GetString("GpuNoData", resourceCulture) ?? "";
 
+    internal static string PerfNoDisks => ResourceManager.GetString("PerfNoDisks", resourceCulture) ?? "";
+    internal static string PerfNoAdapters => ResourceManager.GetString("PerfNoAdapters", resourceCulture) ?? "";
+    internal static string PerfActiveTime => ResourceManager.GetString("PerfActiveTime", resourceCulture) ?? "";
+    internal static string PerfTransferRate => ResourceManager.GetString("PerfTransferRate", resourceCulture) ?? "";
+    internal static string HintClose => ResourceManager.GetString("HintClose", resourceCulture) ?? "";
+
     internal static string PanelServices => ResourceManager.GetString("PanelServices", resourceCulture) ?? "";
     internal static string HeaderStatus => ResourceManager.GetString("HeaderStatus", resourceCulture) ?? "";
     internal static string HeaderStartType => ResourceManager.GetString("HeaderStartType", resourceCulture) ?? "";

@@ -11,12 +11,20 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
 
     public void Initialize()
     {
+        if (_ready) return;
         var counters = InitPerfCounters();
 
         foreach (var c in counters.Values)
         {
-            try { c.Read.NextValue(); c.Write.NextValue(); c.Active.NextValue(); }
-            catch { }
+            try
+            {
+                c.Read.NextValue();
+                c.Write.NextValue();
+                c.Active.NextValue();
+            }
+            catch
+            {
+            }
         }
 
         _counters = counters;
@@ -35,7 +43,10 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
             var active = Math.Clamp(c.Active.NextValue(), 0, 100);
             return (read, write, active);
         }
-        catch { return (0, 0, 0); }
+        catch
+        {
+            return (0, 0, 0);
+        }
     }
 
     public void Dispose()
@@ -62,10 +73,15 @@ public sealed class WindowsDiskMetrics : IDiskMetricsProvider
                         new PerformanceCounter("LogicalDisk", "Disk Write Bytes/sec", instance, true),
                         new PerformanceCounter("LogicalDisk", "% Disk Time", instance, true));
                 }
-                catch { }
+                catch
+                {
+                }
             }
         }
-        catch { }
+        catch
+        {
+        }
+
         return counters;
     }
 

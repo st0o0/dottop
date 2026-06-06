@@ -1,17 +1,17 @@
+using System.Net.NetworkInformation;
 using System.Threading.Channels;
 using Akka.Actor;
 using dottop.Models;
-using Hardware.Info;
 
 namespace dottop.Actors;
 
 public sealed class NetworkMonitorActor : ReceiveActor
 {
-    private readonly HardwareInfo _hw = new(TimeSpan.FromSeconds(2));
     private readonly TimeSpan _interval;
     private Channel<List<NetworkSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
+    private Dictionary<string, (long Rx, long Tx)>? _prevBytes;
 
     public static Props Props(TimeSpan interval) =>
         Akka.Actor.Props.Create(() => new NetworkMonitorActor(interval));
@@ -39,18 +39,29 @@ public sealed class NetworkMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null)
-            {
-                return;
-            }
+            if (_channel is null) return;
 
-            _hw.RefreshNetworkAdapterList();
-            var nets = _hw.NetworkAdapterList
-                .Where(n => n.Speed > 0)
-                .Select(n => new NetworkSnapshot(
-                    n.Name.Length > 20 ? n.Name[..20] + "..." : n.Name,
-                    n.BytesReceivedPersec, n.BytesSentPersec))
-                .ToList();
+            var currentBytes = new Dictionary<string, (long Rx, long Tx)>();
+            var nets = new List<NetworkSnapshot>();
+            try
+            {
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus != OperationalStatus.Up || ni.Speed == 0) continue;
+                    var stats = ni.GetIPv4Statistics();
+                    var name = ni.Name.Length > 20 ? ni.Name[..20] + "..." : ni.Name;
+                    currentBytes[name] = (stats.BytesReceived, stats.BytesSent);
+                    ulong rxPerSec = 0, txPerSec = 0;
+                    if (_prevBytes is not null && _prevBytes.TryGetValue(name, out var prev))
+                    {
+                        rxPerSec = (ulong)Math.Max(0, stats.BytesReceived - prev.Rx);
+                        txPerSec = (ulong)Math.Max(0, stats.BytesSent - prev.Tx);
+                    }
+                    nets.Add(new NetworkSnapshot(name, rxPerSec, txPerSec));
+                }
+            }
+            catch { }
+            _prevBytes = currentBytes;
             _channel.Writer.TryWrite(nets);
         });
     }

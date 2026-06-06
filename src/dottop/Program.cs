@@ -6,7 +6,6 @@ using dottop.Platform;
 using dottop.Platform.Linux;
 using dottop.Platform.Windows;
 using dottop.Services;
-using dottop.Themes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Termina.Hosting;
@@ -21,7 +20,8 @@ var builder = Host.CreateApplicationBuilder(args);
 IDiskMetricsProvider diskMetrics = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsDiskMetrics()
     : new LinuxDiskMetrics();
-Task.Run(() => diskMetrics.Initialize());
+// Disk I/O metrics init runs in background (uses PerformanceCounter which may trigger WMI once)
+Task.Run(() => { try { diskMetrics.Initialize(); } catch { } });
 IProcessTreeProvider processTree = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
     ? new WindowsProcessTree()
     : new LinuxProcessTree();

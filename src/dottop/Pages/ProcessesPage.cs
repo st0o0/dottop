@@ -52,7 +52,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             ViewModel.IsOverlayOpen,
             _overlay);
 
-        return Layouts.Vertical()
+        var mainLayout = Layouts.Vertical()
             .WithChild(new TabBarNode(0))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
@@ -63,8 +63,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                     .WithChild(BuildHeader())
                     .WithChild(_list.Fill()))
                 .Fill())
-            .WithChild(BuildStatusBar())
-            .WithChild(conditionalOverlay);
+            .WithChild(BuildStatusBar());
+
+        return Layouts.Stack(mainLayout, conditionalOverlay);
     }
 
     public override void OnNavigatedTo()

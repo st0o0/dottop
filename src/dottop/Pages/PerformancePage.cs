@@ -41,7 +41,8 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Theme.Primary)
-            .WithBackdrop(BackdropStyle.Dim)
+            .WithBackdrop(BackdropStyle.Solid)
+            .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
             .WithPadding(1);
 
@@ -77,7 +78,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             bottomRow.WithSpacing(1).WithChild(BuildGpuPanel());
         }
 
-        return Layouts.Vertical()
+        var mainLayout = Layouts.Vertical()
             .WithChild(new TabBarNode(1))
             .WithChild(Layouts.Horizontal()
                 .WithChild(BuildCpuPanel())
@@ -86,8 +87,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .HeightPercent(50))
             .WithChild(bottomRow.Fill())
             .WithChild(new TextNode($" {Strings.PerfStatusBar}")
-                .WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar).Height(1))
-            .WithChild(conditionalDetail);
+                .WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar).Height(1));
+
+        return Layouts.Stack(mainLayout, conditionalDetail);
     }
 
     public override void OnNavigatedTo()
@@ -197,37 +199,23 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {
-            _detailGraph = new GraphNode()
-                .WithStyle(graphStyle)
-                .WithColor(color)
-                .WithRange(0, 100);
+            _detailGraph!.WithColor(color).WithRange(0, 100);
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(info)
-                .WithChild(_detailGraph.Height(30))
-                .Height(50).WidthFill();
+                .WithChild(_detailGraph.Height(999));
         }
         else if (section == PerfDetailSection.Disk)
         {
-            _diskActiveGraph = new GraphNode()
-                .WithStyle(graphStyle)
-                .WithColor(Theme.Graph)
-                .WithRange(0, 100);
-            _diskTransferGraph = new GraphNode()
-                .WithStyle(graphStyle)
-                .WithColor(Theme.Graph)
-                .WithRange(0, 100_000_000);
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
-                .WithChild(Layouts.Vertical().WithChild(info).Fill())
-                .Height(50).WidthFill();
+                .WithChild(Layouts.Vertical().WithChild(info).Height(999));
         }
         else
         {
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
-                .WithChild(Layouts.Vertical().WithChild(info).Fill())
-                .Height(50).WidthFill();
+                .WithChild(Layouts.Vertical().WithChild(info).Height(999));
         }
     }
 

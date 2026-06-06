@@ -193,6 +193,22 @@
   <data name="GpuNoData" xml:space="preserve">
     <value> Waiting for GPU data...</value>
   </data>
+  <!-- Performance Detail -->
+  <data name="PerfNoDisks" xml:space="preserve">
+    <value> No disks found</value>
+  </data>
+  <data name="PerfNoAdapters" xml:space="preserve">
+    <value> No active adapters</value>
+  </data>
+  <data name="PerfActiveTime" xml:space="preserve">
+    <value>Active Time %</value>
+  </data>
+  <data name="PerfTransferRate" xml:space="preserve">
+    <value>Transfer Rate</value>
+  </data>
+  <data name="HintClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
   <!-- ServicesPage -->
   <data name="PanelServices" xml:space="preserve">
     <value> Services </value>

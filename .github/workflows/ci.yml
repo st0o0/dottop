@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
+  build:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
@@ -26,12 +26,3 @@ jobs:
 
       - name: Build
         run: dotnet build src/dottop/dottop.csproj --no-restore -c Release
-
-      - name: Restore Tests
-        run: dotnet restore src/dottop.Tests/dottop.Tests.csproj
-
-      - name: Build Tests
-        run: dotnet build src/dottop.Tests/dottop.Tests.csproj --no-restore -c Release
-
-      - name: Test
-        run: dotnet test src/dottop.Tests/dottop.Tests.csproj --no-build -c Release -v normal

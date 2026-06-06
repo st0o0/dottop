@@ -71,7 +71,7 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
 {
     configurationBuilder.WithActors((system, registry) =>
     {
-        var cpu = system.ActorOf(CpuMonitorActor.Props(sharedHw, refreshInterval), "cpu-monitor");
+        var cpu = system.ActorOf(CpuMonitorActor.Props(refreshInterval), "cpu-monitor");
         registry.Register<CpuMonitorActor>(cpu);
 
         var memory = system.ActorOf(MemoryMonitorActor.Props(sharedHw, refreshInterval), "memory-monitor");

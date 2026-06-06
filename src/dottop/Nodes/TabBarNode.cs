@@ -32,6 +32,7 @@ public sealed class TabBarNode : LayoutNode
             return;
         }
 
+        context.Fill(0, 0, bounds.Width, 1, ' ');
         var x = 1;
         for (var i = 0; i < TabLabels.Length; i++)
         {

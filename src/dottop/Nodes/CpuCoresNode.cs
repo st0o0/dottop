@@ -43,31 +43,23 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
 
     public override void Render(IRenderContext context, Rect bounds)
     {
-        if (!bounds.HasArea || _cores.Count == 0)
-        {
-            return;
-        }
+        if (!bounds.HasArea || _cores.Count == 0) return;
 
         var ctx = context.CreateSubContext(bounds);
+        ctx.Fill(0, 0, bounds.Width, bounds.Height, ' ');
+
         var coresPerRow = Math.Max(1, bounds.Width / ItemWidth);
 
         for (var i = 0; i < _cores.Count; i++)
         {
             var row = i / coresPerRow;
             var col = i % coresPerRow;
-
-            if (row >= bounds.Height)
-            {
-                break;
-            }
+            if (row >= bounds.Height) break;
 
             var x = col * ItemWidth;
             var text = $" C{i}:{_cores[i],3:F0}% ";
-
             if (x + text.Length > bounds.Width)
-            {
                 text = text[..(bounds.Width - x)];
-            }
 
             ctx.SetForeground(Theme.Primary);
             ctx.WriteAt(x, row, text);

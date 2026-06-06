@@ -151,19 +151,16 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
             var itemIdx = _scrollOffset + row;
             if (itemIdx >= _items.Count)
             {
-                break;
+                ctx.Fill(0, row, contentWidth, 1, ' ');
+                continue;
             }
 
             var item = _items[itemIdx];
             var text = _formatter(item);
             if (text.Length > contentWidth)
-            {
                 text = text[..(contentWidth - 1)] + "…";
-            }
             else if (text.Length < contentWidth)
-            {
                 text = text.PadRight(contentWidth);
-            }
 
             if (itemIdx == _selectedIndex)
             {
@@ -173,6 +170,12 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
             else if (_colorSelector is not null)
             {
                 ctx.SetForeground(_colorSelector(item));
+                if (Theme.Background != Color.Default)
+                    ctx.SetBackground(Theme.Background);
+            }
+            else if (Theme.Background != Color.Default)
+            {
+                ctx.SetBackground(Theme.Background);
             }
 
             ctx.WriteAt(0, row, text);

@@ -162,6 +162,7 @@ public class ProcessesViewModel : ReactiveViewModel
                     SelectedProcess.Value = proc;
                     OverlayTabIndex.Value = 0;
                     IsOverlayOpen.Value = true;
+                    UpdateStatus();
                     _overlayContentChanged.OnNext(Unit.Default);
                     LoadOverlayTab();
                 }
@@ -224,10 +225,12 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.LeftArrow:
                 OverlayListNode = null;
                 OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1);
+                UpdateStatus();
                 _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
             case ConsoleKey.RightArrow:
                 OverlayListNode = null;
                 OverlayTabIndex.Value = Math.Min(3, OverlayTabIndex.Value + 1);
+                UpdateStatus();
                 _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
             case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
             case ConsoleKey.DownArrow: OverlayListNode?.MoveDown(); break;
@@ -264,6 +267,7 @@ public class ProcessesViewModel : ReactiveViewModel
         ProcessEnv.Value = null;
         ProcessHandles.Value = null;
         OverlayListNode = null;
+        UpdateStatus();
     }
 
     public async void LoadOverlayTab()
@@ -324,8 +328,16 @@ public class ProcessesViewModel : ReactiveViewModel
 
     private void UpdateStatus()
     {
-        var groupLabel = SelectedGroup.Value?.ToString() ?? Strings.GroupAll;
-        StatusMessage.Value = string.Format(Strings.ProcessStatusFormat, FilteredProcesses.Value.Count, groupLabel, SortColumn.Value);
+        if (IsOverlayOpen.Value)
+        {
+            StatusMessage.Value = OverlayTabIndex.Value == 0
+                ? " ←→: Tabs | K: Kill | Esc: Close"
+                : " ←→: Tabs | ↑↓: Scroll | Esc: Close";
+        }
+        else
+        {
+            StatusMessage.Value = string.Format(Strings.ProcessStatusFormat, FilteredProcesses.Value.Count, SelectedGroup.Value?.ToString() ?? Strings.GroupAll, SortColumn.Value);
+        }
     }
 
     public override void OnDeactivating()

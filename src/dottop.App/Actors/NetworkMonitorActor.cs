@@ -33,7 +33,11 @@ public sealed class NetworkMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
+
             var snapshots = _networkMetrics.Measure().ToList();
             _channel.Writer.TryWrite(snapshots);
         });

@@ -24,7 +24,11 @@ public static class Theme
 
     public static void SetTerminalBackground()
     {
-        if (Background == Color.Default) return;
+        if (Background == Color.Default)
+        {
+            return;
+        }
+
         var code = Background == Color.White ? "47" : "40";
         Console.Write($"\x1b[{code}m\x1b[2J\x1b[H");
     }

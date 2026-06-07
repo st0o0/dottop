@@ -6,6 +6,7 @@ using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Core.Platform;
 using dottop.Nodes;
+using dottop.Resources;
 using dottop.Services;
 using Termina.Input;
 using Termina.Reactive;
@@ -35,6 +36,7 @@ public class PerformanceViewModel : ReactiveViewModel
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
     public ReactiveProperty<PerfDetailSection> DetailSection { get; } = new(PerfDetailSection.Cpu);
     public ReactiveProperty<int> DiskDetailIndex { get; } = new(0);
+    public ReactiveProperty<string> StatusHint { get; } = new("");
 
     private readonly Subject<Unit> _detailContentChanged = new();
     public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
@@ -60,10 +62,18 @@ public class PerformanceViewModel : ReactiveViewModel
     {
         _cts = new CancellationTokenSource();
         _ = InitializeAsync();
+        UpdateStatusHint();
 
         Input.OfType<IInputEvent, KeyPressed>()
             .Subscribe(HandleKey)
             .DisposeWith(Subscriptions);
+    }
+
+    private void UpdateStatusHint()
+    {
+        StatusHint.Value = IsDetailOpen.Value
+            ? " Tab/←→: Section | Esc: Close"
+            : $" {Strings.PerfStatusBar}";
     }
 
     private async Task InitializeAsync()
@@ -77,7 +87,9 @@ public class PerformanceViewModel : ReactiveViewModel
             CpuTotal.Value = snapshot.TotalPercent;
             CpuCores.Value = snapshot.CorePercents;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Cpu)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         _ = ConnectStream<MemorySnapshot>(supervisor, new StartMemoryMonitoring(), ct, snapshot =>
@@ -85,21 +97,27 @@ public class PerformanceViewModel : ReactiveViewModel
             RamTotal.Value = snapshot.TotalBytes;
             RamUsed.Value = snapshot.UsedBytes;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Ram)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         _ = ConnectStream<List<DiskSnapshot>>(supervisor, new StartDiskMonitoring(), ct, disks =>
         {
             Disks.Value = disks;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Disk)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         _ = ConnectStream<List<NetworkSnapshot>>(supervisor, new StartNetworkMonitoring(), ct, nets =>
         {
             Networks.Value = nets;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
+            {
                 _detailContentChanged.OnNext(Unit.Default);
+            }
         });
 
         if (_gpuMetrics.IsAvailable)
@@ -108,7 +126,9 @@ public class PerformanceViewModel : ReactiveViewModel
             {
                 Gpu.Value = snapshot;
                 if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Gpu)
+                {
                     _detailContentChanged.OnNext(Unit.Default);
+                }
             });
         }
     }
@@ -145,6 +165,7 @@ public class PerformanceViewModel : ReactiveViewModel
             case ConsoleKey.Enter:
                 DetailSection.Value = PerfDetailSection.Cpu;
                 IsDetailOpen.Value = true;
+                UpdateStatusHint();
                 _detailContentChanged.OnNext(Unit.Default);
                 break;
             case ConsoleKey.D1: Navigate("/"); break;
@@ -188,6 +209,7 @@ public class PerformanceViewModel : ReactiveViewModel
         {
             case ConsoleKey.Escape:
                 IsDetailOpen.Value = false;
+                UpdateStatusHint();
                 break;
             case ConsoleKey.Tab or ConsoleKey.RightArrow:
                 DetailSection.Value = NextSection(DetailSection.Value);
@@ -240,6 +262,7 @@ public class PerformanceViewModel : ReactiveViewModel
         IsDetailOpen.Dispose();
         DetailSection.Dispose();
         DiskDetailIndex.Dispose();
+        StatusHint.Dispose();
         _detailContentChanged.Dispose();
         base.Dispose();
     }

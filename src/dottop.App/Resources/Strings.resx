@@ -117,7 +117,7 @@
   </data>
   <!-- Process overlay content -->
   <data name="OverlayKeyboardHints" xml:space="preserve">
-    <value> [K] Kill   Tabs   Esc Close</value>
+    <value>  ←→: Tabs | K: Kill | Esc: Close</value>
   </data>
   <data name="KillConfirmFormat" xml:space="preserve">
     <value>  Kill {0} (PID {1})? [Y] Yes / [N] No</value>
@@ -239,7 +239,7 @@
     <value>No description available</value>
   </data>
   <data name="ServiceDetailHints" xml:space="preserve">
-    <value>  Esc: Close</value>
+    <value>  S: Start | X: Stop | R: Restart | Esc: Close</value>
   </data>
   <data name="ErrorLoadingServices" xml:space="preserve">
     <value> Error loading services</value>
@@ -265,7 +265,7 @@
   </data>
   <!-- NetworkViewModel -->
   <data name="NetworkStatusFormat" xml:space="preserve">
-    <value> {0} connections | /: Search</value>
+    <value> {0} connections | /: Search | Enter: Detail | Q: Quit</value>
   </data>
   <!-- Settings tab -->
   <data name="TabSettings" xml:space="preserve">

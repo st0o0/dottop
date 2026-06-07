@@ -64,7 +64,19 @@ public class NetworkViewModel : ReactiveViewModel
         }
 
         FilteredConnections.Value = source.ToList();
-        StatusMessage.Value = string.Format(Strings.NetworkStatusFormat, FilteredConnections.Value.Count);
+        UpdateStatus();
+    }
+
+    private void UpdateStatus()
+    {
+        if (IsDetailOpen.Value)
+        {
+            StatusMessage.Value = " Esc: Close";
+        }
+        else
+        {
+            StatusMessage.Value = string.Format(Strings.NetworkStatusFormat, FilteredConnections.Value.Count);
+        }
     }
 
     private void HandleKey(KeyPressed key)
@@ -95,6 +107,7 @@ public class NetworkViewModel : ReactiveViewModel
             {
                 IsDetailOpen.Value = false;
                 SelectedConnection.Value = null;
+                UpdateStatus();
             }
             return;
         }
@@ -118,6 +131,7 @@ public class NetworkViewModel : ReactiveViewModel
                 {
                     SelectedConnection.Value = conn;
                     IsDetailOpen.Value = true;
+                    UpdateStatus();
                     _detailContentChanged.OnNext(Unit.Default);
                 }
                 break;

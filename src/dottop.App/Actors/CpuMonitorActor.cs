@@ -33,7 +33,11 @@ public sealed class CpuMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
+
             var measurement = _cpuMetrics.Measure();
             _channel.Writer.TryWrite(new CpuSnapshot(
                 _cpuMetrics.ProcessorName, measurement.TotalPercent, measurement.CorePercents));

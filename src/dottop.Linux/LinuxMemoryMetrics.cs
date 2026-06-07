@@ -12,12 +12,19 @@ public sealed class LinuxMemoryMetrics : IMemoryMetrics
             foreach (var line in File.ReadAllLines("/proc/meminfo"))
             {
                 if (line.StartsWith("MemTotal:"))
+                {
                     total = ParseKb(line) * 1024;
+                }
                 else if (line.StartsWith("MemAvailable:"))
+                {
                     available = ParseKb(line) * 1024;
+                }
             }
 
-            if (total > 0) return (total, total - available);
+            if (total > 0)
+            {
+                return (total, total - available);
+            }
         }
         catch { }
 

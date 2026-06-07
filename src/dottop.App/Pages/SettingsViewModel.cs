@@ -98,15 +98,16 @@ public class SettingsViewModel : ReactiveViewModel
 
     private void UpdateStatusMessage()
     {
+        const string hints = "↑↓: Select | ←→: Change | Q: Quit";
         var versionInfo = string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
         if (_updateService.UpdateAvailable)
         {
             var updateInfo = string.Format(Strings.UpdateAvailable, _updateService.LatestVersion);
-            StatusMessage.Value = $" {versionInfo} | {updateInfo} | {Strings.UpdatePressU}";
+            StatusMessage.Value = $" {hints} | {versionInfo} | {updateInfo} | {Strings.UpdatePressU}";
         }
         else
         {
-            StatusMessage.Value = $" {versionInfo} | {_settingsService.FilePath}";
+            StatusMessage.Value = $" {hints} | {versionInfo}";
         }
     }
 

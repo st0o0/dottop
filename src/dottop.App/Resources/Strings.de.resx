@@ -117,7 +117,7 @@
   </data>
   <!-- Process overlay content -->
   <data name="OverlayKeyboardHints" xml:space="preserve">
-    <value> [K] Kill   Tabs   Esc Schließen</value>
+    <value>  ←→: Tabs | K: Kill | Esc: Schließen</value>
   </data>
   <data name="KillConfirmFormat" xml:space="preserve">
     <value>  Kill {0} (PID {1})? [Y] Ja / [N] Nein</value>
@@ -239,7 +239,7 @@
     <value>Keine Beschreibung verfügbar</value>
   </data>
   <data name="ServiceDetailHints" xml:space="preserve">
-    <value>  Esc: Schließen</value>
+    <value>  S: Start | X: Stop | R: Restart | Esc: Schließen</value>
   </data>
   <data name="ErrorLoadingServices" xml:space="preserve">
     <value> Fehler beim Laden der Dienste</value>
@@ -265,7 +265,7 @@
   </data>
   <!-- NetworkViewModel -->
   <data name="NetworkStatusFormat" xml:space="preserve">
-    <value> {0} Verbindungen | /: Suche</value>
+    <value> {0} Verbindungen | /: Suche | Enter: Detail | Q: Beenden</value>
   </data>
   <!-- Settings tab -->
   <data name="TabSettings" xml:space="preserve">

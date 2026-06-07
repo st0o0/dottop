@@ -11,7 +11,10 @@ public sealed class WindowsMemoryMetrics : IMemoryMetrics
     {
         var status = new MEMORYSTATUSEX { dwLength = 64 };
         if (GlobalMemoryStatusEx(ref status))
+        {
             return (status.ullTotalPhys, status.ullTotalPhys - status.ullAvailPhys);
+        }
+
         return (0, 0);
     }
 

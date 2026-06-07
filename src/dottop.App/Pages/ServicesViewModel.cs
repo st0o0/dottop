@@ -70,7 +70,19 @@ public class ServicesViewModel : ReactiveViewModel
         }
 
         FilteredServices.Value = source.ToList();
-        StatusMessage.Value = string.Format(Strings.ServicesStatusFormat, FilteredServices.Value.Count);
+        UpdateStatus();
+    }
+
+    private void UpdateStatus()
+    {
+        if (IsDetailOpen.Value)
+        {
+            StatusMessage.Value = " S: Start | X: Stop | R: Restart | Esc: Close";
+        }
+        else
+        {
+            StatusMessage.Value = string.Format(Strings.ServicesStatusFormat, FilteredServices.Value.Count);
+        }
     }
 
     private void HandleKey(KeyPressed key)
@@ -120,6 +132,7 @@ public class ServicesViewModel : ReactiveViewModel
                 {
                     SelectedService.Value = svc;
                     IsDetailOpen.Value = true;
+                    UpdateStatus();
                     _detailContentChanged.OnNext(Unit.Default);
                 }
                 break;
@@ -142,6 +155,7 @@ public class ServicesViewModel : ReactiveViewModel
             case ConsoleKey.Escape:
                 IsDetailOpen.Value = false;
                 SelectedService.Value = null;
+                UpdateStatus();
                 break;
             case ConsoleKey.S:
                 ActionOnDetailService();

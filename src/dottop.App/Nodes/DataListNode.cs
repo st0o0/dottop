@@ -158,9 +158,13 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
             var item = _items[itemIdx];
             var text = _formatter(item);
             if (text.Length > contentWidth)
+            {
                 text = text[..(contentWidth - 1)] + "…";
+            }
             else if (text.Length < contentWidth)
+            {
                 text = text.PadRight(contentWidth);
+            }
 
             if (itemIdx == _selectedIndex)
             {
@@ -171,7 +175,9 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
             {
                 ctx.SetForeground(_colorSelector(item));
                 if (Theme.Background != Color.Default)
+                {
                     ctx.SetBackground(Theme.Background);
+                }
             }
             else if (Theme.Background != Color.Default)
             {

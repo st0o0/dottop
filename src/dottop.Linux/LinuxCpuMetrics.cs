@@ -30,9 +30,13 @@ public sealed class LinuxCpuMetrics : ICpuMetrics
             {
                 var lineIdx = i + 1;
                 if (lineIdx < lines.Length && lines[lineIdx].StartsWith("cpu"))
+                {
                     cores.Add(ParseProcStatLine(lines[lineIdx], ref _prevCoreIdle[i], ref _prevCoreTotal[i]));
+                }
                 else
+                {
                     cores.Add(totalPct);
+                }
             }
 
             return new CpuMeasurement(totalPct, cores);
@@ -46,13 +50,19 @@ public sealed class LinuxCpuMetrics : ICpuMetrics
     private static double ParseProcStatLine(string line, ref long prevIdle, ref long prevTotal)
     {
         var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 5) return 0;
+        if (parts.Length < 5)
+        {
+            return 0;
+        }
 
         long user = long.Parse(parts[1]), nice = long.Parse(parts[2]);
         long system = long.Parse(parts[3]), idle = long.Parse(parts[4]);
         var total = user + nice + system + idle;
         for (var j = 5; j < Math.Min(parts.Length, 8); j++)
-            if (long.TryParse(parts[j], out var v)) total += v;
+            if (long.TryParse(parts[j], out var v))
+            {
+                total += v;
+            }
 
         var idleDelta = idle - prevIdle;
         var totalDelta = total - prevTotal;

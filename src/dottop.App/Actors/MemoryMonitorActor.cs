@@ -33,7 +33,11 @@ public sealed class MemoryMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
+
             var (total, used) = _memoryMetrics.Measure();
             _channel.Writer.TryWrite(new MemorySnapshot(total, used));
         });

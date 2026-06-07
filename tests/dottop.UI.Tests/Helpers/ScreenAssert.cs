@@ -53,7 +53,9 @@ public static class ScreenAssert
         while (Environment.TickCount64 < deadline)
         {
             if (terminal.Contains(text))
+            {
                 return;
+            }
 
             await Task.Delay(pollIntervalMs);
         }

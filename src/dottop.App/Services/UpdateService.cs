@@ -56,7 +56,10 @@ public class UpdateService
 
     public async Task<bool> PerformUpdateAsync(Action<string>? onProgress = null)
     {
-        if (DownloadUrl is null) return false;
+        if (DownloadUrl is null)
+        {
+            return false;
+        }
 
         try
         {
@@ -71,7 +74,10 @@ public class UpdateService
 
             onProgress?.Invoke("Extracting...");
             var extractDir = Path.Combine(tempDir, "extracted");
-            if (Directory.Exists(extractDir)) Directory.Delete(extractDir, true);
+            if (Directory.Exists(extractDir))
+            {
+                Directory.Delete(extractDir, true);
+            }
 
             if (isWindows)
             {
@@ -86,10 +92,16 @@ public class UpdateService
             var exeName = isWindows ? "dottop.exe" : "dottop";
             var newBinary = Directory.GetFiles(extractDir, exeName, SearchOption.AllDirectories)
                 .FirstOrDefault();
-            if (newBinary is null) return false;
+            if (newBinary is null)
+            {
+                return false;
+            }
 
             var currentBinary = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
-            if (currentBinary is null) return false;
+            if (currentBinary is null)
+            {
+                return false;
+            }
 
             if (isWindows)
             {
@@ -125,7 +137,10 @@ public class UpdateService
     private static bool IsNewer(string latest, string current)
     {
         if (Version.TryParse(latest, out var l) && Version.TryParse(current, out var c))
+        {
             return l > c;
+        }
+
         return false;
     }
 }

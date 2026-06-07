@@ -53,7 +53,10 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
             try
             {
                 var status = NtQuerySystemInformation(8, buffer, size, out _);
-                if (status != 0) return Enumerable.Repeat(0.0, coreCount).ToList();
+                if (status != 0)
+                {
+                    return Enumerable.Repeat(0.0, coreCount).ToList();
+                }
 
                 _prevCoreIdle ??= new long[coreCount];
                 _prevCoreTotal ??= new long[coreCount];

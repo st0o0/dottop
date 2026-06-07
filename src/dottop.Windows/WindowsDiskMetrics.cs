@@ -12,7 +12,11 @@ public sealed class WindowsDiskMetrics : IDiskMetrics
 
     public void Initialize()
     {
-        if (_ready) return;
+        if (_ready)
+        {
+            return;
+        }
+
         var counters = InitPerfCounters();
 
         foreach (var c in counters.Values)
@@ -35,7 +39,9 @@ public sealed class WindowsDiskMetrics : IDiskMetrics
     public (ulong ReadBytesPerSec, ulong WriteBytesPerSec, double ActivePercent) GetMetrics(string diskName)
     {
         if (!_ready || _counters is null || !_counters.TryGetValue(diskName, out var c))
+        {
             return (0, 0, 0);
+        }
 
         try
         {
@@ -53,8 +59,10 @@ public sealed class WindowsDiskMetrics : IDiskMetrics
     public void Dispose()
     {
         if (_counters is not null)
+        {
             foreach (var c in _counters.Values)
                 c.Dispose();
+        }
     }
 
     private static Dictionary<string, DiskPerfCounters> InitPerfCounters()
@@ -66,7 +74,10 @@ public sealed class WindowsDiskMetrics : IDiskMetrics
             foreach (var instance in category.GetInstanceNames())
             {
                 if (instance == "_Total" || instance.Length < 2 || instance[1] != ':')
+                {
                     continue;
+                }
+
                 try
                 {
                     counters[instance[..2]] = new DiskPerfCounters(

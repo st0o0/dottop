@@ -16,7 +16,11 @@ public sealed class WindowsNetworkMetrics : INetworkMetrics
         {
             foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (ni.OperationalStatus != OperationalStatus.Up || ni.Speed == 0) continue;
+                if (ni.OperationalStatus != OperationalStatus.Up || ni.Speed == 0)
+                {
+                    continue;
+                }
+
                 var stats = ni.GetIPv4Statistics();
                 var name = ni.Name.Length > 20 ? ni.Name[..20] + "..." : ni.Name;
                 currentBytes[name] = (stats.BytesReceived, stats.BytesSent);

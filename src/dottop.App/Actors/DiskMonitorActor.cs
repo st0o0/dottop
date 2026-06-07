@@ -33,14 +33,21 @@ public sealed class DiskMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
 
             var disks = DriveInfo.GetDrives()
                 .Where(d => d.IsReady && d.TotalSize > 0)
                 .Select(d =>
                 {
                     var name = d.Name.TrimEnd('\\', '/');
-                    if (name.Length >= 2 && name[1] == ':') name = name[..2];
+                    if (name.Length >= 2 && name[1] == ':')
+                    {
+                        name = name[..2];
+                    }
+
                     var (read, write, active) = _diskMetrics.GetMetrics(name);
                     return new DiskSnapshot(name, (ulong)d.TotalSize, (ulong)d.AvailableFreeSpace, read, write, active);
                 })

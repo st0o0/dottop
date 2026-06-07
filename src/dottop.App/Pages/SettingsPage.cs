@@ -69,13 +69,19 @@ public sealed class SettingsListNode : LayoutNode, IInvalidatingNode
 
     public override void Render(IRenderContext context, Rect bounds)
     {
-        if (!bounds.HasArea) return;
+        if (!bounds.HasArea)
+        {
+            return;
+        }
 
         var ctx = context.CreateSubContext(bounds);
 
         for (var row = 0; row < _viewModel.RowCount; row++)
         {
-            if (row >= bounds.Height) break;
+            if (row >= bounds.Height)
+            {
+                break;
+            }
 
             var label = _viewModel.GetLabel(row);
             var value = _viewModel.GetDisplayValue(row);
@@ -83,9 +89,13 @@ public sealed class SettingsListNode : LayoutNode, IInvalidatingNode
 
             var text = $"  {label,-20} {'◀'} {value} {'▶'}";
             if (text.Length < bounds.Width)
+            {
                 text = text.PadRight(bounds.Width);
+            }
             else if (text.Length > bounds.Width)
+            {
                 text = text[..bounds.Width];
+            }
 
             if (isSelected)
             {
@@ -104,7 +114,11 @@ public sealed class SettingsListNode : LayoutNode, IInvalidatingNode
 
     public override void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         _invalidated.OnCompleted();
         _invalidated.Dispose();

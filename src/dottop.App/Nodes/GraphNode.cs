@@ -4,7 +4,7 @@ using Termina.Layout;
 using Termina.Rendering;
 using Termina.Terminal;
 
-namespace dottop;
+namespace dottop.Nodes;
 
 public enum GraphStyle
 {

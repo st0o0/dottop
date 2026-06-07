@@ -35,6 +35,7 @@ catch
 {
     gpuMetrics = NoGpuMetrics.Instance;
 }
+
 builder.Services.AddSingleton(gpuMetrics);
 
 // 3. Settings
@@ -50,7 +51,7 @@ _ = updateService.CheckForUpdatesAsync();
 var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
 
 // 4. Senf.Tracing
-builder.Services.AddServusLoggerTracing(TraceLevel.Debug);
+builder.Services.AddServusLoggerTracing();
 
 // 5. Build a temporary service provider to resolve platform services for actor construction
 var tempSp = builder.Services.BuildServiceProvider();
@@ -63,7 +64,16 @@ var processTreeProvider = tempSp.GetRequiredService<IProcessTreeProvider>();
 var serviceManager = tempSp.GetRequiredService<IServiceManager>();
 
 // Initialize disk metrics in background
-_ = Task.Run(() => { try { diskMetrics.Initialize(); } catch { } });
+_ = Task.Run(() =>
+{
+    try
+    {
+        diskMetrics.Initialize();
+    }
+    catch
+    {
+    }
+});
 
 // 6. Akka — supervisor creates children, all ViewModel communication goes through it
 builder.Services.AddAkka("dottop", configurationBuilder =>

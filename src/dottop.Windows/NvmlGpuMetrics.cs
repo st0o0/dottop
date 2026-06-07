@@ -7,9 +7,9 @@ namespace dottop.Windows;
 
 public sealed class NvmlGpuMetrics : IGpuMetrics
 {
-    private nint _device;
-    private nint _lib;
-    private string _name = "NVIDIA GPU";
+    private readonly nint _device;
+    private readonly nint _lib;
+    private readonly string _name = "NVIDIA GPU";
 
     private delegate int NvmlInitDelegate();
     private delegate int NvmlShutdownDelegate();
@@ -19,10 +19,10 @@ public sealed class NvmlGpuMetrics : IGpuMetrics
     private delegate int NvmlDeviceGetMemoryInfoDelegate(nint device, out NvmlMemory memory);
     private delegate int NvmlDeviceGetTemperatureDelegate(nint device, int sensorType, out uint temperature);
 
-    private NvmlShutdownDelegate? _nvmlShutdown;
-    private NvmlDeviceGetUtilizationRatesDelegate? _nvmlGetUtilization;
-    private NvmlDeviceGetMemoryInfoDelegate? _nvmlGetMemory;
-    private NvmlDeviceGetTemperatureDelegate? _nvmlGetTemperature;
+    private readonly NvmlShutdownDelegate? _nvmlShutdown;
+    private readonly NvmlDeviceGetUtilizationRatesDelegate? _nvmlGetUtilization;
+    private readonly NvmlDeviceGetMemoryInfoDelegate? _nvmlGetMemory;
+    private readonly NvmlDeviceGetTemperatureDelegate? _nvmlGetTemperature;
 
     public bool IsAvailable { get; }
 
@@ -48,13 +48,7 @@ public sealed class NvmlGpuMetrics : IGpuMetrics
             _nvmlGetMemory = GetDelegate<NvmlDeviceGetMemoryInfoDelegate>("nvmlDeviceGetMemoryInfo");
             _nvmlGetTemperature = GetDelegate<NvmlDeviceGetTemperatureDelegate>("nvmlDeviceGetTemperature");
 
-            if (init is null || _nvmlShutdown is null || getHandle is null)
-            {
-                IsAvailable = false;
-                return;
-            }
-
-            if (init() != 0)
+            if (init is null || _nvmlShutdown is null || getHandle is null || init() != 0)
             {
                 IsAvailable = false;
                 return;

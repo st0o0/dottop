@@ -20,9 +20,10 @@ internal static class PlatformRegistration
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static void RegisterWindows(IServiceCollection services)
     {
-        dottop.Windows.ServiceCollectionExtensions.AddWindowsPlatform(services);
+        Windows.ServiceCollectionExtensions.AddWindowsPlatform(services);
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static void RegisterLinux(IServiceCollection services)
     {
         // dottop.Linux project is only referenced when building on Linux (conditional ProjectReference).

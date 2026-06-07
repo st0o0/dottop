@@ -48,7 +48,7 @@ jobs:
 
       - name: Publish
         run: >
-          dotnet publish src/dottop/dottop.csproj
+          dotnet publish src/dottop.App/dottop.App.csproj
           -c Release
           -r ${{ matrix.rid }}
           --self-contained

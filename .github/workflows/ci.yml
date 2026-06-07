@@ -22,7 +22,10 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore src/dottop/dottop.csproj
+        run: dotnet restore src/dottop.slnx
 
       - name: Build
-        run: dotnet build src/dottop/dottop.csproj --no-restore -c Release
+        run: dotnet build src/dottop.slnx --no-restore -c Release
+
+      - name: Test
+        run: dotnet test tests/dottop.Actors.Tests/ --no-build -c Release

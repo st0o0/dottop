@@ -128,6 +128,20 @@ public class SettingsViewModel : ReactiveViewModel
                     _settingsChanged.OnNext(Unit.Default);
                 }
                 break;
+            case ConsoleKey.Home:
+                if (SelectedRow.Value != 0)
+                {
+                    SelectedRow.Value = 0;
+                    _settingsChanged.OnNext(Unit.Default);
+                }
+                break;
+            case ConsoleKey.End:
+                if (SelectedRow.Value != RowCount - 1)
+                {
+                    SelectedRow.Value = RowCount - 1;
+                    _settingsChanged.OnNext(Unit.Default);
+                }
+                break;
             case ConsoleKey.LeftArrow:
                 CycleOption(-1);
                 break;

@@ -7,12 +7,14 @@ using Termina.Extensions;
 using Termina.Layout;
 using Termina.Reactive;
 using Termina.Rendering;
+using Termina.Terminal;
 
 namespace dottop.Pages;
 
 public class NetworkPage : ReactivePage<NetworkViewModel>
 {
     private DataListNode<ConnectionSnapshot>? _list;
+    private ModalNode? _detailModal;
 
     public override ILayoutNode BuildLayout()
     {
@@ -40,8 +42,19 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             });
 
         ViewModel.ListNode = _list;
+        ViewModel.GetSelectedItem = () => _list.SelectedItem;
 
-        return Layouts.Vertical()
+        _detailModal = new ModalNode()
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Primary)
+            .WithBackdrop(BackdropStyle.Solid)
+            .WithBackdropColor(Color.Black)
+            .WithDismissOnEscape(false)
+            .WithPadding(1);
+
+        var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
+
+        var mainLayout = Layouts.Vertical()
             .WithChild(new TabBarNode(3))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
@@ -54,6 +67,8 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                     .WithChild(_list.Fill()))
                 .Fill())
             .WithChild(BuildStatusBar());
+
+        return Layouts.Stack(mainLayout, conditionalDetail);
     }
 
     public override void OnNavigatedTo()
@@ -61,6 +76,28 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
         base.OnNavigatedTo();
         ViewModel.FilteredConnections.Subscribe(connections => _list?.SetItems(connections))
             .DisposeWith(Subscriptions);
+
+        ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())
+            .DisposeWith(Subscriptions);
+    }
+
+    private void UpdateDetailModal()
+    {
+        if (_detailModal is null || ViewModel.SelectedConnection.Value is not { } conn)
+        {
+            return;
+        }
+
+        _detailModal.WithTitle($" {conn.ProcessName} ").WithTitleColor(Theme.Primary);
+        _detailModal.Content = Layouts.Vertical()
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode($"  Process:   {conn.ProcessName} (PID: {conn.Pid})").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  Protocol:  {conn.Protocol}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  Local:     {conn.LocalEndpoint}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  Remote:    {conn.RemoteEndpoint}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  State:     {conn.State}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode("  [Esc] Close").WithForeground(Theme.TextDim).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()

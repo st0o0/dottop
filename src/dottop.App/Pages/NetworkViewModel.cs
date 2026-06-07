@@ -13,12 +13,18 @@ public class NetworkViewModel : ReactiveViewModel
     private readonly IConnectionProvider _connectionProvider;
 
     public IScrollableList? ListNode { get; set; }
+    public Func<ConnectionSnapshot?>? GetSelectedItem { get; set; }
+
+    private readonly Subject<Unit> _detailContentChanged = new();
+    public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
 
     public ReactiveProperty<List<ConnectionSnapshot>> Connections { get; } = new([]);
     public ReactiveProperty<List<ConnectionSnapshot>> FilteredConnections { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
+    public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
+    public ReactiveProperty<ConnectionSnapshot?> SelectedConnection { get; } = new(null);
 
     public NetworkViewModel(IConnectionProvider connectionProvider)
     {
@@ -83,6 +89,15 @@ public class NetworkViewModel : ReactiveViewModel
             }
             return;
         }
+        if (IsDetailOpen.Value)
+        {
+            if (key.KeyInfo.Key == ConsoleKey.Escape)
+            {
+                IsDetailOpen.Value = false;
+                SelectedConnection.Value = null;
+            }
+            return;
+        }
         switch (key.KeyInfo.Key)
         {
             case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
@@ -98,6 +113,14 @@ public class NetworkViewModel : ReactiveViewModel
                 }
 
                 break;
+            case ConsoleKey.Enter:
+                if (GetSelectedItem?.Invoke() is { } conn)
+                {
+                    SelectedConnection.Value = conn;
+                    IsDetailOpen.Value = true;
+                    _detailContentChanged.OnNext(Unit.Default);
+                }
+                break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
@@ -111,6 +134,7 @@ public class NetworkViewModel : ReactiveViewModel
     {
         Connections.Dispose(); FilteredConnections.Dispose();
         SearchText.Dispose(); IsSearchActive.Dispose(); StatusMessage.Dispose();
+        IsDetailOpen.Dispose(); SelectedConnection.Dispose(); _detailContentChanged.Dispose();
         base.Dispose();
     }
 }

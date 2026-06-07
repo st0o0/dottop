@@ -143,7 +143,49 @@ public class ServicesViewModel : ReactiveViewModel
                 IsDetailOpen.Value = false;
                 SelectedService.Value = null;
                 break;
+            case ConsoleKey.S:
+                ActionOnDetailService();
+                break;
+            case ConsoleKey.X:
+                ActionOnDetailService(ActionType.Stop);
+                break;
+            case ConsoleKey.R:
+                ActionOnDetailService(ActionType.Restart);
+                break;
         }
+    }
+
+    private async void ActionOnDetailService(ActionType action = ActionType.Start)
+    {
+        if (_supervisorActor is null || SelectedService.Value is not { } svc)
+        {
+            return;
+        }
+
+        object msg = action switch
+        {
+            ActionType.Stop => new StopService(svc.Name),
+            ActionType.Restart => new RestartService(svc.Name),
+            _ => new StartService(svc.Name),
+        };
+        try
+        {
+            var result = await _supervisorActor.Ask<object>(msg, TimeSpan.FromSeconds(10));
+            StatusMessage.Value = result is ActionSuccess s ? $" {s.Message}" : $" {((ActionFailure)result).Error}";
+            RefreshServices();
+
+            // Update the detail modal with refreshed data
+            if (IsDetailOpen.Value)
+            {
+                var updated = AllServices.Value.FirstOrDefault(x => x.Name == svc.Name);
+                if (updated is not null)
+                {
+                    SelectedService.Value = updated;
+                    _detailContentChanged.OnNext(Unit.Default);
+                }
+            }
+        }
+        catch (Exception ex) { StatusMessage.Value = string.Format(Strings.ErrorFormat, ex.Message); }
     }
 
     private enum ActionType { Start, Stop, Restart }

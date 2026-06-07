@@ -87,7 +87,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .HeightPercent(50))
             .WithChild(bottomRow.Fill())
             .WithChild(new TextNode($" {Strings.PerfStatusBar}")
-                .WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar).Height(1));
+                .WithForeground(Theme.TextDim).WithBackground(Theme.StatusBar).Height(1));
 
         return Layouts.Stack(mainLayout, conditionalDetail);
     }

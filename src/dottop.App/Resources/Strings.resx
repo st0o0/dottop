@@ -97,7 +97,7 @@
     <value>/: Search</value>
   </data>
   <data name="SearchBarActiveFormat" xml:space="preserve">
-    <value> / {0}  Group: [{1}]  Sort: {2} </value>
+    <value> / {0}  Group: [{1}]  Sort: {2}  Esc: Exit</value>
   </data>
   <data name="SearchBarInactiveFormat" xml:space="preserve">
     <value> /: Search  Group: [{0}]  Sort: {1}   G: Group  Tab: Sort</value>
@@ -224,7 +224,7 @@
   </data>
   <!-- ServicesViewModel -->
   <data name="ServicesStatusFormat" xml:space="preserve">
-    <value> {0} services | /: Search | S: Start | X: Stop | R: Restart</value>
+    <value> {0} services | /: Search | Enter: Detail | S: Start | X: Stop | R: Restart | Q: Quit</value>
   </data>
   <data name="ServiceDetailName" xml:space="preserve">
     <value>Name:</value>
@@ -385,6 +385,6 @@
     <value> Esc: Close</value>
   </data>
   <data name="HintSettingsKeys" xml:space="preserve">
-    <value> ↑↓: Select | ←→: Change | Q: Quit</value>
+    <value> ↑↓: Select | ←→: Change | Home/End: Jump | Q: Quit</value>
   </data>
 </root>

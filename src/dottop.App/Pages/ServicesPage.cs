@@ -102,7 +102,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             {
                 if (active)
                 {
-                    return (ILayoutNode)new TextNode($" / {search}█")
+                    return (ILayoutNode)new TextNode($" / {search}█  Esc: Exit")
                         .WithForeground(Theme.Warning);
                 }
 

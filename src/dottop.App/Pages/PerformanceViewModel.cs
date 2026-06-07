@@ -142,7 +142,7 @@ public class PerformanceViewModel : ReactiveViewModel
 
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.Enter or ConsoleKey.Tab:
+            case ConsoleKey.Enter:
                 DetailSection.Value = PerfDetailSection.Cpu;
                 IsDetailOpen.Value = true;
                 _detailContentChanged.OnNext(Unit.Default);

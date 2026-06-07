@@ -155,7 +155,7 @@
     <value>Total:</value>
   </data>
   <data name="PerfStatusBar" xml:space="preserve">
-    <value> Enter/Tab: Detail  |  1-5: Tab  |  Q: Quit</value>
+    <value> Enter: Detail  |  1-5: Tab  |  Q: Quit</value>
   </data>
   <data name="DetailSectionNetwork" xml:space="preserve">
     <value>Network</value>

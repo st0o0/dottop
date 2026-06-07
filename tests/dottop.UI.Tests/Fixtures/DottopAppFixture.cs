@@ -94,6 +94,7 @@ public sealed class DottopAppFixture : IAsyncDisposable
 
         _host = builder.Build();
         await _host.StartAsync();
+        await Task.Delay(300);
     }
 
     /// <summary>

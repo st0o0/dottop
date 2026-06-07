@@ -82,6 +82,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             : svc.Description;
 
         _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(Theme.Primary);
+        _detailModal.WithFooter(Strings.ServiceDetailHints).WithFooterColor(Theme.TextDim);
         _detailModal.Content = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.ServiceDetailName}     {svc.Name}").WithForeground(Theme.TextDim).Height(1))
@@ -90,9 +91,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             .WithChild(new TextNode($"  {Strings.HeaderStartType}  {svc.StartType}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.ServiceDetailDescription}").WithForeground(Theme.Primary).Height(1))
-            .WithChild(new TextNode($"  {desc}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode(Strings.ServiceDetailHints).WithForeground(Theme.TextDim).Height(1));
+            .WithChild(new TextNode($"  {desc}").WithForeground(Theme.Text).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()

@@ -199,7 +199,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var graphStyle = ViewModel.GraphStyleSetting;
 
-        var hints = new TextNode(Strings.HintPerfDetailKeys).WithForeground(Theme.TextDim).Height(1);
+        _detailModal.WithFooter(Strings.HintPerfDetailKeys).WithFooterColor(Theme.TextDim);
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {
@@ -207,22 +207,19 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(info)
-                .WithChild(_detailGraph.Height(999))
-                .WithChild(hints);
+                .WithChild(_detailGraph.Height(999));
         }
         else if (section == PerfDetailSection.Disk)
         {
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
-                .WithChild(Layouts.Vertical().WithChild(info).Height(999))
-                .WithChild(hints);
+                .WithChild(Layouts.Vertical().WithChild(info).Height(999));
         }
         else
         {
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
-                .WithChild(Layouts.Vertical().WithChild(info).Height(999))
-                .WithChild(hints);
+                .WithChild(Layouts.Vertical().WithChild(info).Height(999));
         }
     }
 

@@ -89,15 +89,14 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
         }
 
         _detailModal.WithTitle($" {conn.ProcessName} ").WithTitleColor(Theme.Primary);
+        _detailModal.WithFooter(Strings.HintNetworkDetailKeys).WithFooterColor(Theme.TextDim);
         _detailModal.Content = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  Process:   {conn.ProcessName} (PID: {conn.Pid})").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Protocol:  {conn.Protocol}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Local:     {conn.LocalEndpoint}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Remote:    {conn.RemoteEndpoint}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  State:     {conn.State}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  {Strings.HintNetworkDetailKeys}").WithForeground(Theme.TextDim).Height(1));
+            .WithChild(new TextNode($"  State:     {conn.State}").WithForeground(Theme.TextDim).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()

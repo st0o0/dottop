@@ -155,6 +155,20 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         _overlay.WithTitle($" {proc.Name} — PID {proc.Pid} ");
         _overlay.WithTitleColor(Theme.Primary);
+
+        if (ViewModel.IsKillConfirmPending.Value)
+        {
+            _overlay.WithFooter("").WithFooterColor(Theme.TextDim);
+        }
+        else if (activeTab == 0)
+        {
+            _overlay.WithFooter(Strings.HintProcessOverviewKeys).WithFooterColor(Theme.TextDim);
+        }
+        else
+        {
+            _overlay.WithFooter(Strings.HintProcessDetailKeys).WithFooterColor(Theme.TextDim);
+        }
+
         _overlay.Content = Layouts.Vertical()
             .WithChild(header.Height(1))
             .WithChild(BuildOverlayTab(proc, activeTab));
@@ -196,10 +210,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         {
             layout.WithChild(new TextNode(string.Format(Strings.KillConfirmFormat, proc.Name, proc.Pid))
                 .WithForeground(Theme.Error).Height(1));
-        }
-        else
-        {
-            layout.WithChild(new TextNode(Strings.OverlayKeyboardHints).WithForeground(Theme.TextDim).Height(1));
         }
 
         return layout;

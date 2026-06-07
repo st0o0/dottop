@@ -109,7 +109,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 var groupLabel = t.Group?.ToString() ?? Strings.GroupAll;
                 if (t.Active)
                 {
-                    return (ILayoutNode)new TextNode(string.Format(Strings.SearchBarActiveFormat, t.Search + "█", groupLabel, t.Sort) + " ↓")
+                    return (ILayoutNode)new TextNode($" / {t.Search}█")
                         .WithForeground(Theme.Warning);
                 }
 

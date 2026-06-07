@@ -2,7 +2,6 @@ using dottop.Themes;
 using R3;
 using Termina.Layout;
 using Termina.Rendering;
-using Termina.Terminal;
 
 namespace dottop.Nodes;
 

@@ -1,4 +1,6 @@
 <Solution>
-  <Project Path="dottop.Tests/dottop.Tests.csproj" />
-  <Project Path="dottop/dottop.csproj" />
+  <Project Path="dottop.Core/dottop.Core.csproj" />
+  <Project Path="dottop.Windows/dottop.Windows.csproj" />
+  <Project Path="dottop.Linux/dottop.Linux.csproj" />
+  <Project Path="dottop.App/dottop.App.csproj" />
 </Solution>

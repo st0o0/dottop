@@ -4,4 +4,5 @@
   <Project Path="dottop.Linux/dottop.Linux.csproj" />
   <Project Path="dottop.App/dottop.App.csproj" />
   <Project Path="../tests/dottop.Actors.Tests/dottop.Actors.Tests.csproj" />
+  <Project Path="../tests/dottop.UI.Tests/dottop.UI.Tests.csproj" />
 </Solution>

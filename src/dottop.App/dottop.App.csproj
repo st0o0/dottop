@@ -9,13 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\dottop.Core\dottop.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
         <ProjectReference Include="..\dottop.Windows\dottop.Windows.csproj" />
-    </ItemGroup>
-
-    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
         <ProjectReference Include="..\dottop.Linux\dottop.Linux.csproj" />
     </ItemGroup>
 

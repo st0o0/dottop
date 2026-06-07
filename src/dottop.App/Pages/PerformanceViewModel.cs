@@ -15,11 +15,7 @@ public enum PerfDetailSection { Cpu, Ram, Disk, Network, Gpu }
 
 public class PerformanceViewModel : ReactiveViewModel
 {
-    private readonly IRequiredActor<CpuMonitorActor> _cpuRef;
-    private readonly IRequiredActor<MemoryMonitorActor> _memRef;
-    private readonly IRequiredActor<DiskMonitorActor> _diskRef;
-    private readonly IRequiredActor<NetworkMonitorActor> _netRef;
-    private readonly IRequiredActor<GpuMonitorActor> _gpuRef;
+    private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly IGpuMetrics _gpuMetrics;
     private CancellationTokenSource? _cts;
 
@@ -43,19 +39,11 @@ public class PerformanceViewModel : ReactiveViewModel
     public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
 
     public PerformanceViewModel(
-        IRequiredActor<CpuMonitorActor> cpuRef,
-        IRequiredActor<MemoryMonitorActor> memRef,
-        IRequiredActor<DiskMonitorActor> diskRef,
-        IRequiredActor<NetworkMonitorActor> netRef,
-        IRequiredActor<GpuMonitorActor> gpuRef,
+        IRequiredActor<MonitoringSupervisor> supervisor,
         IGpuMetrics gpuMetrics,
         SettingsService settingsService)
     {
-        _cpuRef = cpuRef;
-        _memRef = memRef;
-        _diskRef = diskRef;
-        _netRef = netRef;
-        _gpuRef = gpuRef;
+        _supervisor = supervisor;
         _gpuMetrics = gpuMetrics;
 
         GraphStyleSetting = settingsService.Settings.GraphStyle switch
@@ -77,11 +65,12 @@ public class PerformanceViewModel : ReactiveViewModel
             .DisposeWith(Subscriptions);
     }
 
-    private Task InitializeAsync()
+    private async Task InitializeAsync()
     {
         var ct = _cts!.Token;
+        var supervisor = await _supervisor.GetAsync(ct);
 
-        _ = ConnectStream(_cpuRef, ct, (CpuSnapshot snapshot) =>
+        _ = ConnectStream<CpuSnapshot>(supervisor, new StartCpuMonitoring(), ct, snapshot =>
         {
             CpuName.Value = snapshot.Name;
             CpuTotal.Value = snapshot.TotalPercent;
@@ -90,7 +79,7 @@ public class PerformanceViewModel : ReactiveViewModel
                 _detailContentChanged.OnNext(Unit.Default);
         });
 
-        _ = ConnectStream(_memRef, ct, (MemorySnapshot snapshot) =>
+        _ = ConnectStream<MemorySnapshot>(supervisor, new StartMemoryMonitoring(), ct, snapshot =>
         {
             RamTotal.Value = snapshot.TotalBytes;
             RamUsed.Value = snapshot.UsedBytes;
@@ -98,14 +87,14 @@ public class PerformanceViewModel : ReactiveViewModel
                 _detailContentChanged.OnNext(Unit.Default);
         });
 
-        _ = ConnectStream(_diskRef, ct, (List<DiskSnapshot> disks) =>
+        _ = ConnectStream<List<DiskSnapshot>>(supervisor, new StartDiskMonitoring(), ct, disks =>
         {
             Disks.Value = disks;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Disk)
                 _detailContentChanged.OnNext(Unit.Default);
         });
 
-        _ = ConnectStream(_netRef, ct, (List<NetworkSnapshot> nets) =>
+        _ = ConnectStream<List<NetworkSnapshot>>(supervisor, new StartNetworkMonitoring(), ct, nets =>
         {
             Networks.Value = nets;
             if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
@@ -114,27 +103,23 @@ public class PerformanceViewModel : ReactiveViewModel
 
         if (_gpuMetrics.IsAvailable)
         {
-            _ = ConnectStream(_gpuRef, ct, (GpuSnapshot snapshot) =>
+            _ = ConnectStream<GpuSnapshot>(supervisor, new StartGpuMonitoring(), ct, snapshot =>
             {
                 Gpu.Value = snapshot;
                 if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Gpu)
                     _detailContentChanged.OnNext(Unit.Default);
             });
         }
-
-        return Task.CompletedTask;
     }
 
-    private async Task ConnectStream<TActor, TData>(
-        IRequiredActor<TActor> actorRef, CancellationToken ct, Action<TData> handler)
-        where TActor : ActorBase
+    private async Task ConnectStream<TData>(
+        IActorRef supervisor, object startMessage, CancellationToken ct, Action<TData> handler)
     {
         while (!ct.IsCancellationRequested)
         {
             try
             {
-                var actor = await actorRef.GetAsync(ct);
-                var stream = await actor.Ask<MonitoringStream<TData>>(new StartMonitoring(), TimeSpan.FromSeconds(60));
+                var stream = await supervisor.Ask<MonitoringStream<TData>>(startMessage, TimeSpan.FromSeconds(60));
                 await foreach (var item in stream.Data.WithCancellation(ct))
                     handler(item);
             }

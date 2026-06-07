@@ -1,10 +1,19 @@
 using Akka.Actor;
+using dottop.Core.Messages;
 using dottop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dottop.Actors;
 
 public sealed class ProcessSupervisor : ReceiveActor
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("Process.Supervisor");
+
+    private readonly IActorRef _processMonitor;
+    private readonly IActorRef _processAction;
+    private readonly IActorRef _service;
+
     public static Props Props(
         IProcessClassifier classifier,
         IProcessTreeProvider treeProvider,
@@ -19,19 +28,47 @@ public sealed class ProcessSupervisor : ReceiveActor
         IServiceManager serviceManager,
         TimeSpan interval)
     {
-        Context.ActorOf(ProcessMonitorActor.Props(classifier, interval), "process-monitor");
-        Context.ActorOf(ProcessActionActor.Props(treeProvider), "process-action");
-        Context.ActorOf(ServiceActor.Props(serviceManager), "service");
+        _processMonitor = Context.ActorOf(ProcessMonitorActor.Props(classifier, interval), "process-monitor");
+        _processAction = Context.ActorOf(ProcessActionActor.Props(treeProvider), "process-action");
+        _service = Context.ActorOf(ServiceActor.Props(serviceManager), "service");
+
+        // Process monitoring
+        Receive<StartProcessMonitoring>(msg => _processMonitor.Forward(msg));
+
+        // Process actions
+        Receive<KillProcess>(msg => _processAction.Forward(msg));
+        Receive<SetProcessPriority>(msg => _processAction.Forward(msg));
+        Receive<SetProcessAffinity>(msg => _processAction.Forward(msg));
+        Receive<GetProcessTree>(msg => _processAction.Forward(msg));
+        Receive<GetProcessEnvironment>(msg => _processAction.Forward(msg));
+        Receive<GetProcessHandles>(msg => _processAction.Forward(msg));
+
+        // Service commands
+        Receive<GetServices>(msg => _service.Forward(msg));
+        Receive<StartService>(msg => _service.Forward(msg));
+        Receive<StopService>(msg => _service.Forward(msg));
+        Receive<RestartService>(msg => _service.Forward(msg));
     }
 
     protected override SupervisorStrategy SupervisorStrategy() =>
         new OneForOneStrategy(
             maxNrOfRetries: 5,
             withinTimeRange: TimeSpan.FromSeconds(10),
-            localOnlyDecider: ex => ex switch
+            localOnlyDecider: ex =>
             {
-                InvalidOperationException => Directive.Resume,
-                System.ComponentModel.Win32Exception => Directive.Resume,
-                _ => Directive.Restart
+                var directive = ex switch
+                {
+                    InvalidOperationException => Directive.Resume,
+                    System.ComponentModel.Win32Exception => Directive.Resume,
+                    _ => Directive.Restart
+                };
+                _trace.Warning(this, "Supervision decision: {0} for {1}", directive, ex.GetType().Name);
+                return directive;
             });
+
+    protected override void PostStop()
+    {
+        _trace.Debug(this, "Stopped");
+        base.PostStop();
+    }
 }

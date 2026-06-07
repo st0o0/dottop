@@ -3,11 +3,15 @@ using Akka.Actor;
 using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dottop.Actors;
 
 public sealed class MemoryMonitorActor : ReceiveActor
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("Memory");
+
     private sealed record Tick;
 
     private readonly IMemoryMetrics _memoryMetrics;
@@ -24,19 +28,8 @@ public sealed class MemoryMonitorActor : ReceiveActor
         _memoryMetrics = memoryMetrics;
         _interval = interval;
 
-        Receive<StartMonitoring>(_ =>
-        {
-            CleanupPreviousStream();
-            _streamCts = new CancellationTokenSource();
-            _channel = Channel.CreateBounded<MemorySnapshot>(new BoundedChannelOptions(1)
-            {
-                FullMode = BoundedChannelFullMode.DropOldest
-            });
-            _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, _interval, Self, new Tick(), Self);
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
-            Sender.Tell(new MonitoringStream<MemorySnapshot>(stream, _streamCts));
-        });
+        Receive<StartMemoryMonitoring>(_ => HandleStartMonitoring());
+        Receive<StartMonitoring>(_ => HandleStartMonitoring());
 
         Receive<Tick>(_ =>
         {
@@ -44,6 +37,21 @@ public sealed class MemoryMonitorActor : ReceiveActor
             var (total, used) = _memoryMetrics.Measure();
             _channel.Writer.TryWrite(new MemorySnapshot(total, used));
         });
+    }
+
+    private void HandleStartMonitoring()
+    {
+        CleanupPreviousStream();
+        _streamCts = new CancellationTokenSource();
+        _channel = Channel.CreateBounded<MemorySnapshot>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+        _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+            TimeSpan.Zero, _interval, Self, new Tick(), Self);
+        var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+        Sender.Tell(new MonitoringStream<MemorySnapshot>(stream, _streamCts));
+        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
     }
 
     private void CleanupPreviousStream()
@@ -60,6 +68,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
+        _trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

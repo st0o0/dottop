@@ -4,11 +4,15 @@ using Akka.Actor;
 using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dottop.Actors;
 
 public sealed class ProcessMonitorActor : ReceiveActor
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("Process");
+
     private sealed record Tick;
 
     private readonly TimeSpan _interval;
@@ -24,22 +28,8 @@ public sealed class ProcessMonitorActor : ReceiveActor
     {
         _interval = interval;
 
-        Receive<StartMonitoring>(_ =>
-        {
-            CleanupPreviousStream();
-
-            _streamCts = new CancellationTokenSource();
-            _channel = Channel.CreateBounded<List<ProcessSnapshot>>(new BoundedChannelOptions(1)
-            {
-                FullMode = BoundedChannelFullMode.DropOldest
-            });
-
-            _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, _interval, Self, new Tick(), Self);
-
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
-            Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, _streamCts));
-        });
+        Receive<StartProcessMonitoring>(_ => HandleStartMonitoring());
+        Receive<StartMonitoring>(_ => HandleStartMonitoring());
 
         Receive<Tick>(_ =>
         {
@@ -92,6 +82,24 @@ public sealed class ProcessMonitorActor : ReceiveActor
         });
     }
 
+    private void HandleStartMonitoring()
+    {
+        CleanupPreviousStream();
+
+        _streamCts = new CancellationTokenSource();
+        _channel = Channel.CreateBounded<List<ProcessSnapshot>>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+
+        _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+            TimeSpan.Zero, _interval, Self, new Tick(), Self);
+
+        var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+        Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, _streamCts));
+        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
+    }
+
     private void CleanupPreviousStream()
     {
         _tickSchedule?.Cancel();
@@ -106,6 +114,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
+        _trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

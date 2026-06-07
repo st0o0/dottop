@@ -2,11 +2,15 @@ using System.Diagnostics;
 using Akka.Actor;
 using dottop.Core.Messages;
 using dottop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dottop.Actors;
 
 public sealed class ProcessActionActor : ReceiveActor
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("Process.Action");
+
     public static Props Props(IProcessTreeProvider treeProvider) =>
         Akka.Actor.Props.Create(() => new ProcessActionActor(treeProvider));
 
@@ -76,6 +80,12 @@ public sealed class ProcessActionActor : ReceiveActor
             }
             catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
         });
+    }
+
+    protected override void PostStop()
+    {
+        _trace.Debug(this, "Stopped");
+        base.PostStop();
     }
 
     private static IReadOnlyList<string> GetProcessModules(int pid)

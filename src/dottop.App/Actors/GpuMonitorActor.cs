@@ -3,11 +3,15 @@ using Akka.Actor;
 using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dottop.Actors;
 
 public sealed class GpuMonitorActor : ReceiveActor
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("Gpu");
+
     private sealed record Tick;
 
     private readonly IGpuMetrics _gpuMetrics;
@@ -24,22 +28,8 @@ public sealed class GpuMonitorActor : ReceiveActor
         _gpuMetrics = gpuMetrics;
         _interval = interval;
 
-        Receive<StartMonitoring>(_ =>
-        {
-            CleanupPreviousStream();
-
-            _streamCts = new CancellationTokenSource();
-            _channel = Channel.CreateBounded<GpuSnapshot>(new BoundedChannelOptions(1)
-            {
-                FullMode = BoundedChannelFullMode.DropOldest
-            });
-
-            _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, _interval, Self, new Tick(), Self);
-
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
-            Sender.Tell(new MonitoringStream<GpuSnapshot>(stream, _streamCts));
-        });
+        Receive<StartGpuMonitoring>(_ => HandleStartMonitoring());
+        Receive<StartMonitoring>(_ => HandleStartMonitoring());
 
         Receive<Tick>(_ =>
         {
@@ -51,6 +41,24 @@ public sealed class GpuMonitorActor : ReceiveActor
             var snapshot = _gpuMetrics.GetSnapshot();
             _channel.Writer.TryWrite(snapshot);
         });
+    }
+
+    private void HandleStartMonitoring()
+    {
+        CleanupPreviousStream();
+
+        _streamCts = new CancellationTokenSource();
+        _channel = Channel.CreateBounded<GpuSnapshot>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+
+        _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+            TimeSpan.Zero, _interval, Self, new Tick(), Self);
+
+        var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+        Sender.Tell(new MonitoringStream<GpuSnapshot>(stream, _streamCts));
+        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
     }
 
     private void CleanupPreviousStream()
@@ -67,6 +75,7 @@ public sealed class GpuMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
+        _trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

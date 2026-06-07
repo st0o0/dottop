@@ -3,11 +3,15 @@ using Akka.Actor;
 using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dottop.Actors;
 
 public sealed class CpuMonitorActor : ReceiveActor
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("Cpu");
+
     private sealed record Tick;
 
     private readonly ICpuMetrics _cpuMetrics;
@@ -24,19 +28,8 @@ public sealed class CpuMonitorActor : ReceiveActor
         _cpuMetrics = cpuMetrics;
         _interval = interval;
 
-        Receive<StartMonitoring>(_ =>
-        {
-            CleanupPreviousStream();
-            _streamCts = new CancellationTokenSource();
-            _channel = Channel.CreateBounded<CpuSnapshot>(new BoundedChannelOptions(1)
-            {
-                FullMode = BoundedChannelFullMode.DropOldest
-            });
-            _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-                TimeSpan.Zero, _interval, Self, new Tick(), Self);
-            var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
-            Sender.Tell(new MonitoringStream<CpuSnapshot>(stream, _streamCts));
-        });
+        Receive<StartCpuMonitoring>(_ => HandleStartMonitoring());
+        Receive<StartMonitoring>(_ => HandleStartMonitoring());
 
         Receive<Tick>(_ =>
         {
@@ -45,6 +38,21 @@ public sealed class CpuMonitorActor : ReceiveActor
             _channel.Writer.TryWrite(new CpuSnapshot(
                 _cpuMetrics.ProcessorName, measurement.TotalPercent, measurement.CorePercents));
         });
+    }
+
+    private void HandleStartMonitoring()
+    {
+        CleanupPreviousStream();
+        _streamCts = new CancellationTokenSource();
+        _channel = Channel.CreateBounded<CpuSnapshot>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+        _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+            TimeSpan.Zero, _interval, Self, new Tick(), Self);
+        var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+        Sender.Tell(new MonitoringStream<CpuSnapshot>(stream, _streamCts));
+        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
     }
 
     private void CleanupPreviousStream()
@@ -61,6 +69,7 @@ public sealed class CpuMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
+        _trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

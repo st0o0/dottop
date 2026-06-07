@@ -16,10 +16,9 @@ public enum SortColumn { Name, Cpu, Ram, Pid }
 
 public class ProcessesViewModel : ReactiveViewModel
 {
-    private readonly IRequiredActor<ProcessMonitorActor> _processMonitorRef;
-    private readonly IRequiredActor<ProcessActionActor> _processActionRef;
+    private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
-    private IActorRef? _processActionActor;
+    private IActorRef? _supervisorActor;
     private CancellationTokenSource? _cts;
 
     public IScrollableList? ListNode { get; set; }
@@ -45,12 +44,10 @@ public class ProcessesViewModel : ReactiveViewModel
     public ReactiveProperty<bool> IsKillConfirmPending { get; } = new(false);
 
     public ProcessesViewModel(
-        IRequiredActor<ProcessMonitorActor> processMonitor,
-        IRequiredActor<ProcessActionActor> processAction,
+        IRequiredActor<MonitoringSupervisor> supervisor,
         SettingsService settingsService)
     {
-        _processMonitorRef = processMonitor;
-        _processActionRef = processAction;
+        _supervisor = supervisor;
         _settingsService = settingsService;
     }
 
@@ -92,13 +89,10 @@ public class ProcessesViewModel : ReactiveViewModel
         {
             var ct = _cts!.Token;
 
-            var actionTask = _processActionRef.GetAsync(ct);
-            var monitorTask = _processMonitorRef.GetAsync(ct);
-            await Task.WhenAll(actionTask, monitorTask);
-            _processActionActor = actionTask.Result;
+            _supervisorActor = await _supervisor.GetAsync(ct);
 
-            var stream = await monitorTask.Result.Ask<MonitoringStream<List<ProcessSnapshot>>>(
-                new StartMonitoring(), TimeSpan.FromSeconds(60));
+            var stream = await _supervisorActor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
+                new StartProcessMonitoring(), TimeSpan.FromSeconds(60));
             await foreach (var list in stream.Data.WithCancellation(ct))
             {
                 AllProcesses.Value = list;
@@ -242,16 +236,16 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.PageUp: OverlayListNode?.PageUp(); break;
             case ConsoleKey.PageDown: OverlayListNode?.PageDown(); break;
             case ConsoleKey.K:
-                if (SelectedProcess.Value is not null && _processActionActor is not null)
+                if (SelectedProcess.Value is not null && _supervisorActor is not null)
                 {
                     IsKillConfirmPending.Value = true;
                 }
 
                 break;
             case ConsoleKey.Y:
-                if (IsKillConfirmPending.Value && SelectedProcess.Value is { } killTarget && _processActionActor is not null)
+                if (IsKillConfirmPending.Value && SelectedProcess.Value is { } killTarget && _supervisorActor is not null)
                 {
-                    _processActionActor.Tell(new KillProcess(killTarget.Pid));
+                    _supervisorActor.Tell(new KillProcess(killTarget.Pid));
                     IsKillConfirmPending.Value = false;
                 }
                 break;
@@ -274,7 +268,7 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public async void LoadOverlayTab()
     {
-        if (SelectedProcess.Value is not { } proc || _processActionActor is null)
+        if (SelectedProcess.Value is not { } proc || _supervisorActor is null)
         {
             return;
         }
@@ -284,19 +278,19 @@ public class ProcessesViewModel : ReactiveViewModel
             switch (OverlayTabIndex.Value)
             {
                 case 1 when ProcessTree.Value is null:
-                    var tree = await _processActionActor.Ask<ProcessTreeResult>(
+                    var tree = await _supervisorActor.Ask<ProcessTreeResult>(
                         new GetProcessTree(proc.Pid), TimeSpan.FromSeconds(5));
                     ProcessTree.Value = tree;
                     _overlayContentChanged.OnNext(Unit.Default);
                     break;
                 case 2 when ProcessEnv.Value is null:
-                    var env = await _processActionActor.Ask<ProcessEnvironmentResult>(
+                    var env = await _supervisorActor.Ask<ProcessEnvironmentResult>(
                         new GetProcessEnvironment(proc.Pid), TimeSpan.FromSeconds(5));
                     ProcessEnv.Value = env.Variables;
                     _overlayContentChanged.OnNext(Unit.Default);
                     break;
                 case 3 when ProcessHandles.Value is null:
-                    var handles = await _processActionActor.Ask<ProcessHandlesResult>(
+                    var handles = await _supervisorActor.Ask<ProcessHandlesResult>(
                         new GetProcessHandles(proc.Pid), TimeSpan.FromSeconds(5));
                     ProcessHandles.Value = handles.Handles;
                     _overlayContentChanged.OnNext(Unit.Default);

@@ -13,8 +13,8 @@ namespace dottop.Pages;
 
 public class ServicesViewModel : ReactiveViewModel
 {
-    private readonly IRequiredActor<ServiceActor> _serviceActorRef;
-    private IActorRef? _serviceActor;
+    private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
+    private IActorRef? _supervisorActor;
 
     public IScrollableList? ListNode { get; set; }
     public Func<ServiceInfo?>? GetSelectedItem { get; set; }
@@ -30,14 +30,14 @@ public class ServicesViewModel : ReactiveViewModel
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
     public ReactiveProperty<ServiceInfo?> SelectedService { get; } = new(null);
 
-    public ServicesViewModel(ActorSystem system, IRequiredActor<ServiceActor> serviceActor)
+    public ServicesViewModel(IRequiredActor<MonitoringSupervisor> supervisor)
     {
-        _serviceActorRef = serviceActor;
+        _supervisor = supervisor;
     }
 
     public override void OnActivated()
     {
-        _serviceActor = _serviceActorRef.GetAsync(CancellationToken.None).GetAwaiter().GetResult();
+        _supervisorActor = _supervisor.GetAsync(CancellationToken.None).GetAwaiter().GetResult();
         RefreshServices();
         SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
         Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
@@ -45,14 +45,14 @@ public class ServicesViewModel : ReactiveViewModel
 
     private async void RefreshServices()
     {
-        if (_serviceActor is null)
+        if (_supervisorActor is null)
         {
             return;
         }
 
         try
         {
-            var result = await _serviceActor.Ask<List<ServiceInfo>>(new GetServices(), TimeSpan.FromSeconds(10));
+            var result = await _supervisorActor.Ask<List<ServiceInfo>>(new GetServices(), TimeSpan.FromSeconds(10));
             AllServices.Value = result;
             ApplyFilter();
         }
@@ -150,7 +150,7 @@ public class ServicesViewModel : ReactiveViewModel
 
     private async void ActionOnSelected(ActionType action = ActionType.Start)
     {
-        if (_serviceActor is null || GetSelectedItem?.Invoke() is not { } svc)
+        if (_supervisorActor is null || GetSelectedItem?.Invoke() is not { } svc)
         {
             return;
         }
@@ -163,7 +163,7 @@ public class ServicesViewModel : ReactiveViewModel
         };
         try
         {
-            var result = await _serviceActor.Ask<object>(msg, TimeSpan.FromSeconds(10));
+            var result = await _supervisorActor.Ask<object>(msg, TimeSpan.FromSeconds(10));
             StatusMessage.Value = result is ActionSuccess s ? $" {s.Message}" : $" {((ActionFailure)result).Error}";
             RefreshServices();
         }

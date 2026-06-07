@@ -368,4 +368,23 @@
   <data name="CurrentVersion" xml:space="preserve">
     <value>Version: {0}</value>
   </data>
+  <!-- Modal/Overlay hint keys -->
+  <data name="HintProcessOverviewKeys" xml:space="preserve">
+    <value> ←→: Tabs | K: Kill | Esc: Schließen</value>
+  </data>
+  <data name="HintProcessDetailKeys" xml:space="preserve">
+    <value> ←→: Tabs | ↑↓: Scrollen | Esc: Schließen</value>
+  </data>
+  <data name="HintPerfDetailKeys" xml:space="preserve">
+    <value> ←→: Sektion | Esc: Schließen</value>
+  </data>
+  <data name="HintServiceDetailKeys" xml:space="preserve">
+    <value> S: Start | X: Stop | R: Restart | Esc: Schließen</value>
+  </data>
+  <data name="HintNetworkDetailKeys" xml:space="preserve">
+    <value> Esc: Schließen</value>
+  </data>
+  <data name="HintSettingsKeys" xml:space="preserve">
+    <value> ↑↓: Wählen | ←→: Ändern | Q: Beenden</value>
+  </data>
 </root>

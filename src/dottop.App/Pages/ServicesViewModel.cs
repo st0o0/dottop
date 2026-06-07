@@ -77,7 +77,7 @@ public class ServicesViewModel : ReactiveViewModel
     {
         if (IsDetailOpen.Value)
         {
-            StatusMessage.Value = " S: Start | X: Stop | R: Restart | Esc: Close";
+            StatusMessage.Value = Strings.HintServiceDetailKeys;
         }
         else
         {

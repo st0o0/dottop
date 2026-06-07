@@ -98,7 +98,7 @@ public class SettingsViewModel : ReactiveViewModel
 
     private void UpdateStatusMessage()
     {
-        const string hints = "↑↓: Select | ←→: Change | Q: Quit";
+        var hints = Strings.HintSettingsKeys;
         var versionInfo = string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
         if (_updateService.UpdateAvailable)
         {

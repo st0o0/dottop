@@ -72,7 +72,7 @@ public class PerformanceViewModel : ReactiveViewModel
     private void UpdateStatusHint()
     {
         StatusHint.Value = IsDetailOpen.Value
-            ? " Tab/←→: Section | Esc: Close"
+            ? Strings.HintPerfDetailKeys
             : $" {Strings.PerfStatusBar}";
     }
 

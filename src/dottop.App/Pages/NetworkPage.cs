@@ -97,7 +97,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             .WithChild(new TextNode($"  Remote:    {conn.RemoteEndpoint}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  State:     {conn.State}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode("  Esc: Close").WithForeground(Theme.TextDim).Height(1));
+            .WithChild(new TextNode($"  {Strings.HintNetworkDetailKeys}").WithForeground(Theme.TextDim).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()

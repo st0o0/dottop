@@ -331,8 +331,8 @@ public class ProcessesViewModel : ReactiveViewModel
         if (IsOverlayOpen.Value)
         {
             StatusMessage.Value = OverlayTabIndex.Value == 0
-                ? " ←→: Tabs | K: Kill | Esc: Close"
-                : " ←→: Tabs | ↑↓: Scroll | Esc: Close";
+                ? Strings.HintProcessOverviewKeys
+                : Strings.HintProcessDetailKeys;
         }
         else
         {

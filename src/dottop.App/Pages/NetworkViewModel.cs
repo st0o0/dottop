@@ -71,7 +71,7 @@ public class NetworkViewModel : ReactiveViewModel
     {
         if (IsDetailOpen.Value)
         {
-            StatusMessage.Value = " Esc: Close";
+            StatusMessage.Value = Strings.HintNetworkDetailKeys;
         }
         else
         {

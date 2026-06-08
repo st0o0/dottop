@@ -89,6 +89,9 @@ public class DockerPage : ReactivePage<DockerViewModel>
         ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())
             .DisposeWith(Subscriptions);
 
+        ViewModel.IsDetailOpen.Subscribe(open => { if (!open) _logList = null; })
+            .DisposeWith(Subscriptions);
+
         ViewModel.SettingsContentChanged.Subscribe(_ => UpdateSettingsModal())
             .DisposeWith(Subscriptions);
     }
@@ -206,15 +209,22 @@ public class DockerPage : ReactivePage<DockerViewModel>
         if (logLines.Count == 0)
             logLines = [$" {Strings.DockerLoadingLogs}"];
 
-        _logList = new DataListNode<string>(line => line, line =>
-            line.Contains("ERROR", StringComparison.OrdinalIgnoreCase) || line.Contains("ERR", StringComparison.OrdinalIgnoreCase)
-                ? Theme.Error
-                : line.Contains("WARN", StringComparison.OrdinalIgnoreCase)
-                    ? Theme.Warning
-                    : Theme.TextDim);
-        _logList.SetItems(logLines);
-        _logList.MoveToEnd();
-        ViewModel.OverlayListNode = _logList;
+        if (_logList is null)
+        {
+            _logList = new DataListNode<string>(line => line, line =>
+                line.Contains("ERROR", StringComparison.OrdinalIgnoreCase) || line.Contains("ERR", StringComparison.OrdinalIgnoreCase)
+                    ? Theme.Error
+                    : line.Contains("WARN", StringComparison.OrdinalIgnoreCase)
+                        ? Theme.Warning
+                        : Theme.TextDim);
+            _logList.SetItems(logLines);
+            _logList.MoveToEnd();
+            ViewModel.OverlayListNode = _logList;
+        }
+        else
+        {
+            _logList.SetItems(logLines);
+        }
 
         var logPanel = new PanelNode()
             .WithTitle($" {Strings.DockerLogsHeader} ")
@@ -224,7 +234,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
             .WithContent(_logList.Fill());
 
         _detailModal.Content = Layouts.Vertical()
-            .WithChild(topRow.HeightPercent(40))
+            .WithChild(topRow.Height(10))
             .WithChild(logPanel.Fill());
     }
 

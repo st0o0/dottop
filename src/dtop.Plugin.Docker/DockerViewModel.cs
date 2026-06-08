@@ -13,6 +13,8 @@ using Termina.Terminal;
 
 namespace dtop.Plugin.Docker;
 
+public enum DockerSubTab { Container, Networks, Volumes, Images }
+
 public record DockerListItem
 {
     public bool IsGroup { get; init; }
@@ -37,21 +39,33 @@ public class DockerViewModel : ReactiveViewModel
 
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
+    public IScrollableList? NetworkListNode { get; set; }
+    public IScrollableList? VolumeListNode { get; set; }
+    public IScrollableList? ImageListNode { get; set; }
     public Func<ContainerSnapshot?>? GetSelectedItem { get; set; }
     public Func<DockerListItem?>? GetSelectedDisplayItem { get; set; }
+    public Func<NetworkInfo?>? GetSelectedNetwork { get; set; }
+    public Func<VolumeInfo?>? GetSelectedVolume { get; set; }
+    public Func<ImageInfo?>? GetSelectedImage { get; set; }
 
     private readonly Subject<Unit> _detailContentChanged = new();
     public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
 
+    public ReactiveProperty<DockerSubTab> ActiveSubTab { get; } = new(DockerSubTab.Container);
     public ReactiveProperty<List<ContainerSnapshot>> AllContainers { get; } = new([]);
     public ReactiveProperty<List<ContainerSnapshot>> FilteredContainers { get; } = new([]);
     public ReactiveProperty<List<DockerListItem>> DisplayItems { get; } = new([]);
+    public ReactiveProperty<List<NetworkInfo>> Networks { get; } = new([]);
+    public ReactiveProperty<List<VolumeInfo>> Volumes { get; } = new([]);
+    public ReactiveProperty<List<ImageInfo>> Images { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
     public ReactiveProperty<ContainerSnapshot?> SelectedContainer { get; } = new(null);
     public ReactiveProperty<bool> IsSettingsOpen { get; } = new(false);
+    public ReactiveProperty<bool> IsInputMode { get; } = new(false);
+    public ReactiveProperty<string> InputText { get; } = new("");
     public ReactiveProperty<string> LogContent { get; } = new(Strings.DockerLoadingLogs);
 
     private readonly Subject<Unit> _settingsContentChanged = new();
@@ -200,6 +214,33 @@ public class DockerViewModel : ReactiveViewModel
 
     private void HandleKey(KeyPressed key)
     {
+        if (IsInputMode.Value)
+        {
+            switch (key.KeyInfo.Key)
+            {
+                case ConsoleKey.Escape:
+                    IsInputMode.Value = false;
+                    InputText.Value = "";
+                    _detailContentChanged.OnNext(Unit.Default);
+                    break;
+                case ConsoleKey.Enter:
+                    _ = SubmitInputAsync();
+                    break;
+                case ConsoleKey.Backspace:
+                    if (InputText.Value.Length > 0)
+                        InputText.Value = InputText.Value[..^1];
+                    _detailContentChanged.OnNext(Unit.Default);
+                    break;
+                default:
+                    if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
+                    {
+                        InputText.Value += key.KeyInfo.KeyChar;
+                        _detailContentChanged.OnNext(Unit.Default);
+                    }
+                    break;
+            }
+            return;
+        }
         if (IsSearchActive.Value)
         {
             switch (key.KeyInfo.Key)
@@ -226,14 +267,28 @@ public class DockerViewModel : ReactiveViewModel
             HandleDetailKey(key);
             return;
         }
+        var activeList = ActiveSubTab.Value switch
+        {
+            DockerSubTab.Networks => NetworkListNode,
+            DockerSubTab.Volumes => VolumeListNode,
+            DockerSubTab.Images => ImageListNode,
+            _ => ListNode
+        };
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
-            case ConsoleKey.DownArrow: ListNode?.MoveDown(); break;
-            case ConsoleKey.Home: ListNode?.MoveToTop(); break;
-            case ConsoleKey.End: ListNode?.MoveToEnd(); break;
-            case ConsoleKey.PageUp: ListNode?.PageUp(); break;
-            case ConsoleKey.PageDown: ListNode?.PageDown(); break;
+            case ConsoleKey.UpArrow: activeList?.MoveUp(); break;
+            case ConsoleKey.DownArrow: activeList?.MoveDown(); break;
+            case ConsoleKey.Home: activeList?.MoveToTop(); break;
+            case ConsoleKey.End: activeList?.MoveToEnd(); break;
+            case ConsoleKey.PageUp: activeList?.PageUp(); break;
+            case ConsoleKey.PageDown: activeList?.PageDown(); break;
+            case ConsoleKey.Tab:
+                if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                    ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Container ? DockerSubTab.Images : (DockerSubTab)((int)ActiveSubTab.Value - 1);
+                else
+                    ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Images ? DockerSubTab.Container : (DockerSubTab)((int)ActiveSubTab.Value + 1);
+                _ = LoadSubTabDataAsync();
+                break;
             default:
                 if (key.KeyInfo.KeyChar == '/')
                 {
@@ -242,31 +297,51 @@ public class DockerViewModel : ReactiveViewModel
 
                 break;
             case ConsoleKey.Enter:
-                var selectedItem = GetSelectedDisplayItem?.Invoke();
-                if (selectedItem is { IsGroup: true, GroupName: { } groupName })
+                if (ActiveSubTab.Value == DockerSubTab.Container)
                 {
-                    ToggleGroup(groupName);
+                    var selectedItem = GetSelectedDisplayItem?.Invoke();
+                    if (selectedItem is { IsGroup: true, GroupName: { } groupName })
+                    {
+                        ToggleGroup(groupName);
+                    }
+                    else if (GetSelectedItem?.Invoke() is { } container)
+                    {
+                        SelectedContainer.Value = container;
+                        IsDetailOpen.Value = true;
+                        LogContent.Value = Strings.DockerLoadingLogs;
+                        UpdateStatus();
+                        _detailContentChanged.OnNext(Unit.Default);
+                        _ = LoadLogsAsync(container.Id);
+                    }
                 }
-                else if (GetSelectedItem?.Invoke() is { } container)
+                else
                 {
-                    SelectedContainer.Value = container;
                     IsDetailOpen.Value = true;
-                    LogContent.Value = Strings.DockerLoadingLogs;
                     UpdateStatus();
                     _detailContentChanged.OnNext(Unit.Default);
-                    _ = LoadLogsAsync(container.Id);
                 }
                 break;
+            case ConsoleKey.N:
+                IsInputMode.Value = true;
+                InputText.Value = "";
+                _detailContentChanged.OnNext(Unit.Default);
+                break;
+            case ConsoleKey.D:
+                if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                    _ = PruneAsync();
+                else
+                    _ = DeleteSelectedAsync();
+                break;
             case ConsoleKey.P:
-                if (GetSelectedItem?.Invoke() is { } pinContainer)
+                if (ActiveSubTab.Value == DockerSubTab.Container && GetSelectedItem?.Invoke() is { } pinContainer)
                 {
                     _pinService.ToggleContainerPin(pinContainer.Id);
                     ApplyFilter();
                 }
                 break;
-            case ConsoleKey.S: ActionOnSelected(); break;
-            case ConsoleKey.X: ActionOnSelected(ActionType.Stop); break;
-            case ConsoleKey.R: ActionOnSelected(ActionType.Restart); break;
+            case ConsoleKey.S: if (ActiveSubTab.Value == DockerSubTab.Container) ActionOnSelected(); break;
+            case ConsoleKey.X: if (ActiveSubTab.Value == DockerSubTab.Container) ActionOnSelected(ActionType.Stop); break;
+            case ConsoleKey.R: if (ActiveSubTab.Value == DockerSubTab.Container) ActionOnSelected(ActionType.Restart); break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
@@ -446,6 +521,122 @@ public class DockerViewModel : ReactiveViewModel
         }
     }
 
+    private async Task LoadSubTabDataAsync()
+    {
+        if (_dockerActorRef is null) return;
+        try
+        {
+            switch (ActiveSubTab.Value)
+            {
+                case DockerSubTab.Networks:
+                    var netResult = await _dockerActorRef.Ask<object>(new GetNetworks(), TimeSpan.FromSeconds(5));
+                    if (netResult is NetworksResult nr) Networks.Value = nr.Networks.ToList();
+                    break;
+                case DockerSubTab.Volumes:
+                    var volResult = await _dockerActorRef.Ask<object>(new GetVolumes(), TimeSpan.FromSeconds(5));
+                    if (volResult is VolumesResult vr) Volumes.Value = vr.Volumes.ToList();
+                    break;
+                case DockerSubTab.Images:
+                    var imgResult = await _dockerActorRef.Ask<object>(new GetImages(), TimeSpan.FromSeconds(5));
+                    if (imgResult is ImagesResult ir) Images.Value = ir.Images.ToList();
+                    break;
+            }
+        }
+        catch { /* ignore timeout */ }
+        _detailContentChanged.OnNext(Unit.Default);
+    }
+
+    private async Task DeleteSelectedAsync()
+    {
+        if (_dockerActorRef is null) return;
+        object? msg = ActiveSubTab.Value switch
+        {
+            DockerSubTab.Networks when GetSelectedNetwork?.Invoke() is { } n => new DeleteNetwork(n.Id),
+            DockerSubTab.Volumes when GetSelectedVolume?.Invoke() is { } v => new DeleteVolume(v.Name),
+            DockerSubTab.Images when GetSelectedImage?.Invoke() is { } i => new DeleteImage(i.Id),
+            _ => null
+        };
+        if (msg is null) return;
+        try
+        {
+            var result = await _dockerActorRef.Ask<object>(msg, TimeSpan.FromSeconds(10));
+            if (result is ActionSuccess s)
+                _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            else if (result is ActionFailure f)
+                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _ = LoadSubTabDataAsync();
+        }
+        catch (Exception ex)
+        {
+            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
+    }
+
+    private async Task PruneAsync()
+    {
+        if (_dockerActorRef is null) return;
+        object? msg = ActiveSubTab.Value switch
+        {
+            DockerSubTab.Volumes => new PruneVolumes(),
+            DockerSubTab.Images => new PruneImages(),
+            _ => null
+        };
+        if (msg is null) return;
+        try
+        {
+            var result = await _dockerActorRef.Ask<object>(msg, TimeSpan.FromSeconds(30));
+            if (result is ActionSuccess s)
+                _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            else if (result is ActionFailure f)
+                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _ = LoadSubTabDataAsync();
+        }
+        catch (Exception ex)
+        {
+            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
+    }
+
+    private async Task SubmitInputAsync()
+    {
+        if (_dockerActorRef is null || string.IsNullOrWhiteSpace(InputText.Value)) return;
+        var text = InputText.Value.Trim();
+        IsInputMode.Value = false;
+        InputText.Value = "";
+
+        object msg = ActiveSubTab.Value switch
+        {
+            DockerSubTab.Networks => new CreateNetwork(text),
+            DockerSubTab.Volumes => new CreateVolume(text),
+            DockerSubTab.Images => new PullImage(text),
+            _ => new PullImage(text) // Container tab: pull image
+        };
+
+        try
+        {
+            _toast.Show($"Working...", new ToastOptions(Duration: TimeSpan.FromSeconds(2)));
+            var result = await _dockerActorRef.Ask<object>(msg, TimeSpan.FromSeconds(60));
+            if (result is ActionSuccess s)
+                _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            else if (result is ActionFailure f)
+                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _ = LoadSubTabDataAsync();
+        }
+        catch (Exception ex)
+        {
+            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
+        _detailContentChanged.OnNext(Unit.Default);
+    }
+
+    public string InputPromptLabel => ActiveSubTab.Value switch
+    {
+        DockerSubTab.Networks => "Network Name",
+        DockerSubTab.Volumes => "Volume Name",
+        DockerSubTab.Images => "Image to Pull",
+        _ => "Image to Pull"
+    };
+
     private void HandleSettingsKey(KeyPressed key)
     {
         switch (key.KeyInfo.Key)
@@ -532,9 +723,12 @@ public class DockerViewModel : ReactiveViewModel
     {
         _cts?.Cancel();
         _cts?.Dispose();
+        ActiveSubTab.Dispose();
         AllContainers.Dispose(); FilteredContainers.Dispose(); SearchText.Dispose();
+        Networks.Dispose(); Volumes.Dispose(); Images.Dispose();
         IsSearchActive.Dispose(); StatusMessage.Dispose(); IsDetailOpen.Dispose();
         SelectedContainer.Dispose(); IsSettingsOpen.Dispose(); LogContent.Dispose();
+        IsInputMode.Dispose(); InputText.Dispose();
         _detailContentChanged.Dispose(); _settingsContentChanged.Dispose();
         base.Dispose();
     }

@@ -3,33 +3,33 @@ using Akka.Hosting;
 using dottop.Core.Platform;
 using dottop.Plugin.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Termina.Hosting;
+using Termina.Pages;
 
 namespace dottop.Plugin.Docker;
 
 public sealed class DockerPlugin : IDottopPlugin
 {
     public string Name => "Docker";
-    public int Order => 5;
-    public bool IsAvailable { get; private set; }
-    public PluginTabInfo? TabInfo => IsAvailable
-        ? new PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5, typeof(DockerPage), typeof(DockerViewModel))
-        : null;
 
-    private DockerProvider? _provider;
-
-    public void ConfigureServices(IServiceCollection services)
+    public void Configure(IPluginBuilder builder)
     {
-        _provider = new DockerProvider();
-        IsAvailable = _provider.IsAvailable;
-        if (!IsAvailable) return;
-        services.AddSingleton<IDockerProvider>(_provider);
-    }
+        var provider = new DockerProvider();
+        if (!provider.IsAvailable) return;
 
-    public void ConfigureActors(ActorSystem system, IActorRegistry registry, IServiceProvider services, TimeSpan refreshInterval)
-    {
-        if (!IsAvailable || _provider is null) return;
-        var dockerInterval = TimeSpan.FromSeconds(Math.Max(3, refreshInterval.TotalSeconds));
-        var actor = system.ActorOf(DockerMonitorActor.Props(_provider, dockerInterval), "docker-monitor");
-        registry.Register<DockerMonitorActor>(actor);
+        builder
+            .WithSingleton<IDockerProvider>(provider)
+            .WithTab("5:Docker", "/docker", ConsoleKey.D5)
+            .ConfigureActors((Action<ActorSystem, IActorRegistry, IServiceProvider, ITickSource>)(
+                (system, registry, sp, tick) =>
+                {
+                    var interval = TimeSpan.FromSeconds(Math.Max(3, tick.CurrentInterval.TotalSeconds));
+                    var actor = system.ActorOf(DockerMonitorActor.Props(provider, interval), "docker-monitor");
+                    registry.Register<DockerMonitorActor>(actor);
+                }))
+            .ConfigureRoutes((Action<TerminaBuilder>)(termina =>
+            {
+                termina.RegisterRoute<DockerPage, DockerViewModel>("/docker", NavigationBehavior.PreserveState);
+            }));
     }
 }

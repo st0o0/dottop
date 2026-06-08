@@ -16,14 +16,12 @@ public interface IScrollableList
     void PageDown();
 }
 
-public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollableList
+public sealed class DataListNode<T>(Func<T, string> formatter, Func<T, Color>? colorSelector = null)
+    : LayoutNode, IInvalidatingNode, IScrollableList
 {
     private readonly Subject<Unit> _invalidated = new();
-    private readonly Func<T, string> _formatter;
-    private readonly Func<T, Color>? _colorSelector;
 
     private IReadOnlyList<T> _items = [];
-    private int _selectedIndex;
     private int _scrollOffset;
     private int _viewportHeight = 20;
     private bool _disposed;
@@ -31,16 +29,11 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     private Color _selectedFg = Theme.SelectionText;
     private Color _selectedBg = Theme.Selection;
 
-    public DataListNode(Func<T, string> formatter, Func<T, Color>? colorSelector = null)
-    {
-        _formatter = formatter;
-        _colorSelector = colorSelector;
-    }
-
     public Observable<Unit> Invalidated => _invalidated.AsObservable();
 
-    public int SelectedIndex => _selectedIndex;
-    public T? SelectedItem => _selectedIndex >= 0 && _selectedIndex < _items.Count ? _items[_selectedIndex] : default;
+    public int SelectedIndex { get; private set; }
+
+    public T? SelectedItem => SelectedIndex >= 0 && SelectedIndex < _items.Count ? _items[SelectedIndex] : default;
 
     public DataListNode<T> WithHighlightColors(Color fg, Color bg)
     {
@@ -52,9 +45,9 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     public void SetItems(IReadOnlyList<T> items)
     {
         _items = items;
-        if (_selectedIndex >= _items.Count)
+        if (SelectedIndex >= _items.Count)
         {
-            _selectedIndex = Math.Max(0, _items.Count - 1);
+            SelectedIndex = Math.Max(0, _items.Count - 1);
         }
 
         Invalidate();
@@ -62,9 +55,9 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
 
     public void MoveUp()
     {
-        if (_selectedIndex > 0)
+        if (SelectedIndex > 0)
         {
-            _selectedIndex--;
+            SelectedIndex--;
             EnsureVisible();
             Invalidate();
         }
@@ -72,9 +65,9 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
 
     public void MoveDown()
     {
-        if (_selectedIndex < _items.Count - 1)
+        if (SelectedIndex < _items.Count - 1)
         {
-            _selectedIndex++;
+            SelectedIndex++;
             EnsureVisible();
             Invalidate();
         }
@@ -82,41 +75,41 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
 
     public void MoveToTop()
     {
-        _selectedIndex = 0;
+        SelectedIndex = 0;
         _scrollOffset = 0;
         Invalidate();
     }
 
     public void MoveToEnd()
     {
-        _selectedIndex = Math.Max(0, _items.Count - 1);
+        SelectedIndex = Math.Max(0, _items.Count - 1);
         EnsureVisible();
         Invalidate();
     }
 
     public void PageUp()
     {
-        _selectedIndex = Math.Max(0, _selectedIndex - _viewportHeight);
+        SelectedIndex = Math.Max(0, SelectedIndex - _viewportHeight);
         EnsureVisible();
         Invalidate();
     }
 
     public void PageDown()
     {
-        _selectedIndex = Math.Min(Math.Max(0, _items.Count - 1), _selectedIndex + _viewportHeight);
+        SelectedIndex = Math.Min(Math.Max(0, _items.Count - 1), SelectedIndex + _viewportHeight);
         EnsureVisible();
         Invalidate();
     }
 
     private void EnsureVisible()
     {
-        if (_selectedIndex < _scrollOffset)
+        if (SelectedIndex < _scrollOffset)
         {
-            _scrollOffset = _selectedIndex;
+            _scrollOffset = SelectedIndex;
         }
-        else if (_selectedIndex >= _scrollOffset + _viewportHeight)
+        else if (SelectedIndex >= _scrollOffset + _viewportHeight)
         {
-            _scrollOffset = _selectedIndex - _viewportHeight + 1;
+            _scrollOffset = SelectedIndex - _viewportHeight + 1;
         }
     }
 
@@ -151,12 +144,12 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
             var itemIdx = _scrollOffset + row;
             if (itemIdx >= _items.Count)
             {
-                ctx.Fill(0, row, contentWidth, 1, ' ');
+                ctx.Fill(0, row, contentWidth, 1);
                 continue;
             }
 
             var item = _items[itemIdx];
-            var text = _formatter(item);
+            var text = formatter(item);
             if (text.Length > contentWidth)
             {
                 text = text[..(contentWidth - 1)] + "…";
@@ -166,14 +159,14 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
                 text = text.PadRight(contentWidth);
             }
 
-            if (itemIdx == _selectedIndex)
+            if (itemIdx == SelectedIndex)
             {
                 ctx.SetForeground(_selectedFg);
                 ctx.SetBackground(_selectedBg);
             }
-            else if (_colorSelector is not null)
+            else if (colorSelector is not null)
             {
-                ctx.SetForeground(_colorSelector(item));
+                ctx.SetForeground(colorSelector(item));
                 if (Theme.Background != Color.Default)
                 {
                     ctx.SetBackground(Theme.Background);

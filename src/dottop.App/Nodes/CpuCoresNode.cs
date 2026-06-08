@@ -30,7 +30,7 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
         if (_cores.Count == 0)
         {
             _rowCount = 0;
-            return new Size(available.Width, 0);
+            return available with { Height = 0 };
         }
 
         var coresPerRow = Math.Max(1, available.Width / ItemWidth);
@@ -48,7 +48,7 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
         }
 
         var ctx = context.CreateSubContext(bounds);
-        ctx.Fill(0, 0, bounds.Width, bounds.Height, ' ');
+        ctx.Fill(0, 0, bounds.Width, bounds.Height);
 
         var coresPerRow = Math.Max(1, bounds.Width / ItemWidth);
 

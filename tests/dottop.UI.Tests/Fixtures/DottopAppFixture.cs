@@ -71,18 +71,13 @@ public sealed class DottopAppFixture : IAsyncDisposable
         builder.Services.AddSingleton(new UpdateService());
         builder.Services.AddSingleton(new PinService());
 
-        // --- Plugin registry with Docker tab info ---
-        var pluginTabs = new dottop.Plugin.Abstractions.PluginTabInfo[]
-        {
-            new("5:Docker", "/docker", ConsoleKey.D5,
-                typeof(dottop.Plugin.Docker.DockerPage),
-                typeof(dottop.Plugin.Docker.DockerViewModel))
-        };
-        var mockPlugin = NSubstitute.Substitute.For<dottop.Plugin.Abstractions.IDottopPlugin>();
-        mockPlugin.TabInfo.Returns(pluginTabs[0]);
-        mockPlugin.IsAvailable.Returns(true);
-        var registry = new PluginRegistry([mockPlugin]);
+        // --- Plugin registry with Docker tab ---
+        var testTickSource = new AppTickSource(TimeSpan.FromSeconds(1));
+        var dockerBuilder = new PluginBuilder(builder.Services, testTickSource);
+        dockerBuilder.WithTab("5:Docker", "/docker", ConsoleKey.D5);
+        var registry = new PluginRegistry([dockerBuilder]);
         builder.Services.AddSingleton(registry);
+        builder.Services.AddSingleton<dottop.Plugin.Abstractions.ITickSource>(testTickSource);
         dottop.App.Nodes.TabBarNode.RegisterPluginTabs(registry);
 
         // --- Akka with TestSupervisorActor ---

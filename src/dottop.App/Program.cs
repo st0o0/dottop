@@ -1,4 +1,4 @@
-using System.Reflection;
+using Akka.Actor;
 using Akka.Hosting;
 using Akka.Logger.Serilog;
 using dottop.App;
@@ -69,10 +69,9 @@ _ = updateService.CheckForUpdatesAsync();
 var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
 
 // 4. Plugin discovery
-var plugins = PluginLoader.DiscoverPlugins().Where(p => p.IsAvailable).ToList();
-foreach (var plugin in plugins)
-    plugin.ConfigureServices(builder.Services);
-var pluginRegistry = new PluginRegistry(plugins);
+var tickSource = new AppTickSource(refreshInterval);
+builder.Services.AddSingleton<ITickSource>(tickSource);
+var pluginRegistry = PluginLoader.DiscoverAndConfigure(builder.Services, tickSource);
 builder.Services.AddSingleton(pluginRegistry);
 dottop.App.Nodes.TabBarNode.RegisterPluginTabs(pluginRegistry);
 
@@ -128,8 +127,11 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
         registry.Register<MonitoringSupervisor>(supervisor);
 
         // Plugin actors
-        foreach (var plugin in plugins)
-            plugin.ConfigureActors(system, registry, tempSp, refreshInterval);
+        foreach (var plugin in pluginRegistry.LoadedPlugins)
+        {
+            if (plugin.ActorSetup is Action<ActorSystem, IActorRegistry, IServiceProvider, ITickSource> setup)
+                setup(system, registry, tempSp, tickSource);
+        }
     });
 });
 
@@ -141,16 +143,11 @@ builder.Services.AddTermina("/", termina =>
     termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
     termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
 
-    // Plugin routes (registered via reflection to avoid compile-time dependency)
-    foreach (var plugin in plugins)
+    // Plugin routes
+    foreach (var plugin in pluginRegistry.LoadedPlugins)
     {
-        if (plugin.TabInfo is { PageType: not null, ViewModelType: not null } tab)
-        {
-            var method = typeof(TerminaBuilder).GetMethods()
-                .First(m => m.Name == "RegisterRoute" && m.GetParameters().Length == 2)
-                .MakeGenericMethod(tab.PageType, tab.ViewModelType);
-            method.Invoke(termina, [tab.Route, NavigationBehavior.PreserveState]);
-        }
+        if (plugin.RouteSetup is Action<TerminaBuilder> routeSetup)
+            routeSetup(termina);
     }
 });
 

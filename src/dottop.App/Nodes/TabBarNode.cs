@@ -10,11 +10,10 @@ public sealed class TabBarNode : LayoutNode
     private static readonly string[] CoreLabels =
         [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork];
 
-    private static readonly string[] CoreRoutes =
-        ["/", "/performance", "/services", "/network"];
+    private static readonly string[] CoreRoutes = ["/", "/performance", "/services", "/network"];
 
     private readonly int _activeIndex;
-    private static IReadOnlyList<string> _allLabels = new List<string>(CoreLabels);
+    private static List<string> _allLabels = [..CoreLabels];
     private static IReadOnlyList<string> _allRoutes = CoreRoutes;
 
     public static void RegisterPluginTabs(PluginRegistry registry)
@@ -26,6 +25,7 @@ public sealed class TabBarNode : LayoutNode
             labels.Add(tab.Label);
             routes.Add(tab.Route);
         }
+
         _allLabels = labels;
         _allRoutes = routes;
     }
@@ -37,7 +37,7 @@ public sealed class TabBarNode : LayoutNode
         WidthConstraint = new SizeConstraint.Fill();
     }
 
-    public override Size Measure(Size available) => new(available.Width, 1);
+    public override Size Measure(Size available) => available with { Height = 1 };
 
     public override void Render(IRenderContext context, Rect bounds)
     {
@@ -46,7 +46,7 @@ public sealed class TabBarNode : LayoutNode
             return;
         }
 
-        context.Fill(0, 0, bounds.Width, 1, ' ');
+        context.Fill(0, 0, bounds.Width, 1);
         var x = 1;
         for (var i = 0; i < _allLabels.Count; i++)
         {

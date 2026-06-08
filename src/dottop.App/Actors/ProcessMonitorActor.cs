@@ -74,7 +74,10 @@ public sealed class ProcessMonitorActor : ReceiveActor
                                 ThreadCount: p.Threads.Count, HandleCount: p.HandleCount,
                                 UserName: "", ParentPid: 0);
                         }
-                        catch { return null; }
+                        catch
+                        {
+                            return null;
+                        }
                     })
                     .Where(p => p is not null)
                     .OrderByDescending(p => p!.WorkingSetBytes)

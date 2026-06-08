@@ -1,4 +1,5 @@
 using Akka.Hosting;
+using dottop.App;
 using dottop.App.Actors;
 using dottop.App.Pages;
 using dottop.App.Services;
@@ -70,6 +71,20 @@ public sealed class DottopAppFixture : IAsyncDisposable
         builder.Services.AddSingleton(new UpdateService());
         builder.Services.AddSingleton(new PinService());
 
+        // --- Plugin registry with Docker tab info ---
+        var pluginTabs = new dottop.Plugin.Abstractions.PluginTabInfo[]
+        {
+            new("5:Docker", "/docker", ConsoleKey.D5,
+                typeof(dottop.Plugin.Docker.DockerPage),
+                typeof(dottop.Plugin.Docker.DockerViewModel))
+        };
+        var mockPlugin = NSubstitute.Substitute.For<dottop.Plugin.Abstractions.IDottopPlugin>();
+        mockPlugin.TabInfo.Returns(pluginTabs[0]);
+        mockPlugin.IsAvailable.Returns(true);
+        var registry = new PluginRegistry([mockPlugin]);
+        builder.Services.AddSingleton(registry);
+        dottop.App.Nodes.TabBarNode.RegisterPluginTabs(registry);
+
         // --- Akka with TestSupervisorActor ---
         builder.Services.AddAkka("dottop-test", configurationBuilder =>
         {
@@ -79,6 +94,11 @@ public sealed class DottopAppFixture : IAsyncDisposable
                     Akka.Actor.Props.Create<TestSupervisorActor>(),
                     "monitoring-supervisor");
                 registry.Register<MonitoringSupervisor>(supervisor);
+
+                var dockerActor = system.ActorOf(
+                    Akka.Actor.Props.Create<TestSupervisorActor>(),
+                    "docker-monitor");
+                registry.Register<dottop.Plugin.Docker.DockerMonitorActor>(dockerActor);
             });
         });
 
@@ -90,6 +110,7 @@ public sealed class DottopAppFixture : IAsyncDisposable
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
+            termina.RegisterRoute<dottop.Plugin.Docker.DockerPage, dottop.Plugin.Docker.DockerViewModel>("/docker", NavigationBehavior.PreserveState);
         });
 
         _host = builder.Build();

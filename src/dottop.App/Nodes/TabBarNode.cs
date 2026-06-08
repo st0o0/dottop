@@ -14,25 +14,25 @@ public sealed class TabBarNode : LayoutNode
         ["/", "/performance", "/services", "/network"];
 
     private readonly int _activeIndex;
-    private readonly IReadOnlyList<string> _allLabels;
+    private static IReadOnlyList<string> _allLabels = new List<string>(CoreLabels);
     private static IReadOnlyList<string> _allRoutes = CoreRoutes;
 
-    public TabBarNode(int activeIndex, PluginRegistry? pluginRegistry = null)
+    public static void RegisterPluginTabs(PluginRegistry registry)
     {
-        _activeIndex = activeIndex;
         var labels = new List<string>(CoreLabels);
         var routes = new List<string>(CoreRoutes);
-        if (pluginRegistry is not null)
+        foreach (var tab in registry.PluginTabs)
         {
-            foreach (var tab in pluginRegistry.PluginTabs)
-            {
-                labels.Add(tab.Label);
-                routes.Add(tab.Route);
-            }
+            labels.Add(tab.Label);
+            routes.Add(tab.Route);
         }
-
         _allLabels = labels;
         _allRoutes = routes;
+    }
+
+    public TabBarNode(int activeIndex)
+    {
+        _activeIndex = activeIndex;
         HeightConstraint = new SizeConstraint.Fixed(1);
         WidthConstraint = new SizeConstraint.Fill();
     }

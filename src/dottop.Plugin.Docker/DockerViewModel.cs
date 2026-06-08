@@ -150,14 +150,14 @@ public class DockerViewModel : ReactiveViewModel
                 });
                 if (expanded)
                 {
-                    var groupContainers = _pinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
+                    var groupContainers = PinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
                     foreach (var c in groupContainers)
                         items.Add(new DockerListItem { Container = c });
                 }
             }
             else
             {
-                var ungroupedContainers = _pinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
+                var ungroupedContainers = PinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
                 foreach (var c in ungroupedContainers)
                     items.Add(new DockerListItem { Container = c });
             }

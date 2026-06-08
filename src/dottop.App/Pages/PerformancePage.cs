@@ -173,7 +173,10 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
     private void UpdateSettingsModal()
     {
-        if (_settingsModal is null) return;
+        if (_settingsModal is null)
+        {
+            return;
+        }
 
         _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
         _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
@@ -208,7 +211,11 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         }
 
         var section = ViewModel.DetailSection.Value;
-        if (section != PerfDetailSection.Network) _networkList = null;
+        if (section != PerfDetailSection.Network)
+        {
+            _networkList = null;
+        }
+
         var sections = new List<string> { "CPU", "RAM", "Disk", Strings.DetailSectionNetwork };
         if (ViewModel.GpuAvailable)
         {
@@ -360,7 +367,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     {
         var nets = ViewModel.Networks.Value;
         if (nets.Count == 0)
+        {
             return new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim);
+        }
 
         var sorted = nets
             .OrderByDescending(n => ViewModel.IsAdapterPinned(n.Name))

@@ -25,13 +25,11 @@ public sealed class DockerPlugin : IDottopPlugin
         services.AddSingleton<IDockerProvider>(_provider);
     }
 
-    public void ConfigureActors(ActorSystem system, IActorRegistry registry,
-        IServiceProvider services, TimeSpan refreshInterval)
+    public void ConfigureActors(ActorSystem system, IActorRegistry registry, IServiceProvider services, TimeSpan refreshInterval)
     {
         if (!IsAvailable || _provider is null) return;
         var dockerInterval = TimeSpan.FromSeconds(Math.Max(3, refreshInterval.TotalSeconds));
-        var actor = system.ActorOf(
-            DockerMonitorActor.Props(_provider, dockerInterval), "docker-monitor");
+        var actor = system.ActorOf(DockerMonitorActor.Props(_provider, dockerInterval), "docker-monitor");
         registry.Register<DockerMonitorActor>(actor);
     }
 }

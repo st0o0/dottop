@@ -74,6 +74,7 @@ foreach (var plugin in plugins)
     plugin.ConfigureServices(builder.Services);
 var pluginRegistry = new PluginRegistry(plugins);
 builder.Services.AddSingleton(pluginRegistry);
+dottop.App.Nodes.TabBarNode.RegisterPluginTabs(pluginRegistry);
 
 // 5. Senf.Tracing
 builder.Services.AddServusLoggerTracing();

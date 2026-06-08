@@ -84,7 +84,10 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
     private void UpdateSettingsModal()
     {
-        if (_settingsModal is null) return;
+        if (_settingsModal is null)
+        {
+            return;
+        }
 
         _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
         _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);

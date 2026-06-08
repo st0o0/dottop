@@ -36,7 +36,11 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             },
             p =>
             {
-                if (ViewModel.IsPinned(p.Pid)) return Theme.Accent;
+                if (ViewModel.IsPinned(p.Pid))
+                {
+                    return Theme.Accent;
+                }
+
                 return p.CpuPercent switch
                 {
                     > 80 => Color.BrightRed,
@@ -121,7 +125,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private void UpdateSettingsModal()
     {
-        if (_settingsModal is null) return;
+        if (_settingsModal is null)
+        {
+            return;
+        }
 
         _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
         _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);

@@ -170,7 +170,7 @@ public class ProcessesViewModel : ReactiveViewModel
         };
 
         var sorted = source.ToList();
-        FilteredProcesses.Value = _pinService.SortWithPinnedFirst(sorted, p => _pinService.IsProcessPinned(p.Pid)).ToList();
+        FilteredProcesses.Value = PinService.SortWithPinnedFirst(sorted, p => _pinService.IsProcessPinned(p.Pid)).ToList();
         UpdateStatus();
     }
 
@@ -275,9 +275,14 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.Tab:
                 OverlayListNode = null;
                 if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                {
                     OverlayTabIndex.Value = OverlayTabIndex.Value <= 0 ? 3 : OverlayTabIndex.Value - 1;
+                }
                 else
+                {
                     OverlayTabIndex.Value = OverlayTabIndex.Value >= 3 ? 0 : OverlayTabIndex.Value + 1;
+                }
+
                 UpdateStatus();
                 _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
             case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
@@ -408,7 +413,9 @@ public class ProcessesViewModel : ReactiveViewModel
             }
             queue.Enqueue(proc.CpuPercent);
             if (queue.Count > CpuHistoryLength)
+            {
                 queue.Dequeue();
+            }
         }
         var stale = _cpuHistory.Keys.Where(pid => !activePids.Contains(pid)).ToList();
         foreach (var pid in stale)
@@ -488,7 +495,11 @@ public class ProcessesViewModel : ReactiveViewModel
     {
         var current = _settingsService.Settings.RefreshIntervalMs;
         var idx = Array.IndexOf(RefreshOptions, current);
-        if (idx < 0) idx = 2; // default to 1000ms
+        if (idx < 0)
+        {
+            idx = 2; // default to 1000ms
+        }
+
         var newIdx = (idx + direction + RefreshOptions.Length) % RefreshOptions.Length;
         _settingsService.Settings.RefreshIntervalMs = RefreshOptions[newIdx];
         _settingsService.Save();

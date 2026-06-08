@@ -201,7 +201,11 @@ public class NetworkViewModel : ReactiveViewModel
     {
         var current = _settingsService.Settings.RefreshIntervalMs;
         var idx = Array.IndexOf(RefreshOptions, current);
-        if (idx < 0) idx = 2;
+        if (idx < 0)
+        {
+            idx = 2;
+        }
+
         var newIdx = (idx + direction + RefreshOptions.Length) % RefreshOptions.Length;
         _settingsService.Settings.RefreshIntervalMs = RefreshOptions[newIdx];
         _settingsService.Save();

@@ -24,7 +24,10 @@ public sealed class ProcessActionActor : ReceiveActor
                 proc.Kill();
                 Sender.Tell(new ActionSuccess($"Killed process {msg.Pid}"));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<SetProcessPriority>(msg =>
@@ -35,7 +38,10 @@ public sealed class ProcessActionActor : ReceiveActor
                 proc.PriorityClass = msg.Priority;
                 Sender.Tell(new ActionSuccess($"Priority set for {msg.Pid}"));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<SetProcessAffinity>(msg =>
@@ -46,7 +52,10 @@ public sealed class ProcessActionActor : ReceiveActor
                 proc.ProcessorAffinity = msg.AffinityMask;
                 Sender.Tell(new ActionSuccess($"Affinity set for {msg.Pid}"));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<GetProcessTree>(msg =>
@@ -56,7 +65,10 @@ public sealed class ProcessActionActor : ReceiveActor
                 var tree = treeProvider.BuildTree(msg.Pid);
                 Sender.Tell(tree);
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<GetProcessEnvironment>(msg =>
@@ -71,7 +83,10 @@ public sealed class ProcessActionActor : ReceiveActor
                     .ToDictionary(e => e.Key.ToString()!, e => e.Value?.ToString() ?? "");
                 Sender.Tell(new ProcessEnvironmentResult(env));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<GetProcessHandles>(msg =>
@@ -81,7 +96,10 @@ public sealed class ProcessActionActor : ReceiveActor
                 var modules = GetProcessModules(msg.Pid);
                 Sender.Tell(new ProcessHandlesResult(modules));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
     }
 
@@ -109,6 +127,7 @@ public sealed class ProcessActionActor : ReceiveActor
                     Trace.Warning("ProcessAction", "Failed to read module for pid={0}: {1}", pid, ex.Message);
                 }
             }
+
             return modules.OrderBy(m => m).ToList();
         }
         catch (Exception ex)

@@ -22,7 +22,10 @@ public sealed class ServiceActor : ReceiveActor
                 var services = serviceManager.GetServices();
                 Sender.Tell(services);
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<StartService>(msg =>
@@ -32,7 +35,10 @@ public sealed class ServiceActor : ReceiveActor
                 var result = serviceManager.Start(msg.Name);
                 Sender.Tell(new ActionSuccess(result));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<StopService>(msg =>
@@ -42,7 +48,10 @@ public sealed class ServiceActor : ReceiveActor
                 var result = serviceManager.Stop(msg.Name);
                 Sender.Tell(new ActionSuccess(result));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         Receive<RestartService>(msg =>
@@ -52,7 +61,10 @@ public sealed class ServiceActor : ReceiveActor
                 var result = serviceManager.Restart(msg.Name);
                 Sender.Tell(new ActionSuccess(result));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
     }
 

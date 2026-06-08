@@ -17,14 +17,8 @@ public class CpuHistoryTests
             if (queue.Count > HistoryLength)
                 queue.Dequeue();
         }
-        return queue;
-    }
 
-    [Fact]
-    public void New_queue_is_empty()
-    {
-        var queue = new Queue<double>(HistoryLength);
-        Assert.Empty(queue);
+        return queue;
     }
 
     [Fact]

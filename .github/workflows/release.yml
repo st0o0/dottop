@@ -32,10 +32,10 @@ jobs:
         include:
           - os: windows-latest
             rid: win-x64
-            artifact: dottop-win-x64
+            artifact: dtop-win-x64
           - os: ubuntu-latest
             rid: linux-x64
-            artifact: dottop-linux-x64
+            artifact: dtop-linux-x64
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -50,7 +50,7 @@ jobs:
 
       - name: Publish
         run: >
-          dotnet publish src/dottop.App/dottop.App.csproj
+          dotnet publish src/dtop.App/dtop.App.csproj
           -c Release
           -r ${{ matrix.rid }}
           --self-contained

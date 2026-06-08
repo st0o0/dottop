@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\dtop.Core\dtop.Core.csproj" />
+        <ProjectReference Include="..\dtop.Plugin\dtop.Plugin.csproj" />
+        <ProjectReference Include="..\dtop.Windows\dtop.Windows.csproj" />
+        <ProjectReference Include="..\dtop.Linux\dtop.Linux.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Akka.Logger.Serilog" Version="1.5.67" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+        <PackageReference Include="Akka.Hosting" Version="1.5.68" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+        <PackageReference Include="Servus" Version="0.34.0" />
+        <ProjectReference Include="..\..\lib\termina\src\Termina\Termina.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Update="Resources\Strings.resx">
+            <Generator>PublicResXFileCodeGenerator</Generator>
+            <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+        <EmbeddedResource Update="Resources\Strings.de.resx" />
+    </ItemGroup>
+
+    <!--
+      Copy plugin DLLs to App output after build.
+      Plugins are built by the solution (not by this target) to avoid circular deps.
+      When running from Rider/VS: build the solution, not just dtop.App.
+    -->
+    <Target Name="CopyPlugins" AfterTargets="Build"
+            Condition="Exists('..\dtop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\dtop.Plugin.Docker.dll')">
+        <ItemGroup>
+            <PluginOutput Include="..\dtop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\dtop.Plugin.Docker.dll" />
+            <PluginOutput Include="..\dtop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Docker.DotNet*.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="@(PluginOutput)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    </Target>
+
+</Project>

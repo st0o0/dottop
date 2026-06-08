@@ -1,0 +1,16 @@
+<Solution>
+  <Project Path="dtop.Core/dtop.Core.csproj" />
+  <Project Path="dtop.Plugin.Docker/dtop.Plugin.Docker.csproj" />
+  <Project Path="dtop.Plugin/dtop.Plugin.csproj" />
+  <Project Path="dtop.Windows/dtop.Windows.csproj" />
+  <Project Path="dtop.Linux/dtop.Linux.csproj" />
+  <Project Path="dtop.App/dtop.App.csproj" />
+  <Folder Name="/Termina/">
+    <Project Path="../lib/termina/src/Termina/Termina.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="../tests/dtop.Actors.Tests/dtop.Actors.Tests.csproj" />
+    <Project Path="../tests/dtop.Rendering.Tests/dtop.Rendering.Tests.csproj" />
+    <Project Path="../tests/dtop.UI.Tests/dtop.UI.Tests.csproj" />
+  </Folder>
+</Solution>

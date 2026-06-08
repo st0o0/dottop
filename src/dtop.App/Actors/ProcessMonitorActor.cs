@@ -1,0 +1,132 @@
+using System.Diagnostics;
+using System.Threading.Channels;
+using Akka.Actor;
+using dtop.Core.Messages;
+using dtop.Core.Models;
+using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
+
+namespace dtop.App.Actors;
+
+public sealed class ProcessMonitorActor : ReceiveActor
+{
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Process");
+
+    private sealed record Tick;
+
+    private readonly TimeSpan _interval;
+    private Channel<List<ProcessSnapshot>>? _channel;
+    private ICancelable? _tickSchedule;
+    private CancellationTokenSource? _streamCts;
+    private Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)> _previousCpu = new();
+
+    public static Props Props(IProcessClassifier classifier, TimeSpan interval) =>
+        Akka.Actor.Props.Create(() => new ProcessMonitorActor(classifier, interval));
+
+    public ProcessMonitorActor(IProcessClassifier classifier, TimeSpan interval)
+    {
+        _interval = interval;
+
+        Receive<StartProcessMonitoring>(_ => HandleStartMonitoring());
+        Receive<StartMonitoring>(_ => HandleStartMonitoring());
+
+        Receive<Tick>(_ =>
+        {
+            if (_channel is null)
+            {
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+            var coreCount = Environment.ProcessorCount;
+            var currentCpu = new Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)>();
+
+            var processes = Process.GetProcesses();
+            try
+            {
+                var snapshots = processes
+                    .Select(p =>
+                    {
+                        try
+                        {
+                            var pid = p.Id;
+                            var cpuTime = p.TotalProcessorTime;
+                            currentCpu[pid] = (cpuTime, now);
+
+                            double cpuPercent = 0;
+                            if (_previousCpu.TryGetValue(pid, out var prev))
+                            {
+                                var elapsed = (now - prev.Timestamp).TotalMilliseconds;
+                                if (elapsed > 0)
+                                {
+                                    var cpuDelta = (cpuTime - prev.CpuTime).TotalMilliseconds;
+                                    cpuPercent = cpuDelta / elapsed / coreCount * 100;
+                                    cpuPercent = Math.Clamp(cpuPercent, 0, 100);
+                                }
+                            }
+
+                            return new ProcessSnapshot(
+                                Pid: pid, Name: p.ProcessName, Group: classifier.Classify(p),
+                                CpuPercent: Math.Round(cpuPercent, 1),
+                                WorkingSetBytes: p.WorkingSet64,
+                                DiskBytesPerSec: 0, NetworkBytesPerSec: 0,
+                                ThreadCount: p.Threads.Count, HandleCount: p.HandleCount,
+                                UserName: "", ParentPid: 0);
+                        }
+                        catch
+                        {
+                            return null;
+                        }
+                    })
+                    .Where(p => p is not null)
+                    .OrderByDescending(p => p!.WorkingSetBytes)
+                    .ToList();
+
+                _previousCpu = currentCpu;
+                _channel.Writer.TryWrite(snapshots!);
+            }
+            finally
+            {
+                foreach (var p in processes)
+                    p.Dispose();
+            }
+        });
+    }
+
+    private void HandleStartMonitoring()
+    {
+        CleanupPreviousStream();
+
+        _streamCts = new CancellationTokenSource();
+        _channel = Channel.CreateBounded<List<ProcessSnapshot>>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest
+        });
+
+        _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
+            TimeSpan.Zero, _interval, Self, new Tick(), Self);
+
+        var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
+        Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, _streamCts));
+        Trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
+    }
+
+    private void CleanupPreviousStream()
+    {
+        _tickSchedule?.Cancel();
+        _streamCts?.Cancel();
+        _streamCts?.Dispose();
+        _channel?.Writer.TryComplete();
+        _tickSchedule = null;
+        _streamCts = null;
+        _channel = null;
+    }
+
+    protected override void PostStop()
+    {
+        CleanupPreviousStream();
+        Trace.Debug(this, "Stopped");
+        base.PostStop();
+    }
+}

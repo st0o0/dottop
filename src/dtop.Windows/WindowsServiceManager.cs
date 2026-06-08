@@ -3,12 +3,16 @@ using System.Runtime.Versioning;
 using System.ServiceProcess;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Windows;
 
 [SupportedOSPlatform("windows")]
 public sealed class WindowsServiceManager : IServiceManager
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Windows.ServiceManager");
+
     public List<ServiceInfo> GetServices()
     {
         var descriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -25,7 +29,7 @@ public sealed class WindowsServiceManager : IServiceManager
                 }
             }
         }
-        catch { }
+        catch (Exception ex) { Trace.Warning("WindowsServiceManager", "Failed to query WMI service descriptions: {0}", ex.Message); }
 
         return ServiceController.GetServices()
             .Select(s => new ServiceInfo(

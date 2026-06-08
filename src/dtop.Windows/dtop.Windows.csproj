@@ -12,5 +12,6 @@
         <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.8"/>
         <PackageReference Include="System.Management" Version="10.0.8"/>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8"/>
+        <PackageReference Include="Servus" Version="0.34.0"/>
     </ItemGroup>
 </Project>

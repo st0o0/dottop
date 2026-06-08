@@ -6,12 +6,15 @@ using dtop.Core.Platform;
 using dtop.Plugin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Servus;
 using Servus.Application.Startup;
+using Servus.Diagnostics;
 
 namespace dtop.App.Setup;
 
 public sealed class ActorSystemSetup : IServiceSetupContainer
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Setup.ActorSystem");
     public void SetupServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddAkka("dtop", builder =>
@@ -35,7 +38,7 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
 
                 // Initialize disk metrics
                 var diskMetrics = resolver.GetService<IDiskMetrics>();
-                try { diskMetrics.Initialize(); } catch { /* noop */ }
+                try { diskMetrics.Initialize(); } catch (Exception ex) { Trace.Warning("ActorSystemSetup", "Failed to initialize disk metrics: {0}", ex.Message); }
 
                 // Core monitoring supervisor
                 var supervisor = system.ActorOf(

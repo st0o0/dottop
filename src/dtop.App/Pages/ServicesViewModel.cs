@@ -7,6 +7,8 @@ using dtop.App.Services;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using R3;
+using Servus;
+using Servus.Diagnostics;
 using Termina.Input;
 using Termina.Notifications;
 using Termina.Reactive;
@@ -16,6 +18,7 @@ namespace dtop.App.Pages;
 
 public class ServicesViewModel : ReactiveViewModel
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("ViewModel.Services");
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
@@ -56,10 +59,15 @@ public class ServicesViewModel : ReactiveViewModel
 
     public override void OnActivated()
     {
-        _supervisorActor = _supervisor.GetAsync(CancellationToken.None).GetAwaiter().GetResult();
-        RefreshServices();
+        _ = InitializeAsync();
         SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
         Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
+    }
+
+    private async Task InitializeAsync()
+    {
+        _supervisorActor = await _supervisor.GetAsync(CancellationToken.None);
+        RefreshServices();
     }
 
     private async void RefreshServices()
@@ -75,7 +83,7 @@ public class ServicesViewModel : ReactiveViewModel
             AllServices.Value = result;
             ApplyFilter();
         }
-        catch { StatusMessage.Value = Strings.ErrorLoadingServices; }
+        catch (Exception ex) { Trace.Warning(this, "Failed to load services: {0}", ex.Message); StatusMessage.Value = Strings.ErrorLoadingServices; }
     }
 
     private void ApplyFilter()

@@ -1,11 +1,14 @@
 using System.Diagnostics;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Linux;
 
 public sealed class LinuxServiceManager : IServiceManager
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Linux.ServiceManager");
     public List<ServiceInfo> GetServices()
     {
         var services = new List<ServiceInfo>();
@@ -36,7 +39,7 @@ public sealed class LinuxServiceManager : IServiceManager
                 services.Add(new ServiceInfo(name, displayName, status, ServiceStartType.Manual, null, description));
             }
         }
-        catch { }
+        catch (Exception ex) { Trace.Warning("LinuxServiceManager", "Failed to list systemd services: {0}", ex.Message); }
 
         return services.OrderBy(s => s.DisplayName).ToList();
     }
@@ -66,7 +69,7 @@ public sealed class LinuxServiceManager : IServiceManager
             var output = RunSystemctl($"show -p Description --value {name}");
             return output.Trim();
         }
-        catch { return ""; }
+        catch (Exception ex) { Trace.Warning("LinuxServiceManager", "Failed to get description for service {0}: {1}", name, ex.Message); return ""; }
     }
 
     private static string RunSystemctl(string arguments)

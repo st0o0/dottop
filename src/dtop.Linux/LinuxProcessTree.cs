@@ -1,11 +1,14 @@
 using System.Diagnostics;
 using dtop.Core.Messages;
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Linux;
 
 public sealed class LinuxProcessTree : IProcessTreeProvider
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Linux.ProcessTree");
     public ProcessTreeResult BuildTree(int rootPid)
     {
         var parentMap = new Dictionary<int, int>();
@@ -45,7 +48,7 @@ public sealed class LinuxProcessTree : IProcessTreeProvider
                         nameMap[pid] = statLine[(openParenIdx + 1)..closeParenIdx];
                     }
                 }
-                catch { }
+                catch (Exception ex) { Trace.Warning("LinuxProcessTree", "Failed to read /proc/{0}/stat: {1}", dirName, ex.Message); }
             }
         }
         catch
@@ -53,7 +56,7 @@ public sealed class LinuxProcessTree : IProcessTreeProvider
             // Fallback: use Process API
             foreach (var p in Process.GetProcesses())
             {
-                try { nameMap[p.Id] = p.ProcessName; } catch { }
+                try { nameMap[p.Id] = p.ProcessName; } catch (Exception ex) { Trace.Warning("LinuxProcessTree", "Failed to read process name for PID {0}: {1}", p.Id, ex.Message); }
             }
         }
 

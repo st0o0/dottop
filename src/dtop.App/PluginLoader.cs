@@ -2,11 +2,13 @@ using System.Reflection;
 using System.Runtime.Loader;
 using dtop.Plugin;
 using Microsoft.Extensions.DependencyInjection;
+using Servus.Diagnostics;
 
 namespace dtop.App;
 
 public static class PluginLoader
 {
+    private static readonly TraceChannel Trace = Servus.Senf.Tracing.For("PluginLoader");
     public static PluginRegistry DiscoverAndConfigure(IServiceCollection services, ITickSource tickSource)
     {
         var plugins = DiscoverPlugins();
@@ -19,8 +21,9 @@ public static class PluginLoader
             {
                 plugin.Configure(builder);
             }
-            catch
+            catch (Exception ex)
             {
+                Trace.Warning("PluginLoader", "Failed to configure plugin {0}: {1}", plugin.GetType().Name, ex.Message);
                 continue;
             }
             builders.Add(builder);
@@ -45,7 +48,7 @@ public static class PluginLoader
                     var assembly = loadContext.LoadFromAssemblyPath(dll);
                     DiscoverInAssembly(assembly, plugins);
                 }
-                catch { }
+                catch (Exception ex) { Trace.Warning("PluginLoader", "Failed to load plugin assembly {0}: {1}", dll, ex.Message); }
             }
         }
 
@@ -66,7 +69,7 @@ public static class PluginLoader
                     plugins.Add((IDtopPlugin)Activator.CreateInstance(type)!);
             }
         }
-        catch { }
+        catch (Exception ex) { Trace.Warning("PluginLoader", "Failed to discover plugins in assembly {0}: {1}", assembly.FullName, ex.Message); }
     }
 }
 

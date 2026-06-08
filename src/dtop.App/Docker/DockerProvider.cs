@@ -2,12 +2,15 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 using CoreVolumeInfo = dtop.Core.Models.VolumeInfo;
 
 namespace dtop.App.Docker;
 
 public sealed class DockerProvider : IDockerProvider
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Docker.Provider");
     private readonly DockerClient _client;
     private bool? _isAvailable;
 
@@ -29,11 +32,12 @@ public sealed class DockerProvider : IDockerProvider
 
             try
             {
-                _client.System.PingAsync().GetAwaiter().GetResult();
+                Task.Run(() => _client.System.PingAsync()).Wait(TimeSpan.FromSeconds(5));
                 _isAvailable = true;
             }
-            catch
+            catch (Exception ex)
             {
+                Trace.Warning("DockerProvider", "Docker ping failed, marking unavailable: {0}", ex.Message);
                 _isAvailable = false;
             }
             return _isAvailable.Value;
@@ -54,7 +58,7 @@ public sealed class DockerProvider : IDockerProvider
                 c => c.ID,
                 c => FetchStatsAsync(c.ID, ct));
             try { await Task.WhenAll(statsTasks.Values).WaitAsync(TimeSpan.FromSeconds(3), ct); }
-            catch { }
+            catch (Exception ex) { Trace.Warning("DockerProvider", "Timeout fetching container stats: {0}", ex.Message); }
 
             return containers.Select(c =>
             {
@@ -86,8 +90,9 @@ public sealed class DockerProvider : IDockerProvider
                 );
             }).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.Warning("DockerProvider", "Failed to list containers: {0}", ex.Message);
             _isAvailable = false;
             return [];
         }
@@ -132,8 +137,9 @@ public sealed class DockerProvider : IDockerProvider
             }
             return (cpu, memUsage, memLimit, netRx, netTx);
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.Warning("DockerProvider", "Failed to fetch stats for container {0}: {1}", id, ex.Message);
             return default;
         }
     }
@@ -179,9 +185,10 @@ public sealed class DockerProvider : IDockerProvider
 
             return lines.TakeLast(tailLines).ToList();
         }
-        catch
+        catch (Exception ex)
         {
-            return ["Error reading logs"];
+            Trace.Warning("DockerProvider", "Failed to read logs for container {0}: {1}", containerId, ex.Message);
+            return [$"Error reading logs: {ex.Message}"];
         }
     }
 
@@ -222,8 +229,9 @@ public sealed class DockerProvider : IDockerProvider
                     Containers: containers);
             }).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.Warning("DockerProvider", "Failed to list networks: {0}", ex.Message);
             return [];
         }
     }
@@ -245,8 +253,9 @@ public sealed class DockerProvider : IDockerProvider
                         as IReadOnlyDictionary<string, string> ?? new Dictionary<string, string>())
             )).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.Warning("DockerProvider", "Failed to list volumes: {0}", ex.Message);
             return [];
         }
     }
@@ -270,8 +279,9 @@ public sealed class DockerProvider : IDockerProvider
                     ContainerCount: (int)img.Containers);
             }).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.Warning("DockerProvider", "Failed to list images: {0}", ex.Message);
             return [];
         }
     }

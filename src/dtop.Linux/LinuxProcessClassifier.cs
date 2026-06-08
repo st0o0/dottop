@@ -1,11 +1,14 @@
 using System.Diagnostics;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Linux;
 
 public sealed class LinuxProcessClassifier : IProcessClassifier
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Linux.ProcessClassifier");
     public ProcessGroup Classify(Process process)
     {
         try
@@ -42,10 +45,10 @@ public sealed class LinuxProcessClassifier : IProcessClassifier
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { Trace.Warning("LinuxProcessClassifier", "Failed to read /proc environ for PID {0}: {1}", pid, ex.Message); }
 
             return ProcessGroup.Background;
         }
-        catch { return ProcessGroup.Background; }
+        catch (Exception ex) { Trace.Warning("LinuxProcessClassifier", "Failed to classify process: {0}", ex.Message); return ProcessGroup.Background; }
     }
 }

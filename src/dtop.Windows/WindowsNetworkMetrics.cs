@@ -1,11 +1,14 @@
 using System.Net.NetworkInformation;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Windows;
 
 public sealed class WindowsNetworkMetrics : INetworkMetrics
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Windows.NetworkMetrics");
     private Dictionary<string, (long Rx, long Tx)>? _prevBytes;
 
     public IReadOnlyList<NetworkSnapshot> Measure()
@@ -33,7 +36,7 @@ public sealed class WindowsNetworkMetrics : INetworkMetrics
                 nets.Add(new NetworkSnapshot(name, rxPerSec, txPerSec));
             }
         }
-        catch { }
+        catch (Exception ex) { Trace.Warning("WindowsNetworkMetrics", "Failed to measure network interfaces: {0}", ex.Message); }
         _prevBytes = currentBytes;
         return nets;
     }

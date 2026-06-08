@@ -2,12 +2,15 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using dtop.Core.Platform;
 using Microsoft.Win32;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Windows;
 
 [SupportedOSPlatform("windows")]
 public sealed class WindowsCpuMetrics : ICpuMetrics
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Windows.CpuMetrics");
     private long _prevIdle;
     private long _prevTotal;
     private long[]? _prevCoreIdle;
@@ -38,8 +41,9 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
 
             return new CpuMeasurement(totalPercent, cores);
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.Warning("WindowsCpuMetrics", "Failed to measure CPU: {0}", ex.Message);
             return new CpuMeasurement(0, []);
         }
     }
@@ -81,7 +85,7 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
             }
             finally { Marshal.FreeHGlobal(buffer); }
         }
-        catch { return Enumerable.Repeat(0.0, coreCount).ToList(); }
+        catch (Exception ex) { Trace.Warning("WindowsCpuMetrics", "Failed to get per-core CPU: {0}", ex.Message); return Enumerable.Repeat(0.0, coreCount).ToList(); }
     }
 
     private static string ReadCpuName()
@@ -92,7 +96,7 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
                 @"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
             return key?.GetValue("ProcessorNameString")?.ToString()?.Trim() ?? "CPU";
         }
-        catch { return "CPU"; }
+        catch (Exception ex) { Trace.Warning("WindowsCpuMetrics", "Failed to read CPU name from registry: {0}", ex.Message); return "CPU"; }
     }
 
     [DllImport("kernel32.dll")]

@@ -1,9 +1,12 @@
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Linux;
 
 public sealed class LinuxDiskMetrics : IDiskMetrics
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Linux.DiskMetrics");
     private Dictionary<string, (ulong ReadSectors, ulong WriteSectors, ulong IoTicks, DateTime Timestamp)>? _previous;
 
     private const int SectorSize = 512;
@@ -77,7 +80,7 @@ public sealed class LinuxDiskMetrics : IDiskMetrics
                 }
             }
         }
-        catch { }
+        catch (Exception ex) { Trace.Warning("LinuxDiskMetrics", "Failed to read /proc/diskstats: {0}", ex.Message); }
 
         return result;
     }

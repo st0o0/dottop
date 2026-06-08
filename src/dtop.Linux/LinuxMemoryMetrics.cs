@@ -1,9 +1,12 @@
 namespace dtop.Linux;
 
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 public sealed class LinuxMemoryMetrics : IMemoryMetrics
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Linux.MemoryMetrics");
     public (ulong TotalBytes, ulong UsedBytes) Measure()
     {
         try
@@ -26,7 +29,7 @@ public sealed class LinuxMemoryMetrics : IMemoryMetrics
                 return (total, total - available);
             }
         }
-        catch { }
+        catch (Exception ex) { Trace.Warning("LinuxMemoryMetrics", "Failed to read /proc/meminfo: {0}", ex.Message); }
 
         return (0, 0);
     }

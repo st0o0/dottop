@@ -7,6 +7,8 @@ using dtop.App.Services;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using R3;
+using Servus;
+using Servus.Diagnostics;
 using Termina.Input;
 using Termina.Notifications;
 using Termina.Reactive;
@@ -27,6 +29,7 @@ public record DockerListItem
 
 public class DockerViewModel : ReactiveViewModel
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("ViewModel.Docker");
     private readonly HashSet<string> _expandedGroups = new();
     private readonly HashSet<string> _knownGroups = new();
 
@@ -91,10 +94,15 @@ public class DockerViewModel : ReactiveViewModel
     public override void OnActivated()
     {
         _cts = new CancellationTokenSource();
-        _dockerActorRef = _dockerActor.GetAsync(CancellationToken.None).GetAwaiter().GetResult();
-        _ = ConnectStreamAsync();
+        _ = InitializeAsync();
         SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
         Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
+    }
+
+    private async Task InitializeAsync()
+    {
+        _dockerActorRef = await _dockerActor.GetAsync(CancellationToken.None);
+        await ConnectStreamAsync();
     }
 
     private async Task ConnectStreamAsync()
@@ -131,7 +139,7 @@ public class DockerViewModel : ReactiveViewModel
             catch (OperationCanceledException) { return; }
             catch
             {
-                try { await Task.Delay(2000, ct); } catch { return; }
+                try { await Task.Delay(2000, ct); } catch (OperationCanceledException) { return; }
             }
         }
     }
@@ -543,7 +551,7 @@ public class DockerViewModel : ReactiveViewModel
                     break;
             }
         }
-        catch { /* ignore timeout */ }
+        catch (Exception ex) { Trace.Warning(this, "Failed to load sub-tab data: {0}", ex.Message); }
         _detailContentChanged.OnNext(Unit.Default);
     }
 

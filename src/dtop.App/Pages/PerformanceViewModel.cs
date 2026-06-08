@@ -166,7 +166,7 @@ public class PerformanceViewModel : ReactiveViewModel
             catch (OperationCanceledException) { return; }
             catch
             {
-                try { await Task.Delay(2000, ct); } catch { return; }
+                try { await Task.Delay(2000, ct); } catch (OperationCanceledException) { return; }
             }
         }
     }

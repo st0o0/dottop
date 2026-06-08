@@ -4,12 +4,15 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
 namespace dtop.Windows;
 
 [SupportedOSPlatform("windows")]
 public sealed class WindowsConnectionProvider : IConnectionProvider
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Windows.ConnectionProvider");
     private const int AfInet = 2;
     private const int TcpTableOwnerPidAll = 5;
     private const int UdpTableOwnerPid = 1;
@@ -24,14 +27,14 @@ public sealed class WindowsConnectionProvider : IConnectionProvider
             foreach (var p in Process.GetProcesses())
             {
                 try { processNames[p.Id] = p.ProcessName; }
-                catch { }
+                catch (Exception ex) { Trace.Warning("WindowsConnectionProvider", "Failed to read process name for PID {0}: {1}", p.Id, ex.Message); }
                 p.Dispose();
             }
         }
-        catch { }
+        catch (Exception ex) { Trace.Warning("WindowsConnectionProvider", "Failed to enumerate processes: {0}", ex.Message); }
 
-        try { results.AddRange(GetTcpConnections(processNames)); } catch { }
-        try { results.AddRange(GetUdpEndpoints(processNames)); } catch { }
+        try { results.AddRange(GetTcpConnections(processNames)); } catch (Exception ex) { Trace.Warning("WindowsConnectionProvider", "Failed to get TCP connections: {0}", ex.Message); }
+        try { results.AddRange(GetUdpEndpoints(processNames)); } catch (Exception ex) { Trace.Warning("WindowsConnectionProvider", "Failed to get UDP endpoints: {0}", ex.Message); }
 
         return results;
     }

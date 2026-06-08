@@ -9,8 +9,6 @@ public sealed class DockerProvider : IDockerProvider
 {
     private readonly DockerClient _client;
     private bool? _isAvailable;
-    private readonly Dictionary<string, (double Cpu, ulong MemUsage, ulong MemLimit, ulong NetRx, ulong NetTx)> _statsCache = new();
-    private bool _statsFetchInProgress;
 
     public DockerProvider()
     {
@@ -41,16 +39,27 @@ public sealed class DockerProvider : IDockerProvider
     {
         try
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(TimeSpan.FromSeconds(5));
-
             var containers = await _client.Containers.ListContainersAsync(
-                new ContainersListParameters { All = true }, cts.Token);
+                new ContainersListParameters { All = true }, ct);
 
-            // Build result immediately using cached stats
-            var result = containers.Select(c =>
+            var running = containers.Where(c => c.State == "running").ToList();
+
+            // Fetch stats for all running containers in parallel
+            var statsTasks = running.ToDictionary(
+                c => c.ID,
+                c => FetchStatsAsync(c.ID, ct));
+            try { await Task.WhenAll(statsTasks.Values).WaitAsync(TimeSpan.FromSeconds(3), ct); }
+            catch { }
+
+            return containers.Select(c =>
             {
-                _statsCache.TryGetValue(c.ID, out var cached);
+                double cpu = 0;
+                ulong memUsage = 0, memLimit = 0, netRx = 0, netTx = 0;
+
+                if (statsTasks.TryGetValue(c.ID, out var task) && task.IsCompletedSuccessfully)
+                {
+                    (cpu, memUsage, memLimit, netRx, netTx) = task.Result;
+                }
 
                 return new ContainerSnapshot(
                     Id: c.ID[..12],
@@ -59,11 +68,11 @@ public sealed class DockerProvider : IDockerProvider
                     Status: c.State,
                     State: c.Status,
                     Created: new DateTimeOffset(c.Created),
-                    CpuPercent: Math.Round(cached.Cpu, 1),
-                    MemoryUsageBytes: cached.MemUsage,
-                    MemoryLimitBytes: cached.MemLimit,
-                    NetworkRxBytes: cached.NetRx,
-                    NetworkTxBytes: cached.NetTx,
+                    CpuPercent: Math.Round(cpu, 1),
+                    MemoryUsageBytes: memUsage,
+                    MemoryLimitBytes: memLimit,
+                    NetworkRxBytes: netRx,
+                    NetworkTxBytes: netTx,
                     Ports: c.Ports?.Select(p => p.PublicPort > 0
                             ? $"{p.PublicPort}:{p.PrivatePort}"
                             : $"{p.PrivatePort}")
@@ -71,15 +80,6 @@ public sealed class DockerProvider : IDockerProvider
                     ComposeProject: c.Labels?.TryGetValue("com.docker.compose.project", out var project) == true ? project : null
                 );
             }).ToList();
-
-            // Refresh stats in background (non-blocking)
-            if (!_statsFetchInProgress)
-            {
-                var runningIds = containers.Where(c => c.State == "running").Select(c => c.ID).ToList();
-                _ = RefreshStatsInBackgroundAsync(runningIds, ct);
-            }
-
-            return result;
         }
         catch
         {
@@ -88,64 +88,46 @@ public sealed class DockerProvider : IDockerProvider
         }
     }
 
-    private async Task RefreshStatsInBackgroundAsync(List<string> containerIds, CancellationToken ct)
+    private async Task<(double Cpu, ulong MemUsage, ulong MemLimit, ulong NetRx, ulong NetTx)> FetchStatsAsync(
+        string id, CancellationToken ct)
     {
-        _statsFetchInProgress = true;
         try
         {
-            var tasks = containerIds.Select(async id =>
+            ContainerStatsResponse? stats = null;
+            var tcs = new TaskCompletionSource<bool>();
+
+            var progress = new Progress<ContainerStatsResponse>(s =>
             {
-                var stats = await GetOneTimeStatsAsync(id, ct);
-                if (stats is not null)
-                {
-                    var cpu = CalculateCpuPercent(stats);
-                    var memUsage = stats.MemoryStats.Usage ?? 0;
-                    var memLimit = stats.MemoryStats.Limit ?? 0;
-                    ulong netRx = 0, netTx = 0;
-                    if (stats.Networks is not null)
-                    {
-                        foreach (var net in stats.Networks.Values)
-                        {
-                            netRx += net.RxBytes;
-                            netTx += net.TxBytes;
-                        }
-                    }
-                    _statsCache[id] = (cpu, memUsage, memLimit, netRx, netTx);
-                }
+                stats = s;
+                tcs.TrySetResult(true);
             });
-            await Task.WhenAll(tasks);
-        }
-        catch { }
-        finally { _statsFetchInProgress = false; }
-    }
 
-    private async Task<ContainerStatsResponse?> GetOneTimeStatsAsync(string id, CancellationToken ct)
-    {
-        ContainerStatsResponse? result = null;
-        var tcs = new TaskCompletionSource<bool>();
+            _ = _client.Containers.GetContainerStatsAsync(id,
+                new ContainerStatsParameters { Stream = false }, progress, ct)
+                .ContinueWith(_ => tcs.TrySetResult(true), TaskScheduler.Default);
 
-        var progress = new Progress<ContainerStatsResponse>(stats =>
-        {
-            result = stats;
-            tcs.TrySetResult(true);
-        });
+            await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2), ct);
 
-        _ = Task.Run(async () =>
-        {
-            try
+            if (stats is null) return default;
+
+            var cpu = CalculateCpuPercent(stats);
+            var memUsage = stats.MemoryStats.Usage ?? 0;
+            var memLimit = stats.MemoryStats.Limit ?? 0;
+            ulong netRx = 0, netTx = 0;
+            if (stats.Networks is not null)
             {
-                await _client.Containers.GetContainerStatsAsync(id,
-                    new ContainerStatsParameters { Stream = false }, progress, ct);
+                foreach (var net in stats.Networks.Values)
+                {
+                    netRx += net.RxBytes;
+                    netTx += net.TxBytes;
+                }
             }
-            catch { }
-            finally { tcs.TrySetResult(true); }
-        }, ct);
-
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timeout.Token);
-        try { await tcs.Task.WaitAsync(linked.Token); } catch { }
-
-        return result;
+            return (cpu, memUsage, memLimit, netRx, netTx);
+        }
+        catch
+        {
+            return default;
+        }
     }
 
     private static double CalculateCpuPercent(ContainerStatsResponse stats)
@@ -169,9 +151,6 @@ public sealed class DockerProvider : IDockerProvider
     {
         try
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(TimeSpan.FromSeconds(5));
-
             var lines = new List<string>();
             var logParams = new ContainerLogsParameters
             {
@@ -181,7 +160,8 @@ public sealed class DockerProvider : IDockerProvider
             };
 
             var progress = new Progress<string>(line => lines.Add(line));
-            await _client.Containers.GetContainerLogsAsync(containerId, logParams, progress, cts.Token);
+            await _client.Containers.GetContainerLogsAsync(containerId, logParams, progress, ct)
+                .WaitAsync(TimeSpan.FromSeconds(3), ct);
 
             return lines.TakeLast(tailLines).ToList();
         }

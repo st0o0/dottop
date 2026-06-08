@@ -32,15 +32,15 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
                 var c = item.Container!;
                 var indent = c.ComposeProject is not null ? "   " : " ";
-                var name = c.Name.Length > 18 ? c.Name[..17] + "…" : c.Name;
-                var image = c.Image.Length > 18 ? c.Image[..17] + "…" : c.Image;
+                var name = c.Name.Length > 24 ? c.Name[..23] + "…" : c.Name;
+                var image = c.Image.Length > 24 ? c.Image[..23] + "…" : c.Image;
                 var statusIcon = c.Status is "running" ? "▶" : "■";
                 var cpuStr = c.CpuPercent > 0 ? $"{c.CpuPercent,5:F1}%" : "    —";
                 var ramMb = c.MemoryUsageBytes / 1024 / 1024;
-                var ramStr = ramMb > 0 ? (ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB") : "  —";
+                var ramStr = ramMb > 0 ? (ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb,4}MB") : "    —";
                 var port = c.Ports.Count > 0 ? c.Ports[0] : "—";
-                if (port.Length > 12) port = port[..11] + "…";
-                return $"{indent}{statusIcon} {name,-18} {image,-18} {cpuStr} {ramStr,7} {port,-12} {c.State}";
+                if (port.Length > 14) port = port[..13] + "…";
+                return $"{indent}{statusIcon} {name,-24} {image,-24} {cpuStr} {ramStr,7}  {port,-14} {c.State}";
             },
             item =>
             {
@@ -85,7 +85,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Theme.Primary)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($"   {"Name",-20} {"Image",-20} {"CPU",6} {"RAM",7} {"Port",-12} {Strings.HeaderStatus}")
+                    .WithChild(new TextNode($"   {"Name",-24} {"Image",-24} {"CPU",6} {"RAM",7}  {"Port",-14} {Strings.HeaderStatus}")
                         .WithForeground(Theme.Header).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())

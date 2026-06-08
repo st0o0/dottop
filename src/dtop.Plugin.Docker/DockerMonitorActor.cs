@@ -119,6 +119,72 @@ public sealed class DockerMonitorActor : ReceiveActor
                 Sender.Tell(new ActionFailure(ex.Message));
             }
         });
+
+        ReceiveAsync<GetNetworks>(async _ =>
+        {
+            try { Sender.Tell(new NetworksResult(await _docker.GetNetworksAsync())); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<GetVolumes>(async _ =>
+        {
+            try { Sender.Tell(new VolumesResult(await _docker.GetVolumesAsync())); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<GetImages>(async _ =>
+        {
+            try { Sender.Tell(new ImagesResult(await _docker.GetImagesAsync())); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<CreateNetwork>(async msg =>
+        {
+            try { await _docker.CreateNetworkAsync(msg.Name, msg.Driver); Sender.Tell(new ActionSuccess($"Network '{msg.Name}' created")); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<CreateVolume>(async msg =>
+        {
+            try { await _docker.CreateVolumeAsync(msg.Name, msg.Driver); Sender.Tell(new ActionSuccess($"Volume '{msg.Name}' created")); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<PullImage>(async msg =>
+        {
+            try { await _docker.PullImageAsync(msg.Image); Sender.Tell(new ActionSuccess($"Image '{msg.Image}' pulled")); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<DeleteNetwork>(async msg =>
+        {
+            try { await _docker.DeleteNetworkAsync(msg.Id); Sender.Tell(new ActionSuccess("Network deleted")); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<DeleteVolume>(async msg =>
+        {
+            try { await _docker.DeleteVolumeAsync(msg.Name); Sender.Tell(new ActionSuccess("Volume deleted")); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<DeleteImage>(async msg =>
+        {
+            try { await _docker.DeleteImageAsync(msg.Id); Sender.Tell(new ActionSuccess("Image deleted")); }
+            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+        });
+
+        ReceiveAsync<PruneVolumes>(async _ =>
+        {
+            await Task.CompletedTask;
+            Sender.Tell(new ActionSuccess("Not implemented yet"));
+        });
+
+        ReceiveAsync<PruneImages>(async _ =>
+        {
+            await Task.CompletedTask;
+            Sender.Tell(new ActionSuccess("Not implemented yet"));
+        });
     }
 
     private void HandleStartMonitoring()

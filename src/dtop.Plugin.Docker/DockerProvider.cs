@@ -2,6 +2,7 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using CoreVolumeInfo = dtop.Core.Models.VolumeInfo;
 
 namespace dtop.Plugin.Docker;
 
@@ -197,5 +198,116 @@ public sealed class DockerProvider : IDockerProvider
     public async Task RestartAsync(string containerId, CancellationToken ct = default)
     {
         await _client.Containers.RestartContainerAsync(containerId, new ContainerRestartParameters { WaitBeforeKillSeconds = 10 }, ct);
+    }
+
+    public async Task<IReadOnlyList<NetworkInfo>> GetNetworksAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var networks = await _client.Networks.ListNetworksAsync(new NetworksListParameters(), ct);
+            return networks.Select(n =>
+            {
+                var subnet = n.IPAM?.Config?.FirstOrDefault()?.Subnet ?? "";
+                var containers = n.Containers?.Select(kvp =>
+                    new NetworkContainer(kvp.Key[..Math.Min(12, kvp.Key.Length)], kvp.Value.Name, kvp.Value.IPv4Address))
+                    .ToList() as IReadOnlyList<NetworkContainer> ?? [];
+                return new NetworkInfo(
+                    Id: n.ID,
+                    Name: n.Name,
+                    Driver: n.Driver,
+                    Scope: n.Scope,
+                    Internal: n.Internal,
+                    IPv6: n.EnableIPv6,
+                    Subnet: subnet,
+                    Containers: containers);
+            }).ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public async Task<IReadOnlyList<CoreVolumeInfo>> GetVolumesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await _client.Volumes.ListAsync(ct);
+            return (response.Volumes ?? []).Select(v => new CoreVolumeInfo(
+                Name: v.Name,
+                Driver: v.Driver,
+                Mountpoint: v.Mountpoint,
+                Created: DateTimeOffset.TryParse(v.CreatedAt, out var created) ? created : DateTimeOffset.MinValue,
+                SizeBytes: v.UsageData?.Size ?? 0,
+                MountCount: (int)(v.UsageData?.RefCount ?? 0),
+                Labels: v.Labels as IReadOnlyDictionary<string, string>
+                    ?? (v.Labels?.ToDictionary(kv => kv.Key, kv => kv.Value)
+                        as IReadOnlyDictionary<string, string> ?? new Dictionary<string, string>())
+            )).ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public async Task<IReadOnlyList<ImageInfo>> GetImagesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var images = await _client.Images.ListImagesAsync(new ImagesListParameters { All = false }, ct);
+            return images.Select(img =>
+            {
+                var repoTag = img.RepoTags?.FirstOrDefault() ?? "<none>:<none>";
+                var parts = repoTag.Split(':', 2);
+                return new ImageInfo(
+                    Id: img.ID.Replace("sha256:", "")[..12],
+                    Repository: parts[0],
+                    Tag: parts.Length > 1 ? parts[1] : "<none>",
+                    SizeBytes: img.Size,
+                    Created: new DateTimeOffset(img.Created),
+                    OsArch: "",
+                    ContainerCount: (int)img.Containers);
+            }).ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public async Task CreateNetworkAsync(string name, string driver = "bridge", CancellationToken ct = default)
+    {
+        await _client.Networks.CreateNetworkAsync(new NetworksCreateParameters { Name = name, Driver = driver }, ct);
+    }
+
+    public async Task CreateVolumeAsync(string name, string driver = "local", CancellationToken ct = default)
+    {
+        await _client.Volumes.CreateAsync(new VolumesCreateParameters { Name = name, Driver = driver }, ct);
+    }
+
+    public async Task PullImageAsync(string image, CancellationToken ct = default)
+    {
+        var parts = image.Split(':', 2);
+        var repo = parts[0];
+        var tag = parts.Length > 1 ? parts[1] : "latest";
+        await _client.Images.CreateImageAsync(
+            new ImagesCreateParameters { FromImage = repo, Tag = tag },
+            null, new Progress<JSONMessage>(), ct);
+    }
+
+    public async Task DeleteNetworkAsync(string id, CancellationToken ct = default)
+    {
+        await _client.Networks.DeleteNetworkAsync(id, ct);
+    }
+
+    public async Task DeleteVolumeAsync(string name, CancellationToken ct = default)
+    {
+        await _client.Volumes.RemoveAsync(name, null, ct);
+    }
+
+    public async Task DeleteImageAsync(string id, CancellationToken ct = default)
+    {
+        await _client.Images.DeleteImageAsync(id, new ImageDeleteParameters(), ct);
     }
 }

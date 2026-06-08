@@ -17,7 +17,7 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
         <PackageReference Include="Akka.Hosting" Version="1.5.68" />
         <PackageReference Include="Servus" Version="0.34.0" />
-        <ProjectReference Include="D:\GIT\termina\src\Termina\Termina.csproj" />
+        <ProjectReference Include="..\..\lib\termina\src\Termina\Termina.csproj" />
     </ItemGroup>
 
     <ItemGroup>

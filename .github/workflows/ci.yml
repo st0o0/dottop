@@ -12,22 +12,26 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
-      - name: Restore
-        run: dotnet restore src/dtop.slnx
-
       - name: Build
-        run: dotnet build src/dtop.slnx --no-restore -c Release
+        run: dotnet build src/dtop.slnx -c Release
 
-      - name: Test
-        run: dotnet test tests/dtop.Actors.Tests/ --no-build -c Release
+      - name: Test (Actors)
+        run: dotnet test --project tests/dtop.Actors.Tests/dtop.Actors.Tests.csproj -c Release --no-build
+        timeout-minutes: 3
+
+      - name: Test (Rendering)
+        run: dotnet test --project tests/dtop.Rendering.Tests/dtop.Rendering.Tests.csproj -c Release --no-build
+        timeout-minutes: 3

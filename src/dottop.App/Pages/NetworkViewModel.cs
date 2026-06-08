@@ -3,6 +3,8 @@ using dottop.Core.Models;
 using dottop.Core.Platform;
 using dottop.Nodes;
 using dottop.Resources;
+using Servus;
+using Servus.Diagnostics;
 using Termina.Input;
 using Termina.Reactive;
 
@@ -10,6 +12,7 @@ namespace dottop.Pages;
 
 public class NetworkViewModel : ReactiveViewModel
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("ViewModel.Network");
     private readonly IConnectionProvider _connectionProvider;
 
     public IScrollableList? ListNode { get; set; }
@@ -48,7 +51,11 @@ public class NetworkViewModel : ReactiveViewModel
             Connections.Value = _connectionProvider.GetConnections();
             ApplyFilter();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _trace.Warning(this, "Failed to refresh connections: {0}", ex.Message);
+            StatusMessage.Value = "Failed to refresh connections";
+        }
     }
 
     private void ApplyFilter()

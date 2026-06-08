@@ -42,43 +42,52 @@ public sealed class ProcessMonitorActor : ReceiveActor
             var coreCount = Environment.ProcessorCount;
             var currentCpu = new Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)>();
 
-            var snapshots = Process.GetProcesses()
-                .Select(p =>
-                {
-                    try
+            var processes = Process.GetProcesses();
+            try
+            {
+                var snapshots = processes
+                    .Select(p =>
                     {
-                        var pid = p.Id;
-                        var cpuTime = p.TotalProcessorTime;
-                        currentCpu[pid] = (cpuTime, now);
-
-                        double cpuPercent = 0;
-                        if (_previousCpu.TryGetValue(pid, out var prev))
+                        try
                         {
-                            var elapsed = (now - prev.Timestamp).TotalMilliseconds;
-                            if (elapsed > 0)
+                            var pid = p.Id;
+                            var cpuTime = p.TotalProcessorTime;
+                            currentCpu[pid] = (cpuTime, now);
+
+                            double cpuPercent = 0;
+                            if (_previousCpu.TryGetValue(pid, out var prev))
                             {
-                                var cpuDelta = (cpuTime - prev.CpuTime).TotalMilliseconds;
-                                cpuPercent = cpuDelta / elapsed / coreCount * 100;
-                                cpuPercent = Math.Clamp(cpuPercent, 0, 100);
+                                var elapsed = (now - prev.Timestamp).TotalMilliseconds;
+                                if (elapsed > 0)
+                                {
+                                    var cpuDelta = (cpuTime - prev.CpuTime).TotalMilliseconds;
+                                    cpuPercent = cpuDelta / elapsed / coreCount * 100;
+                                    cpuPercent = Math.Clamp(cpuPercent, 0, 100);
+                                }
                             }
+
+                            return new ProcessSnapshot(
+                                Pid: pid, Name: p.ProcessName, Group: classifier.Classify(p),
+                                CpuPercent: Math.Round(cpuPercent, 1),
+                                WorkingSetBytes: p.WorkingSet64,
+                                DiskBytesPerSec: 0, NetworkBytesPerSec: 0,
+                                ThreadCount: p.Threads.Count, HandleCount: p.HandleCount,
+                                UserName: "", ParentPid: 0);
                         }
+                        catch { return null; }
+                    })
+                    .Where(p => p is not null)
+                    .OrderByDescending(p => p!.WorkingSetBytes)
+                    .ToList();
 
-                        return new ProcessSnapshot(
-                            Pid: pid, Name: p.ProcessName, Group: classifier.Classify(p),
-                            CpuPercent: Math.Round(cpuPercent, 1),
-                            WorkingSetBytes: p.WorkingSet64,
-                            DiskBytesPerSec: 0, NetworkBytesPerSec: 0,
-                            ThreadCount: p.Threads.Count, HandleCount: p.HandleCount,
-                            UserName: "", ParentPid: 0);
-                    }
-                    catch { return null; }
-                })
-                .Where(p => p is not null)
-                .OrderByDescending(p => p!.WorkingSetBytes)
-                .ToList();
-
-            _previousCpu = currentCpu;
-            _channel.Writer.TryWrite(snapshots!);
+                _previousCpu = currentCpu;
+                _channel.Writer.TryWrite(snapshots!);
+            }
+            finally
+            {
+                foreach (var p in processes)
+                    p.Dispose();
+            }
         });
     }
 

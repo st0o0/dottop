@@ -85,7 +85,7 @@ public class UpdateService
             }
             else
             {
-                var process = Process.Start("tar", $"-xzf {archivePath} -C {extractDir}");
+                var process = Process.Start("tar", $"-xzf \"{archivePath}\" -C \"{extractDir}\"");
                 process?.WaitForExit(30000);
             }
 
@@ -122,7 +122,7 @@ public class UpdateService
             else
             {
                 File.Copy(newBinary, currentBinary, overwrite: true);
-                Process.Start("chmod", $"+x {currentBinary}")?.WaitForExit(5000);
+                Process.Start("chmod", $"+x \"{currentBinary}\"")?.WaitForExit(5000);
                 Process.Start(currentBinary);
             }
 

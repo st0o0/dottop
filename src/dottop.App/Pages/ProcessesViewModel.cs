@@ -8,6 +8,8 @@ using dottop.Nodes;
 using dottop.Resources;
 using dottop.Services;
 using Termina.Input;
+using Servus;
+using Servus.Diagnostics;
 using Termina.Reactive;
 
 namespace dottop.Pages;
@@ -16,6 +18,7 @@ public enum SortColumn { Name, Cpu, Ram, Pid }
 
 public class ProcessesViewModel : ReactiveViewModel
 {
+    private static readonly TraceChannel _trace = Senf.Tracing.For("ViewModel.Processes");
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
     private IActorRef? _supervisorActor;
@@ -260,13 +263,15 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public void CloseOverlay()
     {
-        IsOverlayOpen.Value = false;
-        IsKillConfirmPending.Value = false;
-        SelectedProcess.Value = null;
+        // Clear data before setting flags to avoid rendering null data
         ProcessTree.Value = null;
         ProcessEnv.Value = null;
         ProcessHandles.Value = null;
+        SelectedProcess.Value = null;
         OverlayListNode = null;
+        // Then update state — IsOverlayOpen triggers UI update, data should be cleared first
+        IsKillConfirmPending.Value = false;
+        IsOverlayOpen.Value = false;
         UpdateStatus();
     }
 
@@ -301,7 +306,11 @@ public class ProcessesViewModel : ReactiveViewModel
                     break;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _trace.Warning(this, "Failed to load overlay tab {0}: {1}", OverlayTabIndex.Value, ex.Message);
+            StatusMessage.Value = "Failed to load tab data";
+        }
     }
 
     private void CycleSortColumn()

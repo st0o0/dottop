@@ -20,7 +20,7 @@ public sealed class ProcessActionActor : ReceiveActor
         {
             try
             {
-                var proc = Process.GetProcessById(msg.Pid);
+                using var proc = Process.GetProcessById(msg.Pid);
                 proc.Kill();
                 Sender.Tell(new ActionSuccess($"Killed process {msg.Pid}"));
             }
@@ -31,7 +31,7 @@ public sealed class ProcessActionActor : ReceiveActor
         {
             try
             {
-                var proc = Process.GetProcessById(msg.Pid);
+                using var proc = Process.GetProcessById(msg.Pid);
                 proc.PriorityClass = msg.Priority;
                 Sender.Tell(new ActionSuccess($"Priority set for {msg.Pid}"));
             }
@@ -42,7 +42,7 @@ public sealed class ProcessActionActor : ReceiveActor
         {
             try
             {
-                var proc = Process.GetProcessById(msg.Pid);
+                using var proc = Process.GetProcessById(msg.Pid);
                 proc.ProcessorAffinity = msg.AffinityMask;
                 Sender.Tell(new ActionSuccess($"Affinity set for {msg.Pid}"));
             }
@@ -63,6 +63,9 @@ public sealed class ProcessActionActor : ReceiveActor
         {
             try
             {
+                using var proc = Process.GetProcessById(msg.Pid);
+                // .NET cannot read environment variables of other processes directly.
+                // Return the current process's env as a fallback.
                 IReadOnlyDictionary<string, string> env = Environment.GetEnvironmentVariables()
                     .Cast<System.Collections.DictionaryEntry>()
                     .ToDictionary(e => e.Key.ToString()!, e => e.Value?.ToString() ?? "");
@@ -92,7 +95,7 @@ public sealed class ProcessActionActor : ReceiveActor
     {
         try
         {
-            var proc = Process.GetProcessById(pid);
+            using var proc = Process.GetProcessById(pid);
             var modules = new List<string>();
             foreach (ProcessModule module in proc.Modules)
             {
@@ -101,15 +104,16 @@ public sealed class ProcessActionActor : ReceiveActor
                     var size = module.ModuleMemorySize / 1024;
                     modules.Add($"{module.ModuleName,-30} {size,8} KB  {module.FileName}");
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // noop
+                    _trace.Warning("ProcessAction", "Failed to read module for pid={0}: {1}", pid, ex.Message);
                 }
             }
             return modules.OrderBy(m => m).ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            _trace.Warning("ProcessAction", "Failed to read modules for pid={0}: {1}", pid, ex.Message);
             return ["Unable to read modules (access denied or process exited)"];
         }
     }

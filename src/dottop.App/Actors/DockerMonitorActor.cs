@@ -46,13 +46,9 @@ public sealed class DockerMonitorActor : ReceiveActor
             {
                 _refreshing = true;
                 _docker.GetContainersAsync(_streamCts?.Token ?? CancellationToken.None)
-                    .ContinueWith(t =>
-                    {
-                        if (t is { IsCompletedSuccessfully: true, Result: { } result })
-                            return new ContainersRefreshed(result.ToList());
-                        return new ContainersRefreshed([]);
-                    })
-                    .PipeTo(Self);
+                    .PipeTo(Self,
+                        success: result => new ContainersRefreshed(result.ToList()),
+                        failure: _ => new ContainersRefreshed([]));
             }
         });
 

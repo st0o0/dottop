@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.6.0](https://github.com/st0o0/dtop/compare/v0.5.0...v0.6.0) (2026-06-08)
+
+
+### Features
+
+* add CPU history tracking and sparkline/bar formatter to process list ([e1d40f1](https://github.com/st0o0/dtop/commit/e1d40f1cd0f41ec67b5a846f4f1d4b525ba2f34f))
+* add CPU, RAM, and Port columns to Docker container list ([df3a85e](https://github.com/st0o0/dtop/commit/df3a85e0cf8053fa46e685057e61ef54f87ad1e9))
+* add CPU/RAM graphs to Docker detail, fix auto-update ([4ed3489](https://github.com/st0o0/dtop/commit/4ed34895256f8aa8a381f5c50504c771a44843fc))
+* add D5 navigation to Docker tab in all ViewModels and update tests ([9ed2816](https://github.com/st0o0/dtop/commit/9ed28165c0d949a436a9f39d541989bb1d3d25d7))
+* add Docker container tab with live monitoring, actions, and log preview ([2a62451](https://github.com/st0o0/dtop/commit/2a624519a5f78e98b28489079a1fd3628e622a4f))
+* add Docker core types — ContainerSnapshot, commands, IDockerProvider ([ccba54f](https://github.com/st0o0/dtop/commit/ccba54f476211e6a5ba602835305842715cb91eb))
+* add DockerProvider and DockerMonitorActor ([0e05712](https://github.com/st0o0/dtop/commit/0e057122e128d22f4d8a6767082233570c41a725))
+* add F10: Settings hint to all status bars ([ff06b7c](https://github.com/st0o0/dtop/commit/ff06b7cc427f663ae20b6705f36eae1c0e75cf13))
+* add framed CPU and RAM graphs to process detail overlay ([130174f](https://github.com/st0o0/dtop/commit/130174f2f1471a7cefa1e4ad8b930f55c08a6e7d))
+* add mac support & docker ([#12](https://github.com/st0o0/dtop/issues/12)) ([9f9d40b](https://github.com/st0o0/dtop/commit/9f9d40b7092b66ec9689ee8cf0177a9f235f13d2))
+* add scrolling to process tree tab via DataListNode ([a5ad784](https://github.com/st0o0/dtop/commit/a5ad784859e4701574367b187a67c8a4d8e66988))
+* add SparklineRenderer and BarRenderer with unit tests ([0219132](https://github.com/st0o0/dtop/commit/02191320bea5b68d4a9739ea11434210c1532cd0))
+* complete process sparklines — localization, integration tests, and verification ([4b68af1](https://github.com/st0o0/dtop/commit/4b68af1abef1ddf71f6871a626ef5cf7032c52bf))
+* group Docker containers by Compose project with collapsible headers ([034bf1f](https://github.com/st0o0/dtop/commit/034bf1f2f6af3822a6fa8a2920c492119626d131))
+* move CPU graph to process detail overlay, revert list to compact format ([8e7da0d](https://github.com/st0o0/dtop/commit/8e7da0dd19ccb688515bc264133523ba94730b92))
+* preserve sparkline colors on selected row ([fd23084](https://github.com/st0o0/dtop/commit/fd2308434628bab66931fc64a4c1ef4c46488d88))
+* redesign Docker detail modal with panels and scrollable logs ([7e34b1a](https://github.com/st0o0/dtop/commit/7e34b1a051921d8c8597f495ff924228e846e2f5))
+* S/X/R on Compose group header applies to all containers ([761729d](https://github.com/st0o0/dtop/commit/761729d520d90060e05ce4dc26c546a1bbb472f9))
+* use Tab/Shift+Tab for overlay tab navigation, remove ←→ ([c4674cb](https://github.com/st0o0/dtop/commit/c4674cbe31e3b184419a5d7698c372047f4d3c9e))
+
+
+### Bug Fixes
+
+* always show numeric CPU% and RAM values in Docker list ([a280352](https://github.com/st0o0/dtop/commit/a280352b3bfd51dae78931ddc5677a911f68ac2f))
+* Docker performance + detail UI improvements ([7929215](https://github.com/st0o0/dtop/commit/7929215d298c9835fd30f85b40db3810b7f007ee))
+* fetch real CPU/RAM/Network stats from Docker Stats API ([a190755](https://github.com/st0o0/dtop/commit/a190755953718c056dd9c93d39f539c66a3a6197))
+* handle ActionFailure responses in process detail Ask calls ([03420d3](https://github.com/st0o0/dtop/commit/03420d328bf950afde41bef2f11d12b75e9c97f5))
+* improve process tree rendering with proper box-drawing characters ([a069f9b](https://github.com/st0o0/dtop/commit/a069f9bdc744af5f1762c4384cd01c72c67ed21b))
+* move graphs below info, adjust sizes, update tests ([2c2eaed](https://github.com/st0o0/dtop/commit/2c2eaed37e775c5dfff6204b7204d2d7f2ce01ee))
+* render sparkline colors segment-wise instead of overlaying ([ee25108](https://github.com/st0o0/dtop/commit/ee251083cca5c73f45b1ae0be6d57ca2f33507f3))
+* revert ColorSpan — selected row uses standard selection colors ([ea9d98e](https://github.com/st0o0/dtop/commit/ea9d98eb1caa5008f56d5db64bb2aa66e74d2e9b))
+* rewrite Docker stats fetching — live CPU/RAM updates ([404ae5c](https://github.com/st0o0/dtop/commit/404ae5c0f59d4f1095a8be6a900de7a93fdd097e))
+* show only active adapters in Performance network detail view ([1ac258a](https://github.com/st0o0/dtop/commit/1ac258aef40e51756d05c1fc0804612b16b5d153))
+
+
+### Performance Improvements
+
+* fetch Docker container stats in parallel ([c094a09](https://github.com/st0o0/dtop/commit/c094a09097f5b03b1a4efc07c89eb2ea37b739bf))
+* rewrite DockerMonitorActor to match CpuMonitorActor pattern ([6284155](https://github.com/st0o0/dtop/commit/628415536f0afc74f0dbca778fa86831451a8de7))
+
 ## [0.5.0](https://github.com/st0o0/dottop/compare/v0.4.0...v0.5.0) (2026-06-08)
 
 

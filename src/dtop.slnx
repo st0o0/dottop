@@ -1,7 +1,7 @@
 <Solution>
   <Project Path="dtop.Core/dtop.Core.csproj" />
-  <Project Path="dtop.Plugin.Docker/dtop.Plugin.Docker.csproj" />
   <Project Path="dtop.Plugin/dtop.Plugin.csproj" />
+  <Project Path="dtop.Plugin.Example/dtop.Plugin.Example.csproj" />
   <Project Path="dtop.Windows/dtop.Windows.csproj" />
   <Project Path="dtop.Linux/dtop.Linux.csproj" />
   <Project Path="dtop.App/dtop.App.csproj" />

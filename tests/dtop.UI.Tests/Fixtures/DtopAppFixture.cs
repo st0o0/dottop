@@ -71,11 +71,10 @@ public sealed class DtopAppFixture : IAsyncDisposable
         builder.Services.AddSingleton(new UpdateService());
         builder.Services.AddSingleton(new PinService());
 
-        // --- Plugin registry with Docker tab ---
+        // --- Plugin registry with Docker tab (built-in) ---
         var testTickSource = new AppTickSource(TimeSpan.FromSeconds(1));
-        var dockerBuilder = new PluginBuilder(builder.Services, testTickSource);
-        dockerBuilder.WithTab("5:Docker", "/docker", ConsoleKey.D5);
-        var registry = new PluginRegistry([dockerBuilder]);
+        var registry = new PluginRegistry([]);
+        registry.AddBuiltInTab(new Plugin.PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5));
         builder.Services.AddSingleton(registry);
         builder.Services.AddSingleton<Plugin.ITickSource>(testTickSource);
         App.Nodes.TabBarNode.RegisterPluginTabs(registry);
@@ -93,7 +92,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
                 var dockerActor = system.ActorOf(
                     Akka.Actor.Props.Create<TestSupervisorActor>(),
                     "docker-monitor");
-                registry.Register<dtop.Plugin.Docker.DockerMonitorActor>(dockerActor);
+                registry.Register<dtop.App.Actors.DockerMonitorActor>(dockerActor);
             });
         });
 
@@ -105,7 +104,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
-            termina.RegisterRoute<dtop.Plugin.Docker.DockerPage, dtop.Plugin.Docker.DockerViewModel>("/docker", NavigationBehavior.PreserveState);
+            termina.RegisterRoute<dtop.App.Pages.DockerPage, dtop.App.Pages.DockerViewModel>("/docker", NavigationBehavior.PreserveState);
         });
 
         _host = builder.Build();

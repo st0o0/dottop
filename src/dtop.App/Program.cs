@@ -3,6 +3,7 @@ using Akka.Hosting;
 using Akka.Logger.Serilog;
 using dtop.App;
 using dtop.App.Actors;
+using dtop.App.Docker;
 using dtop.App.Pages;
 using dtop.App.Services;
 using dtop.Core.Platform;
@@ -68,17 +69,34 @@ _ = updateService.CheckForUpdatesAsync();
 
 var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
 
-// 4. Plugin discovery
+// 4. Docker (conditional — only if Docker is available)
+var dockerProvider = new DockerProvider();
+var dockerAvailable = false;
+try { dockerAvailable = dockerProvider.IsAvailable; } catch { }
+
+if (dockerAvailable)
+{
+    builder.Services.AddSingleton<IDockerProvider>(dockerProvider);
+}
+
+// 5. Plugin discovery
 var tickSource = new AppTickSource(refreshInterval);
 builder.Services.AddSingleton<ITickSource>(tickSource);
 var pluginRegistry = PluginLoader.DiscoverAndConfigure(builder.Services, tickSource);
+
+// Register Docker as a built-in tab when available
+if (dockerAvailable)
+{
+    pluginRegistry.AddBuiltInTab(new PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5));
+}
+
 builder.Services.AddSingleton(pluginRegistry);
 dtop.App.Nodes.TabBarNode.RegisterPluginTabs(pluginRegistry);
 
-// 5. Senf.Tracing
+// 6. Senf.Tracing
 builder.Services.AddServusLoggerTracing();
 
-// 6. Build a temporary service provider to resolve platform services for actor construction
+// 7. Build a temporary service provider to resolve platform services for actor construction
 var tempSp = builder.Services.BuildServiceProvider();
 var cpuMetrics = tempSp.GetRequiredService<ICpuMetrics>();
 var memoryMetrics = tempSp.GetRequiredService<IMemoryMetrics>();
@@ -100,7 +118,7 @@ _ = Task.Run(() =>
     }
 });
 
-// 7. Akka — supervisor creates children, all ViewModel communication goes through it
+// 8. Akka — supervisor creates children, all ViewModel communication goes through it
 builder.Services.AddAkka("dtop", configurationBuilder =>
 {
     configurationBuilder.ConfigureLoggers(logging =>
@@ -126,6 +144,16 @@ builder.Services.AddAkka("dtop", configurationBuilder =>
             "monitoring-supervisor");
         registry.Register<MonitoringSupervisor>(supervisor);
 
+        // Docker actor (conditional)
+        if (dockerAvailable)
+        {
+            var dockerInterval = TimeSpan.FromSeconds(Math.Max(3, refreshInterval.TotalSeconds));
+            var dockerActor = system.ActorOf(
+                DockerMonitorActor.Props(dockerProvider, dockerInterval),
+                "docker-monitor");
+            registry.Register<DockerMonitorActor>(dockerActor);
+        }
+
         // Plugin actors
         var actorCtx = new PluginActorContextImpl(system, registry, tempSp, tickSource);
         foreach (var plugin in pluginRegistry.LoadedPlugins)
@@ -133,13 +161,19 @@ builder.Services.AddAkka("dtop", configurationBuilder =>
     });
 });
 
-// 8. Termina Pages
+// 9. Termina Pages
 builder.Services.AddTermina("/", termina =>
 {
     termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/", NavigationBehavior.PreserveState);
     termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
     termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
     termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
+
+    // Docker route (conditional)
+    if (dockerAvailable)
+    {
+        termina.RegisterRoute<DockerPage, DockerViewModel>("/docker", NavigationBehavior.PreserveState);
+    }
 
     // Plugin routes
     var routeCtx = new PluginRouteContext(termina);

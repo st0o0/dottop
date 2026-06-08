@@ -4,7 +4,7 @@ using dtop.Core.Models;
 using dtop.Core.Platform;
 using CoreVolumeInfo = dtop.Core.Models.VolumeInfo;
 
-namespace dtop.Plugin.Docker;
+namespace dtop.App.Docker;
 
 public sealed class DockerProvider : IDockerProvider
 {

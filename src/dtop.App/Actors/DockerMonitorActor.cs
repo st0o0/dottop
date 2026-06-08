@@ -6,7 +6,7 @@ using dtop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dtop.Plugin.Docker;
+namespace dtop.App.Actors;
 
 public sealed class DockerMonitorActor : ReceiveActor
 {

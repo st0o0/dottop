@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\dtop.App\dtop.App.csproj" />
-    <ProjectReference Include="..\..\src\dtop.Plugin.Docker\dtop.Plugin.Docker.csproj" />
   </ItemGroup>
 
   <ItemGroup>

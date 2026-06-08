@@ -9,7 +9,7 @@ using Termina.Reactive;
 using Termina.Rendering;
 using Termina.Terminal;
 
-namespace dtop.Plugin.Docker;
+namespace dtop.App.Pages;
 
 public class DockerPage : ReactivePage<DockerViewModel>
 {

@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Akka.Hosting;
+using dtop.App.Actors;
 using dtop.App.Nodes;
 using dtop.App.Resources;
 using dtop.App.Services;
@@ -11,7 +12,7 @@ using Termina.Notifications;
 using Termina.Reactive;
 using Termina.Terminal;
 
-namespace dtop.Plugin.Docker;
+namespace dtop.App.Pages;
 
 public enum DockerSubTab { Container, Networks, Volumes, Images }
 

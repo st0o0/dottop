@@ -81,6 +81,16 @@ public class DockerViewModel : ReactiveViewModel
                 {
                     AllContainers.Value = containers;
                     ApplyFilter();
+
+                    if (IsDetailOpen.Value && SelectedContainer.Value is { } current)
+                    {
+                        var updated = containers.FirstOrDefault(c => c.Id == current.Id);
+                        if (updated is not null)
+                        {
+                            SelectedContainer.Value = updated;
+                            _detailContentChanged.OnNext(Unit.Default);
+                        }
+                    }
                 }
             }
             catch (OperationCanceledException) { return; }

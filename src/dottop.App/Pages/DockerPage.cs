@@ -137,25 +137,67 @@ public class DockerPage : ReactivePage<DockerViewModel>
             _ => Theme.TextDim
         };
 
-        var ports = container.Ports.Count > 0
-            ? string.Join(", ", container.Ports)
-            : "—";
-
         _detailModal.WithTitle($" {container.Name} ").WithTitleColor(Theme.Primary);
         _detailModal.WithFooter(Strings.HintDockerDetailKeys).WithFooterColor(Theme.TextDim);
+
+        // Container info (left side of top area)
+        var infoContent = Layouts.Vertical()
+            .WithChild(new TextNode($"  ID        {container.Id}").WithForeground(Theme.Text).Height(1))
+            .WithChild(new TextNode($"  Image     {container.Image}").WithForeground(Theme.Text).Height(1))
+            .WithChild(new TextNode($"  Status    {statusIcon} {container.State}").WithForeground(statusColor).Height(1))
+            .WithChild(new TextNode($"  Created   {container.Created:yyyy-MM-dd HH:mm}").WithForeground(Theme.TextDim).Height(1));
 
         var infoPanel = new PanelNode()
             .WithTitle(" Container ")
             .WithTitleColor(Theme.Accent)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(Theme.Border)
-            .WithContent(Layouts.Vertical()
-                .WithChild(new TextNode($"  ID        {container.Id}").WithForeground(Theme.Text).Height(1))
-                .WithChild(new TextNode($"  Image     {container.Image}").WithForeground(Theme.Text).Height(1))
-                .WithChild(new TextNode($"  Status    {statusIcon} {container.State}").WithForeground(statusColor).Height(1))
-                .WithChild(new TextNode($"  Created   {container.Created:yyyy-MM-dd HH:mm}").WithForeground(Theme.TextDim).Height(1))
-                .WithChild(new TextNode($"  Ports     {ports}").WithForeground(Theme.TextDim).Height(1)));
+            .WithContent(infoContent);
 
+        // CPU + RAM graphs (right side of top area)
+        var cpuColor = container.CpuPercent > 80 ? Theme.Error
+            : container.CpuPercent > 50 ? Theme.Warning : Theme.Graph;
+        var cpuGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(cpuColor)
+            .WithRange(0, 100);
+        cpuGraph.Push(container.CpuPercent);
+
+        var cpuPanel = new PanelNode()
+            .WithTitle($" CPU {container.CpuPercent:F1}% ")
+            .WithTitleColor(cpuColor)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(cpuGraph);
+
+        var ramMb = container.MemoryUsageBytes / 1024.0 / 1024;
+        var ramLimitMb = container.MemoryLimitBytes / 1024.0 / 1024;
+        var ramPercent = ramLimitMb > 0 ? ramMb / ramLimitMb * 100 : 0;
+        var ramStr = ramMb >= 1024 ? $"{ramMb / 1024:F1} GB" : $"{ramMb:F0} MB";
+        var ramLimitStr = ramLimitMb >= 1024 ? $"{ramLimitMb / 1024:F1} GB" : $"{ramLimitMb:F0} MB";
+
+        var ramGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(Theme.Graph)
+            .WithRange(0, 100);
+        ramGraph.Push(Math.Clamp(ramPercent, 0, 100));
+
+        var ramPanel = new PanelNode()
+            .WithTitle($" RAM {ramStr} / {ramLimitStr} ")
+            .WithTitleColor(Theme.Text)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(ramGraph);
+
+        var topRow = Layouts.Horizontal()
+            .WithChild(infoPanel.Fill())
+            .WithSpacing(1)
+            .WithChild(Layouts.Vertical()
+                .WithChild(cpuPanel.Fill())
+                .WithChild(ramPanel.Fill())
+                .WidthPercent(40));
+
+        // Logs
         var logLines = ViewModel.LogContent.Value
             .Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(line => $" {line}")
@@ -182,7 +224,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
             .WithContent(_logList.Fill());
 
         _detailModal.Content = Layouts.Vertical()
-            .WithChild(infoPanel.Height(9))
+            .WithChild(topRow.HeightPercent(40))
             .WithChild(logPanel.Fill());
     }
 

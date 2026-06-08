@@ -23,10 +23,15 @@ public class DockerPage : ReactivePage<DockerViewModel>
         _list = new DataListNode<ContainerSnapshot>(
             c =>
             {
-                var name = c.Name.Length > 22 ? c.Name[..21] + "…" : c.Name;
-                var image = c.Image.Length > 22 ? c.Image[..21] + "…" : c.Image;
+                var name = c.Name.Length > 20 ? c.Name[..19] + "…" : c.Name;
+                var image = c.Image.Length > 20 ? c.Image[..19] + "…" : c.Image;
                 var statusIcon = c.Status is "running" ? "▶" : "■";
-                return $" {statusIcon} {name,-22} {image,-22} {c.State}";
+                var cpuStr = c.CpuPercent > 0 ? $"{c.CpuPercent,5:F1}%" : "    —";
+                var ramMb = c.MemoryUsageBytes / 1024 / 1024;
+                var ramStr = ramMb > 0 ? (ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB") : "  —";
+                var port = c.Ports.Count > 0 ? c.Ports[0] : "—";
+                if (port.Length > 12) port = port[..11] + "…";
+                return $" {statusIcon} {name,-20} {image,-20} {cpuStr} {ramStr,7} {port,-12} {c.State}";
             },
             c => c.Status switch
             {
@@ -66,7 +71,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Theme.Primary)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($"   {"Name",-22} {"Image",-22} {Strings.HeaderStatus}")
+                    .WithChild(new TextNode($"   {"Name",-20} {"Image",-20} {"CPU",6} {"RAM",7} {"Port",-12} {Strings.HeaderStatus}")
                         .WithForeground(Theme.Header).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())

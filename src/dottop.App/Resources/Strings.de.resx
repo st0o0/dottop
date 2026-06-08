@@ -416,7 +416,7 @@
     <value> Docker nicht verfügbar. Stellen Sie sicher, dass Docker Desktop läuft.</value>
   </data>
   <data name="HintDockerDetailKeys" xml:space="preserve">
-    <value> S: Start | X: Stop | R: Restart | Esc: Schließen</value>
+    <value> S: Start | X: Stop | R: Restart | ↑↓: Logs scrollen | Esc: Schließen</value>
   </data>
   <data name="DockerLogsHeader" xml:space="preserve">
     <value>─── Logs (letzte 20 Zeilen) ───</value>

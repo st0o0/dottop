@@ -416,7 +416,7 @@
     <value> Docker is not available. Make sure Docker Desktop is running.</value>
   </data>
   <data name="HintDockerDetailKeys" xml:space="preserve">
-    <value> S: Start | X: Stop | R: Restart | Esc: Close</value>
+    <value> S: Start | X: Stop | R: Restart | ↑↓: Scroll Logs | Esc: Close</value>
   </data>
   <data name="DockerLogsHeader" xml:space="preserve">
     <value>─── Logs (last 20 lines) ───</value>

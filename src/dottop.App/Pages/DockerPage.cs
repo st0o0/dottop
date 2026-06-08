@@ -14,6 +14,7 @@ namespace dottop.App.Pages;
 public class DockerPage : ReactivePage<DockerViewModel>
 {
     private DataListNode<ContainerSnapshot>? _list;
+    private DataListNode<string>? _logList;
     private ModalNode? _detailModal;
     private ModalNode? _settingsModal;
 
@@ -126,35 +127,58 @@ public class DockerPage : ReactivePage<DockerViewModel>
         var statusIcon = container.Status is "running" ? "▶" : "■";
         var statusColor = container.Status switch
         {
-            "running" => Theme.Text,
+            "running" => Theme.Success,
             "restarting" => Theme.Warning,
             _ => Theme.TextDim
         };
 
         var ports = container.Ports.Count > 0
             ? string.Join(", ", container.Ports)
-            : "-";
+            : "—";
 
         _detailModal.WithTitle($" {container.Name} ").WithTitleColor(Theme.Primary);
         _detailModal.WithFooter(Strings.HintDockerDetailKeys).WithFooterColor(Theme.TextDim);
 
-        var contentLayout = Layouts.Vertical()
-            .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  ID:       {container.Id}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Image:    {container.Image}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Status:   {statusIcon} {container.Status} ({container.State})").WithForeground(statusColor).Height(1))
-            .WithChild(new TextNode($"  Created:  {container.Created:yyyy-MM-dd HH:mm}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Ports:    {ports}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  {Strings.DockerLogsHeader}").WithForeground(Theme.Primary).Height(1));
+        var infoPanel = new PanelNode()
+            .WithTitle(" Container ")
+            .WithTitleColor(Theme.Accent)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(Layouts.Vertical()
+                .WithChild(new TextNode($"  ID        {container.Id}").WithForeground(Theme.Text).Height(1))
+                .WithChild(new TextNode($"  Image     {container.Image}").WithForeground(Theme.Text).Height(1))
+                .WithChild(new TextNode($"  Status    {statusIcon} {container.State}").WithForeground(statusColor).Height(1))
+                .WithChild(new TextNode($"  Created   {container.Created:yyyy-MM-dd HH:mm}").WithForeground(Theme.TextDim).Height(1))
+                .WithChild(new TextNode($"  Ports     {ports}").WithForeground(Theme.TextDim).Height(1)));
 
-        var logLines = ViewModel.LogContent.Value.Split('\n');
-        foreach (var line in logLines)
-        {
-            contentLayout.WithChild(new TextNode($"  {line}").WithForeground(Theme.TextDim).Height(1));
-        }
+        var logLines = ViewModel.LogContent.Value
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => $" {line}")
+            .ToList();
 
-        _detailModal.Content = contentLayout;
+        if (logLines.Count == 0)
+            logLines = [$" {Strings.DockerLoadingLogs}"];
+
+        _logList = new DataListNode<string>(line => line, line =>
+            line.Contains("ERROR", StringComparison.OrdinalIgnoreCase) || line.Contains("ERR", StringComparison.OrdinalIgnoreCase)
+                ? Theme.Error
+                : line.Contains("WARN", StringComparison.OrdinalIgnoreCase)
+                    ? Theme.Warning
+                    : Theme.TextDim);
+        _logList.SetItems(logLines);
+        _logList.MoveToEnd();
+        ViewModel.OverlayListNode = _logList;
+
+        var logPanel = new PanelNode()
+            .WithTitle($" {Strings.DockerLogsHeader} ")
+            .WithTitleColor(Theme.Accent)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(_logList.Fill());
+
+        _detailModal.Content = Layouts.Vertical()
+            .WithChild(infoPanel.Height(9))
+            .WithChild(logPanel.Fill());
     }
 
     private ILayoutNode BuildSearchBar()

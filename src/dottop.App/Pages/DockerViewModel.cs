@@ -24,6 +24,7 @@ public class DockerViewModel : ReactiveViewModel
     private CancellationTokenSource? _cts;
 
     public IScrollableList? ListNode { get; set; }
+    public IScrollableList? OverlayListNode { get; set; }
     public Func<ContainerSnapshot?>? GetSelectedItem { get; set; }
 
     private readonly Subject<Unit> _detailContentChanged = new();
@@ -193,6 +194,7 @@ public class DockerViewModel : ReactiveViewModel
             case ConsoleKey.Escape:
                 IsDetailOpen.Value = false;
                 SelectedContainer.Value = null;
+                OverlayListNode = null;
                 UpdateStatus();
                 break;
             case ConsoleKey.S:
@@ -204,6 +206,12 @@ public class DockerViewModel : ReactiveViewModel
             case ConsoleKey.R:
                 ActionOnDetailContainer(ActionType.Restart);
                 break;
+            case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
+            case ConsoleKey.DownArrow: OverlayListNode?.MoveDown(); break;
+            case ConsoleKey.Home: OverlayListNode?.MoveToTop(); break;
+            case ConsoleKey.End: OverlayListNode?.MoveToEnd(); break;
+            case ConsoleKey.PageUp: OverlayListNode?.PageUp(); break;
+            case ConsoleKey.PageDown: OverlayListNode?.PageDown(); break;
         }
     }
 

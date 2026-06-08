@@ -43,8 +43,10 @@
             <PluginOutput Include="..\dtop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Microsoft.Net.Http.Client.dll" />
             <PluginOutput Include="..\dtop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Newtonsoft.Json.dll" />
             <PluginOutput Include="..\dtop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Google.Protobuf.dll" />
+            <PluginOutput Include="..\dtop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\dtop.Plugin.Docker.deps.json" />
         </ItemGroup>
-        <Copy SourceFiles="@(PluginOutput)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+        <MakeDir Directories="$(OutputPath)plugins" />
+        <Copy SourceFiles="@(PluginOutput)" DestinationFolder="$(OutputPath)plugins" SkipUnchangedFiles="true" />
     </Target>
 
 </Project>

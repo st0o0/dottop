@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.Loader;
 using dtop.Plugin;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,7 +15,14 @@ public static class PluginLoader
         foreach (var plugin in plugins)
         {
             var builder = new PluginBuilder(services, tickSource);
-            plugin.Configure(builder);
+            try
+            {
+                plugin.Configure(builder);
+            }
+            catch
+            {
+                continue;
+            }
             builders.Add(builder);
         }
 
@@ -25,21 +33,23 @@ public static class PluginLoader
     {
         var plugins = new List<IDtopPlugin>();
 
-        var searchDirs = new[] { AppContext.BaseDirectory, Path.Combine(AppContext.BaseDirectory, "plugins") };
-        foreach (var dir in searchDirs)
+        // Scan plugins/ subdirectory with custom load context for dependencies
+        var pluginsDir = Path.Combine(AppContext.BaseDirectory, "plugins");
+        if (Directory.Exists(pluginsDir))
         {
-            if (!Directory.Exists(dir)) continue;
-            foreach (var dll in Directory.GetFiles(dir, "dtop.Plugin.*.dll"))
+            foreach (var dll in Directory.GetFiles(pluginsDir, "dtop.Plugin.*.dll"))
             {
                 try
                 {
-                    var assembly = Assembly.LoadFrom(dll);
+                    var loadContext = new PluginLoadContext(dll);
+                    var assembly = loadContext.LoadFromAssemblyPath(dll);
                     DiscoverInAssembly(assembly, plugins);
                 }
                 catch { }
             }
         }
 
+        // Scan already-loaded assemblies (NuGet/ProjectReference during development)
         foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
             DiscoverInAssembly(asm, plugins);
 
@@ -57,5 +67,16 @@ public static class PluginLoader
             }
         }
         catch { }
+    }
+}
+
+internal sealed class PluginLoadContext(string pluginPath) : AssemblyLoadContext
+{
+    private readonly string _pluginDir = Path.GetDirectoryName(pluginPath)!;
+
+    protected override Assembly? Load(AssemblyName assemblyName)
+    {
+        var candidate = Path.Combine(_pluginDir, assemblyName.Name + ".dll");
+        return File.Exists(candidate) ? LoadFromAssemblyPath(candidate) : null;
     }
 }

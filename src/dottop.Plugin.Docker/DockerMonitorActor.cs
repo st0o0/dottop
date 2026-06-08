@@ -13,6 +13,7 @@ public sealed class DockerMonitorActor : ReceiveActor
     private static readonly TraceChannel Trace = Senf.Tracing.For("Docker");
 
     private sealed record Tick;
+
     private sealed record ContainersRefreshed(List<ContainerSnapshot> Containers);
 
     private readonly IDockerProvider _docker;
@@ -35,11 +36,16 @@ public sealed class DockerMonitorActor : ReceiveActor
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null) return;
+            if (_channel is null)
+            {
+                return;
+            }
 
             // Write cached data immediately (non-blocking, like CpuMonitorActor)
             if (_cached.Count > 0)
+            {
                 _channel.Writer.TryWrite(_cached);
+            }
 
             // Trigger background refresh if not already running
             if (!_refreshing)
@@ -56,7 +62,9 @@ public sealed class DockerMonitorActor : ReceiveActor
         {
             _refreshing = false;
             if (msg.Containers.Count > 0)
+            {
                 _cached = msg.Containers;
+            }
         });
 
         // Actions use PipeTo to stay non-blocking
@@ -67,7 +75,10 @@ public sealed class DockerMonitorActor : ReceiveActor
                 await _docker.StartAsync(msg.Id);
                 Sender.Tell(new ActionSuccess($"Started {msg.Id}"));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         ReceiveAsync<StopContainer>(async msg =>
@@ -77,7 +88,10 @@ public sealed class DockerMonitorActor : ReceiveActor
                 await _docker.StopAsync(msg.Id);
                 Sender.Tell(new ActionSuccess($"Stopped {msg.Id}"));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         ReceiveAsync<RestartContainer>(async msg =>
@@ -87,7 +101,10 @@ public sealed class DockerMonitorActor : ReceiveActor
                 await _docker.RestartAsync(msg.Id);
                 Sender.Tell(new ActionSuccess($"Restarted {msg.Id}"));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
 
         ReceiveAsync<GetContainerLogs>(async msg =>
@@ -97,7 +114,10 @@ public sealed class DockerMonitorActor : ReceiveActor
                 var logs = await _docker.GetLogsAsync(msg.Id, msg.TailLines);
                 Sender.Tell(new ContainerLogsResult(logs));
             }
-            catch (Exception ex) { Sender.Tell(new ActionFailure(ex.Message)); }
+            catch (Exception ex)
+            {
+                Sender.Tell(new ActionFailure(ex.Message));
+            }
         });
     }
 

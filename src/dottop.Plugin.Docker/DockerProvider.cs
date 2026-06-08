@@ -21,7 +21,11 @@ public sealed class DockerProvider : IDockerProvider
     {
         get
         {
-            if (_isAvailable.HasValue) return _isAvailable.Value;
+            if (_isAvailable.HasValue)
+            {
+                return _isAvailable.Value;
+            }
+
             try
             {
                 _client.System.PingAsync().GetAwaiter().GetResult();
@@ -108,7 +112,10 @@ public sealed class DockerProvider : IDockerProvider
 
             await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2), ct);
 
-            if (stats is null) return default;
+            if (stats is null)
+            {
+                return default;
+            }
 
             var cpu = CalculateCpuPercent(stats);
             var memUsage = stats.MemoryStats.Usage ?? 0;
@@ -139,10 +146,16 @@ public sealed class DockerProvider : IDockerProvider
 
         var cpuDelta = (double)(cpuUsage - preCpuUsage);
         var systemDelta = (double)(systemUsage - preSystemUsage);
-        if (systemDelta <= 0 || cpuDelta <= 0) return 0;
+        if (systemDelta <= 0 || cpuDelta <= 0)
+        {
+            return 0;
+        }
 
         var cpuCount = (double)(stats.CPUStats.OnlineCPUs ?? 0);
-        if (cpuCount == 0) cpuCount = stats.CPUStats.CPUUsage.PercpuUsage?.Count ?? 1;
+        if (cpuCount == 0)
+        {
+            cpuCount = stats.CPUStats.CPUUsage.PercpuUsage?.Count ?? 1;
+        }
 
         return cpuDelta / systemDelta * cpuCount * 100.0;
     }

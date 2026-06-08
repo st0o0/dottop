@@ -39,13 +39,25 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 var ramMb = c.MemoryUsageBytes / 1024 / 1024;
                 var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb,4}MB";
                 var port = c.Ports.Count > 0 ? c.Ports[0] : "—";
-                if (port.Length > 14) port = port[..13] + "…";
+                if (port.Length > 14)
+                {
+                    port = port[..13] + "…";
+                }
+
                 return $"{pinIcon}{statusIcon} {name,-24} {image,-24} {cpuStr} {ramStr,7}  {port,-14} {c.State}";
             },
             item =>
             {
-                if (item.IsGroup) return Theme.Primary;
-                if (item.Container is not null && ViewModel.IsPinned(item.Container.Id)) return Theme.Accent;
+                if (item.IsGroup)
+                {
+                    return Theme.Primary;
+                }
+
+                if (item.Container is not null && ViewModel.IsPinned(item.Container.Id))
+                {
+                    return Theme.Accent;
+                }
+
                 return item.Container?.Status switch
                 {
                     "running" => Theme.Text,
@@ -104,7 +116,11 @@ public class DockerPage : ReactivePage<DockerViewModel>
         ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())
             .DisposeWith(Subscriptions);
 
-        ViewModel.IsDetailOpen.Subscribe(open => { if (!open) _logList = null; })
+        ViewModel.IsDetailOpen.Subscribe(open => { if (!open)
+                {
+                    _logList = null;
+                }
+            })
             .DisposeWith(Subscriptions);
 
         ViewModel.SettingsContentChanged.Subscribe(_ => UpdateSettingsModal())
@@ -113,7 +129,10 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
     private void UpdateSettingsModal()
     {
-        if (_settingsModal is null) return;
+        if (_settingsModal is null)
+        {
+            return;
+        }
 
         _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
         _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
@@ -222,7 +241,9 @@ public class DockerPage : ReactivePage<DockerViewModel>
             .ToList();
 
         if (logLines.Count == 0)
+        {
             logLines = [$" {Strings.DockerLoadingLogs}"];
+        }
 
         if (_logList is null)
         {

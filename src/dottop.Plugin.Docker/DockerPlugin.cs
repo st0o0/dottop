@@ -10,7 +10,10 @@ public sealed class DockerPlugin : IDottopPlugin
     public void Configure(IPluginBuilder builder)
     {
         var provider = new DockerProvider();
-        if (!provider.IsAvailable) return;
+        if (!provider.IsAvailable)
+        {
+            return;
+        }
 
         builder
             .WithSingleton<IDockerProvider>(provider)

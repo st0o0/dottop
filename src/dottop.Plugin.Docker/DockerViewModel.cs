@@ -84,7 +84,11 @@ public class DockerViewModel : ReactiveViewModel
 
     private async Task ConnectStreamAsync()
     {
-        if (_dockerActorRef is null || _cts is null) return;
+        if (_dockerActorRef is null || _cts is null)
+        {
+            return;
+        }
+
         var ct = _cts.Token;
 
         while (!ct.IsCancellationRequested)
@@ -139,7 +143,10 @@ public class DockerViewModel : ReactiveViewModel
             if (!string.IsNullOrEmpty(group.Key))
             {
                 if (_knownGroups.Add(group.Key))
+                {
                     _expandedGroups.Add(group.Key);
+                }
+
                 var expanded = _expandedGroups.Contains(group.Key);
                 items.Add(new DockerListItem
                 {
@@ -170,7 +177,10 @@ public class DockerViewModel : ReactiveViewModel
     public void ToggleGroup(string groupName)
     {
         if (!_expandedGroups.Remove(groupName))
+        {
             _expandedGroups.Add(groupName);
+        }
+
         ApplyFilter();
     }
 
@@ -300,7 +310,11 @@ public class DockerViewModel : ReactiveViewModel
 
     private async Task LoadLogsAsync(string containerId)
     {
-        if (_dockerActorRef is null) return;
+        if (_dockerActorRef is null)
+        {
+            return;
+        }
+
         try
         {
             var result = await _dockerActorRef.Ask<object>(new GetContainerLogs(containerId), TimeSpan.FromSeconds(10));
@@ -367,7 +381,10 @@ public class DockerViewModel : ReactiveViewModel
 
     private async void ActionOnSelected(ActionType action = ActionType.Start)
     {
-        if (_dockerActorRef is null) return;
+        if (_dockerActorRef is null)
+        {
+            return;
+        }
 
         var selected = GetSelectedDisplayItem?.Invoke();
         if (selected is { IsGroup: true, GroupName: { } groupName })
@@ -375,7 +392,10 @@ public class DockerViewModel : ReactiveViewModel
             var containers = FilteredContainers.Value
                 .Where(c => c.ComposeProject == groupName)
                 .ToList();
-            if (containers.Count == 0) return;
+            if (containers.Count == 0)
+            {
+                return;
+            }
 
             var actionName = action switch { ActionType.Stop => "Stopping", ActionType.Restart => "Restarting", _ => "Starting" };
             _toast.Show($"{actionName} {containers.Count} containers...", new ToastOptions(Duration: TimeSpan.FromSeconds(2)));
@@ -387,13 +407,20 @@ public class DockerViewModel : ReactiveViewModel
             return;
         }
 
-        if (GetSelectedItem?.Invoke() is not { } container) return;
+        if (GetSelectedItem?.Invoke() is not { } container)
+        {
+            return;
+        }
+
         await ExecuteContainerActionAsync(container.Id, action);
     }
 
     private async Task ExecuteContainerActionAsync(string containerId, ActionType action)
     {
-        if (_dockerActorRef is null) return;
+        if (_dockerActorRef is null)
+        {
+            return;
+        }
 
         object msg = action switch
         {
@@ -445,7 +472,11 @@ public class DockerViewModel : ReactiveViewModel
     {
         var current = _settingsService.Settings.RefreshIntervalMs;
         var idx = Array.IndexOf(RefreshOptions, current);
-        if (idx < 0) idx = 2;
+        if (idx < 0)
+        {
+            idx = 2;
+        }
+
         var newIdx = (idx + direction + RefreshOptions.Length) % RefreshOptions.Length;
         _settingsService.Settings.RefreshIntervalMs = RefreshOptions[newIdx];
         _settingsService.Save();

@@ -145,7 +145,7 @@
   </data>
   <!-- ProcessesViewModel status -->
   <data name="ProcessStatusFormat" xml:space="preserve">
-    <value> {0} processes | Group: {1} | Sort: {2} | /: Search | Enter: Detail | Q: Quit</value>
+    <value> {0} processes | Group: {1} | Sort: {2} | /: Search | Enter: Detail | F10: Settings | Q: Quit</value>
   </data>
   <!-- PerformancePage -->
   <data name="PanelCpu" xml:space="preserve">
@@ -233,7 +233,7 @@
   </data>
   <!-- ServicesViewModel -->
   <data name="ServicesStatusFormat" xml:space="preserve">
-    <value> {0} services | /: Search | Enter: Detail | S: Start | X: Stop | R: Restart | Q: Quit</value>
+    <value> {0} services | /: Search | Enter: Detail | S/X/R | F10: Settings | Q: Quit</value>
   </data>
   <data name="ServiceDetailName" xml:space="preserve">
     <value>Name:</value>
@@ -274,7 +274,7 @@
   </data>
   <!-- NetworkViewModel -->
   <data name="NetworkStatusFormat" xml:space="preserve">
-    <value> {0} connections | /: Search | Enter: Detail | Q: Quit</value>
+    <value> {0} connections | /: Search | Enter: Detail | F10: Settings | Q: Quit</value>
   </data>
   <!-- Settings tab -->
   <data name="TabSettings" xml:space="preserve">
@@ -410,7 +410,7 @@
     <value> Docker </value>
   </data>
   <data name="DockerStatusFormat" xml:space="preserve">
-    <value> {0} containers | /: Search | Enter: Detail | S/X/R | Q: Quit</value>
+    <value> {0} containers | /: Search | Enter: Detail | S/X/R | F10: Settings | Q: Quit</value>
   </data>
   <data name="DockerNotAvailable" xml:space="preserve">
     <value> Docker is not available. Make sure Docker Desktop is running.</value>

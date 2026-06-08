@@ -45,36 +45,35 @@ public sealed class DockerProvider : IDockerProvider
             var containers = await _client.Containers.ListContainersAsync(
                 new ContainersListParameters { All = true }, cts.Token);
 
-            var results = new List<ContainerSnapshot>();
-            foreach (var c in containers)
+            // Fetch stats for running containers in parallel
+            var running = containers.Where(c => c.State == "running").ToList();
+            var statsTasks = running.ToDictionary(
+                c => c.ID,
+                c => GetOneTimeStatsAsync(c.ID, cts.Token));
+
+            await Task.WhenAll(statsTasks.Values);
+
+            return containers.Select(c =>
             {
                 var cpuPercent = 0.0;
                 ulong memUsage = 0, memLimit = 0, netRx = 0, netTx = 0;
 
-                if (c.State == "running")
+                if (statsTasks.TryGetValue(c.ID, out var statsTask) && statsTask is { IsCompletedSuccessfully: true, Result: { } stats })
                 {
-                    try
+                    cpuPercent = CalculateCpuPercent(stats);
+                    memUsage = stats.MemoryStats.Usage ?? 0;
+                    memLimit = stats.MemoryStats.Limit ?? 0;
+                    if (stats.Networks is not null)
                     {
-                        var stats = await GetOneTimeStatsAsync(c.ID, cts.Token);
-                        if (stats is not null)
+                        foreach (var net in stats.Networks.Values)
                         {
-                            cpuPercent = CalculateCpuPercent(stats);
-                            memUsage = stats.MemoryStats.Usage ?? 0;
-                            memLimit = stats.MemoryStats.Limit ?? 0;
-                            if (stats.Networks is not null)
-                            {
-                                foreach (var net in stats.Networks.Values)
-                                {
-                                    netRx += net.RxBytes;
-                                    netTx += net.TxBytes;
-                                }
-                            }
+                            netRx += net.RxBytes;
+                            netTx += net.TxBytes;
                         }
                     }
-                    catch { }
                 }
 
-                results.Add(new ContainerSnapshot(
+                return new ContainerSnapshot(
                     Id: c.ID[..12],
                     Name: c.Names.FirstOrDefault()?.TrimStart('/') ?? c.ID[..12],
                     Image: c.Image,
@@ -90,10 +89,8 @@ public sealed class DockerProvider : IDockerProvider
                             ? $"{p.PublicPort}:{p.PrivatePort}"
                             : $"{p.PrivatePort}")
                         .ToList() ?? []
-                ));
-            }
-
-            return results;
+                );
+            }).ToList();
         }
         catch
         {
@@ -124,7 +121,7 @@ public sealed class DockerProvider : IDockerProvider
             finally { tcs.TrySetResult(true); }
         }, ct);
 
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timeout.Token);
         try { await tcs.Task.WaitAsync(linked.Token); } catch { }
 

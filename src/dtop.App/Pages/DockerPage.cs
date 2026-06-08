@@ -124,9 +124,14 @@ public class DockerPage : ReactivePage<DockerViewModel>
         {
             var node = new TextNode($" {tabs[i]} ");
             if (i == activeIdx)
+            {
                 node.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
+            }
             else
+            {
                 node.WithForeground(Theme.Secondary);
+            }
+
             bar.WithChild(node);
         }
         return bar.Height(1);
@@ -282,7 +287,10 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
     private void UpdateDetailModal()
     {
-        if (_detailModal is null) return;
+        if (_detailModal is null)
+        {
+            return;
+        }
 
         switch (ViewModel.ActiveSubTab.Value)
         {
@@ -415,7 +423,10 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
     private void UpdateNetworkDetailModal()
     {
-        if (_detailModal is null || ViewModel.GetSelectedNetwork?.Invoke() is not { } network) return;
+        if (_detailModal is null || ViewModel.GetSelectedNetwork?.Invoke() is not { } network)
+        {
+            return;
+        }
 
         _detailModal.WithTitle($" Network: {network.Name} ").WithTitleColor(Theme.Primary);
         _detailModal.WithFooter(" Esc: Close ").WithFooterColor(Theme.TextDim);
@@ -438,7 +449,10 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
     private void UpdateVolumeDetailModal()
     {
-        if (_detailModal is null || ViewModel.GetSelectedVolume?.Invoke() is not { } volume) return;
+        if (_detailModal is null || ViewModel.GetSelectedVolume?.Invoke() is not { } volume)
+        {
+            return;
+        }
 
         _detailModal.WithTitle($" Volume: {volume.Name} ").WithTitleColor(Theme.Primary);
         _detailModal.WithFooter(" Esc: Close ").WithFooterColor(Theme.TextDim);
@@ -467,7 +481,10 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
     private void UpdateImageDetailModal()
     {
-        if (_detailModal is null || ViewModel.GetSelectedImage?.Invoke() is not { } image) return;
+        if (_detailModal is null || ViewModel.GetSelectedImage?.Invoke() is not { } image)
+        {
+            return;
+        }
 
         _detailModal.WithTitle($" Image: {image.Repository}:{image.Tag} ").WithTitleColor(Theme.Primary);
         _detailModal.WithFooter(" Esc: Close ").WithFooterColor(Theme.TextDim);
@@ -489,7 +506,10 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
     private void UpdateInputModal()
     {
-        if (_inputModal is null || !ViewModel.IsInputMode.Value) return;
+        if (_inputModal is null || !ViewModel.IsInputMode.Value)
+        {
+            return;
+        }
 
         var label = ViewModel.InputPromptLabel;
         _inputModal.WithTitle($" {label} ").WithTitleColor(Theme.Primary);

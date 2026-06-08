@@ -15,6 +15,7 @@ namespace dtop.App.Setup;
 public sealed class ActorSystemSetup : IServiceSetupContainer
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("Setup.ActorSystem");
+
     public void SetupServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddAkka("dtop", builder =>
@@ -38,7 +39,14 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
 
                 // Initialize disk metrics
                 var diskMetrics = resolver.GetService<IDiskMetrics>();
-                try { diskMetrics.Initialize(); } catch (Exception ex) { Trace.Warning("ActorSystemSetup", "Failed to initialize disk metrics: {0}", ex.Message); }
+                try
+                {
+                    diskMetrics.Initialize();
+                }
+                catch (Exception ex)
+                {
+                    Trace.Warning("ActorSystemSetup", "Failed to initialize disk metrics: {0}", ex.Message);
+                }
 
                 // Core monitoring supervisor
                 var supervisor = system.ActorOf(
@@ -69,12 +77,12 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
                 // Plugin actors
                 var pluginRegistry = resolver.GetService<PluginRegistry>();
                 var tickSource = resolver.GetService<ITickSource>();
-#pragma warning disable CS0618 // ServiceProvider.For is obsolete but needed for IServiceProvider access
-                var sp = Akka.DependencyInjection.ServiceProvider.For(system).Provider;
-#pragma warning restore CS0618
+                var sp = resolver.GetService<IServiceProvider>();
                 var actorCtx = new PluginActorContextImpl(system, registry, sp, tickSource);
                 foreach (var plugin in pluginRegistry.LoadedPlugins)
+                {
                     plugin.ActorSetup?.Invoke(actorCtx);
+                }
             });
         });
     }

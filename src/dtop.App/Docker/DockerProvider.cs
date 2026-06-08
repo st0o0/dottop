@@ -23,7 +23,10 @@ public sealed class DockerProvider : IDockerProvider
 
     public async Task<bool> IsAvailableAsync(CancellationToken ct = default)
     {
-        if (_isAvailable.HasValue) return _isAvailable.Value;
+        if (_isAvailable.HasValue)
+        {
+            return _isAvailable.Value;
+        }
 
         try
         {

@@ -66,7 +66,9 @@ public static class PluginLoader
             foreach (var type in assembly.GetTypes())
             {
                 if (typeof(IDtopPlugin).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false })
+                {
                     plugins.Add((IDtopPlugin)Activator.CreateInstance(type)!);
+                }
             }
         }
         catch (Exception ex) { Trace.Warning("PluginLoader", "Failed to discover plugins in assembly {0}: {1}", assembly.FullName, ex.Message); }

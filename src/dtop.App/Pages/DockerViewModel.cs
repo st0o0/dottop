@@ -237,7 +237,10 @@ public class DockerViewModel : ReactiveViewModel
                     break;
                 case ConsoleKey.Backspace:
                     if (InputText.Value.Length > 0)
+                    {
                         InputText.Value = InputText.Value[..^1];
+                    }
+
                     _detailContentChanged.OnNext(Unit.Default);
                     break;
                 default:
@@ -293,9 +296,14 @@ public class DockerViewModel : ReactiveViewModel
             case ConsoleKey.PageDown: activeList?.PageDown(); break;
             case ConsoleKey.Tab:
                 if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                {
                     ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Container ? DockerSubTab.Images : (DockerSubTab)((int)ActiveSubTab.Value - 1);
+                }
                 else
+                {
                     ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Images ? DockerSubTab.Container : (DockerSubTab)((int)ActiveSubTab.Value + 1);
+                }
+
                 _ = LoadSubTabDataAsync();
                 break;
             default:
@@ -337,9 +345,14 @@ public class DockerViewModel : ReactiveViewModel
                 break;
             case ConsoleKey.D:
                 if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                {
                     _ = PruneAsync();
+                }
                 else
+                {
                     _ = DeleteSelectedAsync();
+                }
+
                 break;
             case ConsoleKey.P:
                 if (ActiveSubTab.Value == DockerSubTab.Container && GetSelectedItem?.Invoke() is { } pinContainer)
@@ -348,9 +361,24 @@ public class DockerViewModel : ReactiveViewModel
                     ApplyFilter();
                 }
                 break;
-            case ConsoleKey.S: if (ActiveSubTab.Value == DockerSubTab.Container) ActionOnSelected(); break;
-            case ConsoleKey.X: if (ActiveSubTab.Value == DockerSubTab.Container) ActionOnSelected(ActionType.Stop); break;
-            case ConsoleKey.R: if (ActiveSubTab.Value == DockerSubTab.Container) ActionOnSelected(ActionType.Restart); break;
+            case ConsoleKey.S: if (ActiveSubTab.Value == DockerSubTab.Container)
+                {
+                    ActionOnSelected();
+                }
+
+                break;
+            case ConsoleKey.X: if (ActiveSubTab.Value == DockerSubTab.Container)
+                {
+                    ActionOnSelected(ActionType.Stop);
+                }
+
+                break;
+            case ConsoleKey.R: if (ActiveSubTab.Value == DockerSubTab.Container)
+                {
+                    ActionOnSelected(ActionType.Restart);
+                }
+
+                break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
@@ -532,22 +560,38 @@ public class DockerViewModel : ReactiveViewModel
 
     private async Task LoadSubTabDataAsync()
     {
-        if (_dockerActorRef is null) return;
+        if (_dockerActorRef is null)
+        {
+            return;
+        }
+
         try
         {
             switch (ActiveSubTab.Value)
             {
                 case DockerSubTab.Networks:
                     var netResult = await _dockerActorRef.Ask<object>(new GetNetworks(), TimeSpan.FromSeconds(5));
-                    if (netResult is NetworksResult nr) Networks.Value = nr.Networks.ToList();
+                    if (netResult is NetworksResult nr)
+                    {
+                        Networks.Value = nr.Networks.ToList();
+                    }
+
                     break;
                 case DockerSubTab.Volumes:
                     var volResult = await _dockerActorRef.Ask<object>(new GetVolumes(), TimeSpan.FromSeconds(5));
-                    if (volResult is VolumesResult vr) Volumes.Value = vr.Volumes.ToList();
+                    if (volResult is VolumesResult vr)
+                    {
+                        Volumes.Value = vr.Volumes.ToList();
+                    }
+
                     break;
                 case DockerSubTab.Images:
                     var imgResult = await _dockerActorRef.Ask<object>(new GetImages(), TimeSpan.FromSeconds(5));
-                    if (imgResult is ImagesResult ir) Images.Value = ir.Images.ToList();
+                    if (imgResult is ImagesResult ir)
+                    {
+                        Images.Value = ir.Images.ToList();
+                    }
+
                     break;
             }
         }
@@ -557,7 +601,11 @@ public class DockerViewModel : ReactiveViewModel
 
     private async Task DeleteSelectedAsync()
     {
-        if (_dockerActorRef is null) return;
+        if (_dockerActorRef is null)
+        {
+            return;
+        }
+
         object? msg = ActiveSubTab.Value switch
         {
             DockerSubTab.Networks when GetSelectedNetwork?.Invoke() is { } n => new DeleteNetwork(n.Id),
@@ -565,14 +613,23 @@ public class DockerViewModel : ReactiveViewModel
             DockerSubTab.Images when GetSelectedImage?.Invoke() is { } i => new DeleteImage(i.Id),
             _ => null
         };
-        if (msg is null) return;
+        if (msg is null)
+        {
+            return;
+        }
+
         try
         {
             var result = await _dockerActorRef.Ask<object>(msg, TimeSpan.FromSeconds(10));
             if (result is ActionSuccess s)
+            {
                 _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            }
             else if (result is ActionFailure f)
+            {
                 _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            }
+
             _ = LoadSubTabDataAsync();
         }
         catch (Exception ex)
@@ -583,21 +640,34 @@ public class DockerViewModel : ReactiveViewModel
 
     private async Task PruneAsync()
     {
-        if (_dockerActorRef is null) return;
+        if (_dockerActorRef is null)
+        {
+            return;
+        }
+
         object? msg = ActiveSubTab.Value switch
         {
             DockerSubTab.Volumes => new PruneVolumes(),
             DockerSubTab.Images => new PruneImages(),
             _ => null
         };
-        if (msg is null) return;
+        if (msg is null)
+        {
+            return;
+        }
+
         try
         {
             var result = await _dockerActorRef.Ask<object>(msg, TimeSpan.FromSeconds(30));
             if (result is ActionSuccess s)
+            {
                 _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            }
             else if (result is ActionFailure f)
+            {
                 _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            }
+
             _ = LoadSubTabDataAsync();
         }
         catch (Exception ex)
@@ -608,7 +678,11 @@ public class DockerViewModel : ReactiveViewModel
 
     private async Task SubmitInputAsync()
     {
-        if (_dockerActorRef is null || string.IsNullOrWhiteSpace(InputText.Value)) return;
+        if (_dockerActorRef is null || string.IsNullOrWhiteSpace(InputText.Value))
+        {
+            return;
+        }
+
         var text = InputText.Value.Trim();
         IsInputMode.Value = false;
         InputText.Value = "";
@@ -626,9 +700,14 @@ public class DockerViewModel : ReactiveViewModel
             _toast.Show($"Working...", new ToastOptions(Duration: TimeSpan.FromSeconds(2)));
             var result = await _dockerActorRef.Ask<object>(msg, TimeSpan.FromSeconds(60));
             if (result is ActionSuccess s)
+            {
                 _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            }
             else if (result is ActionFailure f)
+            {
                 _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            }
+
             _ = LoadSubTabDataAsync();
         }
         catch (Exception ex)

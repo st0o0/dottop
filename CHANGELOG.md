@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.5.0](https://github.com/st0o0/dottop/compare/v0.4.0...v0.5.0) (2026-06-08)
+
+
+### Features
+
+* add command/query/event message types to dottop.Core ([f9293d0](https://github.com/st0o0/dottop/commit/f9293d0c9b2e5448614ddf5e5c2264047a7707dd))
+* add context-sensitive keyboard hints to all pages and modals ([0f2bf37](https://github.com/st0o0/dottop/commit/0f2bf3733db6b2f6e069f968e94327e5c99c9b46))
+* add dottop.Actors.Tests with CpuMonitor and ProcessAction tests ([48c82ff](https://github.com/st0o0/dottop/commit/48c82ffdc4944a455f9b329be338373999825a6f))
+* add keyboard hints inside Performance detail modal ([404e048](https://github.com/st0o0/dottop/commit/404e048e8df38e059ecf2c1c919a8056767fc49c))
+* add platform interfaces to dottop.Core (including new ICpuMetrics, IMemoryMetrics, INetworkMetrics) ([2505022](https://github.com/st0o0/dottop/commit/2505022107c4e0c2cfe76b6f0dd0e284d0b5433a))
+* add Processes page integration tests and unify search bar format ([b00f64c](https://github.com/st0o0/dottop/commit/b00f64c9ad88d4db7cb0444891357433b5e5be4f))
+* add UI integration test project with fixture and helpers ([2cec830](https://github.com/st0o0/dottop/commit/2cec8300670b6c3b18241560f65e4e1f7a3df8c3))
+* create dottop.Core project with models ([bb36cbd](https://github.com/st0o0/dottop/commit/bb36cbded2bd0643b40f217d6d04b96a9f043cea))
+* create dottop.Linux project with platform implementations ([1c55a7b](https://github.com/st0o0/dottop/commit/1c55a7b0c9560e2640a983068aba47280fe8cfd9))
+* create dottop.Windows project with platform implementations ([1a190bb](https://github.com/st0o0/dottop/commit/1a190bb8fcd1c7cde9d7c69da25253e9f8ba823f))
+* move modal hints to border footer line ([2bf4724](https://github.com/st0o0/dottop/commit/2bf472491225174a5e2ae7080c17dd8424257e9a))
+* refactor dottop.App with supervisor hierarchy and platform interfaces ([92ab2b4](https://github.com/st0o0/dottop/commit/92ab2b4e1d64290359334b2850c2803b00e7821d))
+* replace console logging with Serilog file sink ([c0785f4](https://github.com/st0o0/dottop/commit/c0785f4d0feace995f0eb41b42ec4414972b9bb4))
+* route all ViewModel communication through MonitoringSupervisor and add Senf.Tracing ([9d9c937](https://github.com/st0o0/dottop/commit/9d9c9370982a44a2870c8348091a5e6ac84b2b54))
+* route all ViewModel communication through MonitoringSupervisor and add Senf.Tracing ([0d6f4ea](https://github.com/st0o0/dottop/commit/0d6f4ea86541c8df8f8b350edbda806a92b82f01))
+* use toast notifications for error/success feedback in all ViewModels ([0780f64](https://github.com/st0o0/dottop/commit/0780f64f9d1247f8b60019cda8abfc21013a4bfd))
+
+
+### Bug Fixes
+
+* add submodules: recursive to CI/CD checkout steps ([d0bb12a](https://github.com/st0o0/dottop/commit/d0bb12a4b0260f8a3923a610cec0a749a76eb670))
+* align keyboard hints with actual keybindings across all pages ([d47d4bf](https://github.com/st0o0/dottop/commit/d47d4bfc4056231e617c64a2ccb9e2362a3e5512))
+* always reference both platform projects, remove reflection ([b1b7142](https://github.com/st0o0/dottop/commit/b1b71428fbae7c4f4db7bca333b4783b5050eca0))
+* dispose Process objects, add error logging, fix overlay race condition ([92d85b4](https://github.com/st0o0/dottop/commit/92d85b49a095aca6ea2399871f96d32a905d4d73))
+* route Akka logging through Serilog, suppress DeadLetter console output ([a49f317](https://github.com/st0o0/dottop/commit/a49f317d0a08a44d421a6cd20c6942b761a8baa6))
+* show disk-specific hint in Performance detail modal ([a71aa12](https://github.com/st0o0/dottop/commit/a71aa12195c62d0db5427944d8af43002fd766f0))
+* stabilize flaky UI tests with proper WaitForText timeouts ([16910f0](https://github.com/st0o0/dottop/commit/16910f08021b664c01519cd0b80de8e9e9e079f7))
+* unify key bindings — Enter opens detail, Tab only cycles ([6a75a7f](https://github.com/st0o0/dottop/commit/6a75a7f54d85d48be761f9ad3dd0353e169a7f16))
+
 ## [0.4.0](https://github.com/st0o0/dottop/compare/v0.3.0...v0.4.0) (2026-06-06)
 
 

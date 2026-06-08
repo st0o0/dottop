@@ -203,12 +203,33 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         foreach (var val in ViewModel.GetCpuHistory(proc.Pid))
             cpuGraph.Push(val);
 
+        var cpuPanel = new PanelNode()
+            .WithTitle($" CPU {proc.CpuPercent:F1}% ")
+            .WithTitleColor(cpuColor)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(cpuGraph);
+
+        var ramPercent = ramMb >= 1024
+            ? proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100
+            : proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100;
+        var ramGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(Theme.Graph)
+            .WithRange(0, 100);
+        ramGraph.Push(Math.Clamp(ramPercent, 0, 100));
+
+        var ramPanel = new PanelNode()
+            .WithTitle($" RAM {ramStr} ")
+            .WithTitleColor(Theme.Text)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(ramGraph);
+
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  CPU   {cpuBar}  {proc.CpuPercent:F1}%").WithForeground(cpuColor).Height(1))
-            .WithChild(cpuGraph.Height(4))
-            .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Theme.Text).Height(1))
+            .WithChild(cpuPanel.Height(6))
+            .WithChild(ramPanel.Height(4))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Theme.TextDim).Height(1))

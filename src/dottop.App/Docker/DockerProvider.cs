@@ -67,7 +67,8 @@ public sealed class DockerProvider : IDockerProvider
                     Ports: c.Ports?.Select(p => p.PublicPort > 0
                             ? $"{p.PublicPort}:{p.PrivatePort}"
                             : $"{p.PrivatePort}")
-                        .ToList() ?? []
+                        .ToList() ?? [],
+                    ComposeProject: c.Labels?.TryGetValue("com.docker.compose.project", out var project) == true ? project : null
                 );
             }).ToList();
 

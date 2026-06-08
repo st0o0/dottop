@@ -14,8 +14,20 @@ using Termina.Terminal;
 
 namespace dottop.App.Pages;
 
+public record DockerListItem
+{
+    public bool IsGroup { get; init; }
+    public string? GroupName { get; init; }
+    public int GroupCount { get; init; }
+    public bool IsExpanded { get; init; }
+    public ContainerSnapshot? Container { get; init; }
+}
+
 public class DockerViewModel : ReactiveViewModel
 {
+    private readonly HashSet<string> _expandedGroups = new();
+    private readonly HashSet<string> _knownGroups = new();
+
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
@@ -26,12 +38,14 @@ public class DockerViewModel : ReactiveViewModel
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
     public Func<ContainerSnapshot?>? GetSelectedItem { get; set; }
+    public Func<DockerListItem?>? GetSelectedDisplayItem { get; set; }
 
     private readonly Subject<Unit> _detailContentChanged = new();
     public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
 
     public ReactiveProperty<List<ContainerSnapshot>> AllContainers { get; } = new([]);
     public ReactiveProperty<List<ContainerSnapshot>> FilteredContainers { get; } = new([]);
+    public ReactiveProperty<List<DockerListItem>> DisplayItems { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<string> StatusMessage { get; } = new("");
@@ -111,9 +125,51 @@ public class DockerViewModel : ReactiveViewModel
                 c.Image.Contains(SearchText.Value, StringComparison.OrdinalIgnoreCase));
         }
 
-        FilteredContainers.Value = source.ToList();
+        var filtered = source.ToList();
+        FilteredContainers.Value = filtered;
+
+        // Build grouped display items
+        var items = new List<DockerListItem>();
+        var grouped = filtered.GroupBy(c => c.ComposeProject ?? "").OrderBy(g => g.Key);
+
+        foreach (var group in grouped)
+        {
+            if (!string.IsNullOrEmpty(group.Key))
+            {
+                if (_knownGroups.Add(group.Key))
+                    _expandedGroups.Add(group.Key);
+                var expanded = _expandedGroups.Contains(group.Key);
+                items.Add(new DockerListItem
+                {
+                    IsGroup = true,
+                    GroupName = group.Key,
+                    GroupCount = group.Count(),
+                    IsExpanded = expanded
+                });
+                if (expanded)
+                {
+                    foreach (var c in group)
+                        items.Add(new DockerListItem { Container = c });
+                }
+            }
+            else
+            {
+                foreach (var c in group)
+                    items.Add(new DockerListItem { Container = c });
+            }
+        }
+
+        DisplayItems.Value = items;
         UpdateStatus();
     }
+
+    public void ToggleGroup(string groupName)
+    {
+        if (!_expandedGroups.Remove(groupName))
+            _expandedGroups.Add(groupName);
+        ApplyFilter();
+    }
+
 
     private void UpdateStatus()
     {
@@ -171,7 +227,12 @@ public class DockerViewModel : ReactiveViewModel
 
                 break;
             case ConsoleKey.Enter:
-                if (GetSelectedItem?.Invoke() is { } container)
+                var selectedItem = GetSelectedDisplayItem?.Invoke();
+                if (selectedItem is { IsGroup: true, GroupName: { } groupName })
+                {
+                    ToggleGroup(groupName);
+                }
+                else if (GetSelectedItem?.Invoke() is { } container)
                 {
                     SelectedContainer.Value = container;
                     IsDetailOpen.Value = true;

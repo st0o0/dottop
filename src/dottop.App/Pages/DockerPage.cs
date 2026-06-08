@@ -13,35 +13,49 @@ namespace dottop.App.Pages;
 
 public class DockerPage : ReactivePage<DockerViewModel>
 {
-    private DataListNode<ContainerSnapshot>? _list;
+    private DataListNode<DockerListItem>? _list;
     private DataListNode<string>? _logList;
     private ModalNode? _detailModal;
     private ModalNode? _settingsModal;
 
     public override ILayoutNode BuildLayout()
     {
-        _list = new DataListNode<ContainerSnapshot>(
-            c =>
+        _list = new DataListNode<DockerListItem>(
+            item =>
             {
-                var name = c.Name.Length > 20 ? c.Name[..19] + "…" : c.Name;
-                var image = c.Image.Length > 20 ? c.Image[..19] + "…" : c.Image;
+                if (item.IsGroup)
+                {
+                    var arrow = item.IsExpanded ? "▼" : "▶";
+                    var running = item.GroupCount;
+                    return $" {arrow} {item.GroupName} ({running} containers)";
+                }
+
+                var c = item.Container!;
+                var indent = c.ComposeProject is not null ? "   " : " ";
+                var name = c.Name.Length > 18 ? c.Name[..17] + "…" : c.Name;
+                var image = c.Image.Length > 18 ? c.Image[..17] + "…" : c.Image;
                 var statusIcon = c.Status is "running" ? "▶" : "■";
                 var cpuStr = c.CpuPercent > 0 ? $"{c.CpuPercent,5:F1}%" : "    —";
                 var ramMb = c.MemoryUsageBytes / 1024 / 1024;
                 var ramStr = ramMb > 0 ? (ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB") : "  —";
                 var port = c.Ports.Count > 0 ? c.Ports[0] : "—";
                 if (port.Length > 12) port = port[..11] + "…";
-                return $" {statusIcon} {name,-20} {image,-20} {cpuStr} {ramStr,7} {port,-12} {c.State}";
+                return $"{indent}{statusIcon} {name,-18} {image,-18} {cpuStr} {ramStr,7} {port,-12} {c.State}";
             },
-            c => c.Status switch
+            item =>
             {
-                "running" => Theme.Text,
-                "restarting" => Theme.Warning,
-                _ => Theme.TextDim
+                if (item.IsGroup) return Theme.Primary;
+                return item.Container?.Status switch
+                {
+                    "running" => Theme.Text,
+                    "restarting" => Theme.Warning,
+                    _ => Theme.TextDim
+                };
             });
 
         ViewModel.ListNode = _list;
-        ViewModel.GetSelectedItem = () => _list.SelectedItem;
+        ViewModel.GetSelectedItem = () => _list.SelectedItem?.Container;
+        ViewModel.GetSelectedDisplayItem = () => _list.SelectedItem;
 
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
@@ -83,7 +97,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
     public override void OnNavigatedTo()
     {
         base.OnNavigatedTo();
-        ViewModel.FilteredContainers.Subscribe(containers => _list?.SetItems(containers))
+        ViewModel.DisplayItems.Subscribe(items => _list?.SetItems(items))
             .DisposeWith(Subscriptions);
 
         ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())

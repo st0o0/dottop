@@ -12,4 +12,5 @@ public record ContainerSnapshot(
     ulong MemoryLimitBytes,
     ulong NetworkRxBytes,
     ulong NetworkTxBytes,
-    IReadOnlyList<string> Ports);
+    IReadOnlyList<string> Ports,
+    string? ComposeProject = null);

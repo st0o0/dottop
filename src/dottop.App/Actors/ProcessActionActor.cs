@@ -5,11 +5,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class ProcessActionActor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Process.Action");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Process.Action");
 
     public static Props Props(IProcessTreeProvider treeProvider) =>
         Akka.Actor.Props.Create(() => new ProcessActionActor(treeProvider));
@@ -87,7 +87,7 @@ public sealed class ProcessActionActor : ReceiveActor
 
     protected override void PostStop()
     {
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 
@@ -106,14 +106,14 @@ public sealed class ProcessActionActor : ReceiveActor
                 }
                 catch (Exception ex)
                 {
-                    _trace.Warning("ProcessAction", "Failed to read module for pid={0}: {1}", pid, ex.Message);
+                    Trace.Warning("ProcessAction", "Failed to read module for pid={0}: {1}", pid, ex.Message);
                 }
             }
             return modules.OrderBy(m => m).ToList();
         }
         catch (Exception ex)
         {
-            _trace.Warning("ProcessAction", "Failed to read modules for pid={0}: {1}", pid, ex.Message);
+            Trace.Warning("ProcessAction", "Failed to read modules for pid={0}: {1}", pid, ex.Message);
             return ["Unable to read modules (access denied or process exited)"];
         }
     }

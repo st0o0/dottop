@@ -90,6 +90,15 @@
   <data name="HeaderGroup" xml:space="preserve">
     <value>Gruppe</value>
   </data>
+  <data name="HeaderCpuSparkline" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="HeaderRamBar" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="HeaderMem" xml:space="preserve">
+    <value>Mem</value>
+  </data>
   <data name="GroupAll" xml:space="preserve">
     <value>Alle</value>
   </data>
@@ -136,7 +145,7 @@
   </data>
   <!-- ProcessesViewModel status -->
   <data name="ProcessStatusFormat" xml:space="preserve">
-    <value> {0} Prozesse | Gruppe: {1} | Sort: {2} | /: Suche | Enter: Detail | Q: Beenden</value>
+    <value> {0} Prozesse | Gruppe: {1} | Sort: {2} | /: Suche | Enter: Detail | F10: Einstellungen | Q: Beenden</value>
   </data>
   <!-- PerformancePage -->
   <data name="PanelCpu" xml:space="preserve">
@@ -155,7 +164,7 @@
     <value>Gesamt:</value>
   </data>
   <data name="PerfStatusBar" xml:space="preserve">
-    <value> Enter: Detail  |  1-5: Tab  |  Q: Beenden</value>
+    <value> Enter: Detail  |  1-4: Tab  |  F10: Einstellungen  |  Q: Beenden</value>
   </data>
   <data name="DetailSectionNetwork" xml:space="preserve">
     <value>Netzwerk</value>
@@ -224,7 +233,7 @@
   </data>
   <!-- ServicesViewModel -->
   <data name="ServicesStatusFormat" xml:space="preserve">
-    <value> {0} Dienste | /: Suche | Enter: Detail | S: Start | X: Stop | R: Restart | Q: Beenden</value>
+    <value> {0} Dienste | /: Suche | Enter: Detail | S/X/R | F10: Einstellungen | Q: Beenden</value>
   </data>
   <data name="ServiceDetailName" xml:space="preserve">
     <value>Name:</value>
@@ -265,7 +274,7 @@
   </data>
   <!-- NetworkViewModel -->
   <data name="NetworkStatusFormat" xml:space="preserve">
-    <value> {0} Verbindungen | /: Suche | Enter: Detail | Q: Beenden</value>
+    <value> {0} Verbindungen | /: Suche | Enter: Detail | F10: Einstellungen | Q: Beenden</value>
   </data>
   <!-- Settings tab -->
   <data name="TabSettings" xml:space="preserve">
@@ -370,10 +379,10 @@
   </data>
   <!-- Modal/Overlay hint keys -->
   <data name="HintProcessOverviewKeys" xml:space="preserve">
-    <value> ←→: Tabs | K: Kill | Esc: Schließen</value>
+    <value> Tab: Tabs | K: Kill | Esc: Schließen</value>
   </data>
   <data name="HintProcessDetailKeys" xml:space="preserve">
-    <value> ←→: Tabs | ↑↓: Scrollen | Esc: Schließen</value>
+    <value> Tab: Tabs | ↑↓: Scrollen | Esc: Schließen</value>
   </data>
   <data name="HintPerfDetailKeys" xml:space="preserve">
     <value> ←→: Sektion | Esc: Schließen</value>
@@ -389,5 +398,30 @@
   </data>
   <data name="HintSettingsKeys" xml:space="preserve">
     <value> ↑↓: Wählen | ←→: Ändern | Home/End: Sprung | Q: Beenden</value>
+  </data>
+  <data name="HintSettingsModalKeys" xml:space="preserve">
+    <value> ←→: Ändern | U: Aktualisieren | Esc: Schließen</value>
+  </data>
+  <!-- DockerPage -->
+  <data name="TabDocker" xml:space="preserve">
+    <value>5:Docker</value>
+  </data>
+  <data name="PanelDocker" xml:space="preserve">
+    <value> Docker </value>
+  </data>
+  <data name="DockerStatusFormat" xml:space="preserve">
+    <value> {0} Container | /: Suche | Enter: Detail | S/X/R | F10: Einstellungen | Q: Beenden</value>
+  </data>
+  <data name="DockerNotAvailable" xml:space="preserve">
+    <value> Docker nicht verfügbar. Stellen Sie sicher, dass Docker Desktop läuft.</value>
+  </data>
+  <data name="HintDockerDetailKeys" xml:space="preserve">
+    <value> S: Start | X: Stop | R: Restart | ↑↓: Logs scrollen | Esc: Schließen</value>
+  </data>
+  <data name="DockerLogsHeader" xml:space="preserve">
+    <value>─── Logs (letzte 20 Zeilen) ───</value>
+  </data>
+  <data name="DockerLoadingLogs" xml:space="preserve">
+    <value> Lade Logs...</value>
   </data>
 </root>

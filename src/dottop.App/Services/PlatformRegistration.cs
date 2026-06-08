@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace dottop.Services;
+namespace dottop.App.Services;
 
 internal static class PlatformRegistration
 {

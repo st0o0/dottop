@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
+using dottop.App.Themes;
 using dottop.Core.Models;
-using dottop.Themes;
 
-namespace dottop.Services;
+namespace dottop.App.Services;
 
 public class SettingsService
 {

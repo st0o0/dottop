@@ -1,4 +1,3 @@
-// src/dottop.Core/Messages/Commands.cs
 using System.Diagnostics;
 
 namespace dottop.Core.Messages;

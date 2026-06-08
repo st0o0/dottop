@@ -1,10 +1,10 @@
-using dottop.Themes;
+using dottop.App.Themes;
 using R3;
 using Termina.Layout;
 using Termina.Rendering;
 using Termina.Terminal;
 
-namespace dottop.Nodes;
+namespace dottop.App.Nodes;
 
 public interface IScrollableList
 {

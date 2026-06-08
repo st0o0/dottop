@@ -1,10 +1,9 @@
 using Akka.Actor;
 using dottop.Actors;
+using dottop.App.Actors;
 using dottop.Core.Messages;
 using dottop.Core.Platform;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace dottop.Actors.Tests;
 
@@ -13,13 +12,13 @@ public class ProcessActionActorTests : IAsyncLifetime
     private readonly IProcessTreeProvider _treeProvider = Substitute.For<IProcessTreeProvider>();
     private ActorSystem _sys = null!;
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _sys = ActorSystem.Create("test");
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _sys.Terminate();
     }
@@ -34,8 +33,8 @@ public class ProcessActionActorTests : IAsyncLifetime
         var result = await actor.Ask<ProcessTreeResult>(
             new GetProcessTree(1234), TimeSpan.FromSeconds(3));
 
-        result.Pid.Should().Be(1234);
-        result.Name.Should().Be("test.exe");
+        Assert.Equal(1234, result.Pid);
+        Assert.Equal("test.exe", result.Name);
     }
 
     [Fact]
@@ -45,6 +44,6 @@ public class ProcessActionActorTests : IAsyncLifetime
         var result = await actor.Ask<ActionFailure>(
             new KillProcess(-1), TimeSpan.FromSeconds(3));
 
-        result.Error.Should().NotBeEmpty();
+        Assert.NotEmpty(result.Error);
     }
 }

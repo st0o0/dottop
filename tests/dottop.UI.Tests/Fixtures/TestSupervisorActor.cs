@@ -61,6 +61,21 @@ public sealed class TestSupervisorActor : ReceiveActor
 
         Receive<GetProcessHandles>(_ =>
             Sender.Tell(new ProcessHandlesResult(["handle1", "handle2"])));
+
+        Receive<StartDockerMonitoring>(_ =>
+            Sender.Tell(CreateStream(TestData.Containers)));
+
+        Receive<StartContainer>(msg =>
+            Sender.Tell(new ActionSuccess($"Started {msg.Id}")));
+
+        Receive<StopContainer>(msg =>
+            Sender.Tell(new ActionSuccess($"Stopped {msg.Id}")));
+
+        Receive<RestartContainer>(msg =>
+            Sender.Tell(new ActionSuccess($"Restarted {msg.Id}")));
+
+        Receive<GetContainerLogs>(msg =>
+            Sender.Tell(new ContainerLogsResult(["Log line 1", "Log line 2"])));
     }
 
     private static MonitoringStream<T> CreateStream<T>(T snapshot)

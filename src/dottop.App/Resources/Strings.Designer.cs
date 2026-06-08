@@ -9,11 +9,10 @@
 
 #nullable enable
 
-namespace dottop.Resources;
-
-using System;
-using System.Resources;
 using System.Globalization;
+using System.Resources;
+
+namespace dottop.App.Resources;
 
 /// <summary>
 ///   A strongly-typed resource class, for looking up localized strings, etc.
@@ -39,7 +38,7 @@ internal class Strings
         {
             if (resourceMan is null)
             {
-                var temp = new ResourceManager("dottop.Resources.Strings", typeof(Strings).Assembly);
+                var temp = new ResourceManager("dottop.App.Resources.Strings", typeof(Strings).Assembly);
                 resourceMan = temp;
             }
             return resourceMan;
@@ -68,6 +67,9 @@ internal class Strings
     internal static string HeaderCpuPercent => ResourceManager.GetString("HeaderCpuPercent", resourceCulture) ?? "";
     internal static string HeaderRam => ResourceManager.GetString("HeaderRam", resourceCulture) ?? "";
     internal static string HeaderGroup => ResourceManager.GetString("HeaderGroup", resourceCulture) ?? "";
+    internal static string HeaderCpuSparkline => ResourceManager.GetString("HeaderCpuSparkline", resourceCulture) ?? "";
+    internal static string HeaderRamBar => ResourceManager.GetString("HeaderRamBar", resourceCulture) ?? "";
+    internal static string HeaderMem => ResourceManager.GetString("HeaderMem", resourceCulture) ?? "";
     internal static string GroupAll => ResourceManager.GetString("GroupAll", resourceCulture) ?? "";
     internal static string SearchHint => ResourceManager.GetString("SearchHint", resourceCulture) ?? "";
     internal static string SearchBarActiveFormat => ResourceManager.GetString("SearchBarActiveFormat", resourceCulture) ?? "";
@@ -167,6 +169,15 @@ internal class Strings
     internal static string UpdatePressU => ResourceManager.GetString("UpdatePressU", resourceCulture) ?? "";
     internal static string CurrentVersion => ResourceManager.GetString("CurrentVersion", resourceCulture) ?? "";
 
+    // Docker
+    internal static string TabDocker => ResourceManager.GetString("TabDocker", resourceCulture) ?? "";
+    internal static string PanelDocker => ResourceManager.GetString("PanelDocker", resourceCulture) ?? "";
+    internal static string DockerStatusFormat => ResourceManager.GetString("DockerStatusFormat", resourceCulture) ?? "";
+    internal static string DockerNotAvailable => ResourceManager.GetString("DockerNotAvailable", resourceCulture) ?? "";
+    internal static string HintDockerDetailKeys => ResourceManager.GetString("HintDockerDetailKeys", resourceCulture) ?? "";
+    internal static string DockerLogsHeader => ResourceManager.GetString("DockerLogsHeader", resourceCulture) ?? "";
+    internal static string DockerLoadingLogs => ResourceManager.GetString("DockerLoadingLogs", resourceCulture) ?? "";
+
     // Modal/Overlay hint keys
     internal static string HintProcessOverviewKeys => ResourceManager.GetString("HintProcessOverviewKeys", resourceCulture) ?? "";
     internal static string HintProcessDetailKeys => ResourceManager.GetString("HintProcessDetailKeys", resourceCulture) ?? "";
@@ -175,4 +186,5 @@ internal class Strings
     internal static string HintServiceDetailKeys => ResourceManager.GetString("HintServiceDetailKeys", resourceCulture) ?? "";
     internal static string HintNetworkDetailKeys => ResourceManager.GetString("HintNetworkDetailKeys", resourceCulture) ?? "";
     internal static string HintSettingsKeys => ResourceManager.GetString("HintSettingsKeys", resourceCulture) ?? "";
+    internal static string HintSettingsModalKeys => ResourceManager.GetString("HintSettingsModalKeys", resourceCulture) ?? "";
 }

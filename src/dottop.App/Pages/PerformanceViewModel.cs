@@ -1,17 +1,19 @@
 using Akka.Actor;
 using Akka.Hosting;
-using R3;
-using dottop.Actors;
+using dottop.App.Actors;
+using dottop.App.Nodes;
+using dottop.App.Resources;
+using dottop.App.Services;
 using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Core.Platform;
-using dottop.Nodes;
-using dottop.Resources;
-using dottop.Services;
+using R3;
 using Termina.Input;
+using Termina.Notifications;
 using Termina.Reactive;
+using Termina.Terminal;
 
-namespace dottop.Pages;
+namespace dottop.App.Pages;
 
 public enum PerfDetailSection { Cpu, Ram, Disk, Network, Gpu }
 
@@ -19,6 +21,9 @@ public class PerformanceViewModel : ReactiveViewModel
 {
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly IGpuMetrics _gpuMetrics;
+    private readonly SettingsService _settingsService;
+    private readonly UpdateService _updateService;
+    private readonly IToastService _toast;
     private CancellationTokenSource? _cts;
 
     public GraphStyle GraphStyleSetting { get; }
@@ -37,17 +42,28 @@ public class PerformanceViewModel : ReactiveViewModel
     public ReactiveProperty<PerfDetailSection> DetailSection { get; } = new(PerfDetailSection.Cpu);
     public ReactiveProperty<int> DiskDetailIndex { get; } = new(0);
     public ReactiveProperty<string> StatusHint { get; } = new("");
+    public ReactiveProperty<bool> IsSettingsOpen { get; } = new(false);
 
     private readonly Subject<Unit> _detailContentChanged = new();
     public Observable<Unit> DetailContentChanged => _detailContentChanged.AsObservable();
 
+    private readonly Subject<Unit> _settingsContentChanged = new();
+    public Observable<Unit> SettingsContentChanged => _settingsContentChanged.AsObservable();
+
+    private static readonly int[] RefreshOptions = [250, 500, 1000, 2000, 5000];
+
     public PerformanceViewModel(
         IRequiredActor<MonitoringSupervisor> supervisor,
         IGpuMetrics gpuMetrics,
-        SettingsService settingsService)
+        SettingsService settingsService,
+        UpdateService updateService,
+        IToastService toast)
     {
         _supervisor = supervisor;
         _gpuMetrics = gpuMetrics;
+        _settingsService = settingsService;
+        _updateService = updateService;
+        _toast = toast;
 
         GraphStyleSetting = settingsService.Settings.GraphStyle switch
         {
@@ -154,6 +170,7 @@ public class PerformanceViewModel : ReactiveViewModel
 
     private void HandleKey(KeyPressed key)
     {
+        if (IsSettingsOpen.Value) { HandleSettingsKey(key); return; }
         if (IsDetailOpen.Value)
         {
             HandleDetailKey(key);
@@ -171,7 +188,11 @@ public class PerformanceViewModel : ReactiveViewModel
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
-            case ConsoleKey.D5: Navigate("/settings"); break;
+            case ConsoleKey.D5: Navigate("/docker"); break;
+            case ConsoleKey.F10:
+                IsSettingsOpen.Value = true;
+                _settingsContentChanged.OnNext(Unit.Default);
+                break;
 
             case ConsoleKey.Q or ConsoleKey.Escape: Shutdown(); break;
         }
@@ -239,6 +260,84 @@ public class PerformanceViewModel : ReactiveViewModel
         }
     }
 
+    private void HandleSettingsKey(KeyPressed key)
+    {
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.Escape:
+                IsSettingsOpen.Value = false;
+                break;
+            case ConsoleKey.LeftArrow:
+                CycleRefreshRate(-1);
+                break;
+            case ConsoleKey.RightArrow:
+                CycleRefreshRate(1);
+                break;
+            case ConsoleKey.U:
+                if (_updateService.UpdateAvailable)
+                {
+                    _ = PerformUpdateAsync();
+                }
+                break;
+        }
+    }
+
+    private void CycleRefreshRate(int direction)
+    {
+        var current = _settingsService.Settings.RefreshIntervalMs;
+        var idx = Array.IndexOf(RefreshOptions, current);
+        if (idx < 0) idx = 2;
+        var newIdx = (idx + direction + RefreshOptions.Length) % RefreshOptions.Length;
+        _settingsService.Settings.RefreshIntervalMs = RefreshOptions[newIdx];
+        _settingsService.Save();
+        _settingsContentChanged.OnNext(Unit.Default);
+    }
+
+    private async Task PerformUpdateAsync()
+    {
+        _toast.Show(Strings.UpdateDownloading, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+        var success = await _updateService.PerformUpdateAsync(progress =>
+        {
+            _toast.Show(progress switch
+            {
+                "Downloading..." => Strings.UpdateDownloading,
+                "Extracting..." => Strings.UpdateInstalling,
+                _ => progress
+            }, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+        });
+
+        if (success)
+        {
+            _toast.Show(Strings.UpdateComplete, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            await Task.Delay(1500);
+            Shutdown();
+        }
+        else
+        {
+            _toast.Show(Strings.UpdateFailed, new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
+    }
+
+    public string GetRefreshRateDisplay()
+    {
+        return _settingsService.Settings.RefreshIntervalMs switch
+        {
+            250 => "250ms",
+            500 => "500ms",
+            1000 => "1s",
+            2000 => "2s",
+            5000 => "5s",
+            _ => $"{_settingsService.Settings.RefreshIntervalMs}ms"
+        };
+    }
+
+    public string GetSettingsFilePath() => SettingsService.FilePath;
+    public bool IsUpdateAvailable => _updateService.UpdateAvailable;
+    public string CurrentVersionDisplay => string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
+    public string? LatestVersionDisplay => _updateService.UpdateAvailable
+        ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
+        : null;
+
     public override void OnDeactivating()
     {
         _cts?.Cancel();
@@ -263,7 +362,9 @@ public class PerformanceViewModel : ReactiveViewModel
         DetailSection.Dispose();
         DiskDetailIndex.Dispose();
         StatusHint.Dispose();
+        IsSettingsOpen.Dispose();
         _detailContentChanged.Dispose();
+        _settingsContentChanged.Dispose();
         base.Dispose();
     }
 }

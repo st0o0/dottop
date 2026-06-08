@@ -1,17 +1,17 @@
-using dottop.Resources;
-using dottop.Themes;
+using dottop.App.Resources;
+using dottop.App.Themes;
 using Termina.Layout;
 using Termina.Rendering;
 
-namespace dottop.Nodes;
+namespace dottop.App.Nodes;
 
 public sealed class TabBarNode : LayoutNode
 {
     private static string[] TabLabels =>
-        [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork, Strings.TabSettings];
+        [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork, Strings.TabDocker];
 
     private static readonly string[] TabRoutes =
-        ["/", "/performance", "/services", "/network", "/settings"];
+        ["/", "/performance", "/services", "/network", "/docker"];
 
     private readonly int _activeIndex;
 

@@ -1,6 +1,5 @@
 using dottop.UI.Tests.Fixtures;
 using dottop.UI.Tests.Helpers;
-using Xunit;
 
 namespace dottop.UI.Tests;
 
@@ -8,7 +7,7 @@ public class PerformancePageTests : IAsyncLifetime
 {
     private DottopAppFixture _app = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _app = new DottopAppFixture();
         await _app.StartAsync();
@@ -16,33 +15,33 @@ public class PerformancePageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(500);
     }
 
-    public async Task DisposeAsync() => await _app.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 
     [Fact]
     public async Task ShowsCpuAndRamPanels()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "CPU");
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "RAM");
+        await _app.Terminal.WaitForTextAsync("CPU");
+        await _app.Terminal.WaitForTextAsync("RAM");
     }
 
     [Fact]
     public async Task ShowsCpuData()
     {
         // CPU total should show percentage data from test snapshot (42.5%)
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "42.5%");
+        await _app.Terminal.WaitForTextAsync("42.5%");
     }
 
     [Fact]
     public async Task StatusBar_ShowsKeyboardHints()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Enter", 5000);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Detail", 3000);
+        await _app.Terminal.WaitForTextAsync("Enter", 5000);
+        await _app.Terminal.WaitForTextAsync("Detail", 3000);
     }
 
     [Fact]
     public async Task DetailModal_OpensOnEnter()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "CPU");
+        await _app.Terminal.WaitForTextAsync("CPU");
 
         // Press Enter to open detail modal
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -55,7 +54,7 @@ public class PerformancePageTests : IAsyncLifetime
     [Fact]
     public async Task DetailModal_LeftRightCyclesSections()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "CPU");
+        await _app.Terminal.WaitForTextAsync("CPU");
 
         // Open detail modal (starts on CPU section)
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -72,7 +71,7 @@ public class PerformancePageTests : IAsyncLifetime
     [Fact]
     public async Task DetailModal_EscapeCloses()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "CPU");
+        await _app.Terminal.WaitForTextAsync("CPU");
 
         // Open detail modal
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -86,6 +85,6 @@ public class PerformancePageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(300);
 
         // Detail-specific content should no longer be visible
-        ScreenAssert.DoesNotContain(_app.Terminal, "Test CPU");
+        _app.Terminal.DoesNotContain("Test CPU");
     }
 }

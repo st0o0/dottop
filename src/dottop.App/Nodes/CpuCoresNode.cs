@@ -1,9 +1,9 @@
-using dottop.Themes;
+using dottop.App.Themes;
 using R3;
 using Termina.Layout;
 using Termina.Rendering;
 
-namespace dottop.Nodes;
+namespace dottop.App.Nodes;
 
 public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
 {

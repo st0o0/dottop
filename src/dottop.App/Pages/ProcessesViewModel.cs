@@ -1,31 +1,35 @@
 using Akka.Actor;
 using Akka.Hosting;
-using R3;
-using dottop.Actors;
+using dottop.App.Actors;
+using dottop.App.Nodes;
+using dottop.App.Resources;
+using dottop.App.Services;
 using dottop.Core.Messages;
 using dottop.Core.Models;
-using dottop.Nodes;
-using dottop.Resources;
-using dottop.Services;
-using Termina.Input;
-using Termina.Notifications;
-using Termina.Terminal;
+using R3;
 using Servus;
 using Servus.Diagnostics;
+using Termina.Input;
+using Termina.Notifications;
 using Termina.Reactive;
+using Termina.Terminal;
 
-namespace dottop.Pages;
+namespace dottop.App.Pages;
 
 public enum SortColumn { Name, Cpu, Ram, Pid }
 
 public class ProcessesViewModel : ReactiveViewModel
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("ViewModel.Processes");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("ViewModel.Processes");
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
+    private readonly UpdateService _updateService;
     private readonly IToastService _toast;
     private IActorRef? _supervisorActor;
     private CancellationTokenSource? _cts;
+
+    private readonly Dictionary<int, Queue<double>> _cpuHistory = new();
+    private const int CpuHistoryLength = 8;
 
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
@@ -48,14 +52,22 @@ public class ProcessesViewModel : ReactiveViewModel
     public ReactiveProperty<IReadOnlyDictionary<string, string>?> ProcessEnv { get; } = new(null);
     public ReactiveProperty<IReadOnlyList<string>?> ProcessHandles { get; } = new(null);
     public ReactiveProperty<bool> IsKillConfirmPending { get; } = new(false);
+    public ReactiveProperty<bool> IsSettingsOpen { get; } = new(false);
+
+    private readonly Subject<Unit> _settingsContentChanged = new();
+    public Observable<Unit> SettingsContentChanged => _settingsContentChanged.AsObservable();
+
+    private static readonly int[] RefreshOptions = [250, 500, 1000, 2000, 5000];
 
     public ProcessesViewModel(
         IRequiredActor<MonitoringSupervisor> supervisor,
         SettingsService settingsService,
+        UpdateService updateService,
         IToastService toast)
     {
         _supervisor = supervisor;
         _settingsService = settingsService;
+        _updateService = updateService;
         _toast = toast;
     }
 
@@ -104,6 +116,7 @@ public class ProcessesViewModel : ReactiveViewModel
             await foreach (var list in stream.Data.WithCancellation(ct))
             {
                 AllProcesses.Value = list;
+                UpdateCpuHistory(list);
                 ApplyFilter();
 
                 if (IsOverlayOpen.Value && SelectedProcess.Value is { } current
@@ -154,6 +167,7 @@ public class ProcessesViewModel : ReactiveViewModel
     private void HandleKey(KeyPressed key)
     {
         if (IsSearchActive.Value) { HandleSearchKey(key); return; }
+        if (IsSettingsOpen.Value) { HandleSettingsKey(key); return; }
         if (IsOverlayOpen.Value) { HandleOverlayKey(key); return; }
 
         switch (key.KeyInfo.Key)
@@ -187,7 +201,11 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
-            case ConsoleKey.D5: Navigate("/settings"); break;
+            case ConsoleKey.D5: Navigate("/docker"); break;
+            case ConsoleKey.F10:
+                IsSettingsOpen.Value = true;
+                _settingsContentChanged.OnNext(Unit.Default);
+                break;
 
             case ConsoleKey.Q: Shutdown(); break;
         }
@@ -230,14 +248,12 @@ public class ProcessesViewModel : ReactiveViewModel
                 }
 
                 break;
-            case ConsoleKey.LeftArrow:
+            case ConsoleKey.Tab:
                 OverlayListNode = null;
-                OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1);
-                UpdateStatus();
-                _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
-            case ConsoleKey.RightArrow:
-                OverlayListNode = null;
-                OverlayTabIndex.Value = Math.Min(3, OverlayTabIndex.Value + 1);
+                if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                    OverlayTabIndex.Value = OverlayTabIndex.Value <= 0 ? 3 : OverlayTabIndex.Value - 1;
+                else
+                    OverlayTabIndex.Value = OverlayTabIndex.Value >= 3 ? 0 : OverlayTabIndex.Value + 1;
                 UpdateStatus();
                 _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
             case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
@@ -293,28 +309,55 @@ public class ProcessesViewModel : ReactiveViewModel
             switch (OverlayTabIndex.Value)
             {
                 case 1 when ProcessTree.Value is null:
-                    var tree = await _supervisorActor.Ask<ProcessTreeResult>(
-                        new GetProcessTree(proc.Pid), TimeSpan.FromSeconds(5));
-                    ProcessTree.Value = tree;
-                    _overlayContentChanged.OnNext(Unit.Default);
+                    var treeResponse = await _supervisorActor.Ask<object>(
+                        new GetProcessTree(proc.Pid), TimeSpan.FromSeconds(10));
+                    if (treeResponse is ProcessTreeResult tree)
+                    {
+                        ProcessTree.Value = tree;
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
+                    else if (treeResponse is ActionFailure treeFail)
+                    {
+                        _toast?.Show(treeFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        ProcessTree.Value = new ProcessTreeResult(proc.Pid, proc.Name, []);
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
                     break;
                 case 2 when ProcessEnv.Value is null:
-                    var env = await _supervisorActor.Ask<ProcessEnvironmentResult>(
-                        new GetProcessEnvironment(proc.Pid), TimeSpan.FromSeconds(5));
-                    ProcessEnv.Value = env.Variables;
-                    _overlayContentChanged.OnNext(Unit.Default);
+                    var envResponse = await _supervisorActor.Ask<object>(
+                        new GetProcessEnvironment(proc.Pid), TimeSpan.FromSeconds(10));
+                    if (envResponse is ProcessEnvironmentResult env)
+                    {
+                        ProcessEnv.Value = env.Variables;
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
+                    else if (envResponse is ActionFailure envFail)
+                    {
+                        _toast?.Show(envFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        ProcessEnv.Value = new Dictionary<string, string>();
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
                     break;
                 case 3 when ProcessHandles.Value is null:
-                    var handles = await _supervisorActor.Ask<ProcessHandlesResult>(
-                        new GetProcessHandles(proc.Pid), TimeSpan.FromSeconds(5));
-                    ProcessHandles.Value = handles.Handles;
-                    _overlayContentChanged.OnNext(Unit.Default);
+                    var handlesResponse = await _supervisorActor.Ask<object>(
+                        new GetProcessHandles(proc.Pid), TimeSpan.FromSeconds(10));
+                    if (handlesResponse is ProcessHandlesResult handles)
+                    {
+                        ProcessHandles.Value = handles.Handles;
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
+                    else if (handlesResponse is ActionFailure handlesFail)
+                    {
+                        _toast?.Show(handlesFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        ProcessHandles.Value = [];
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
                     break;
             }
         }
         catch (Exception ex)
         {
-            _trace.Warning(this, "Failed to load overlay tab {0}: {1}", OverlayTabIndex.Value, ex.Message);
+            Trace.Warning(this, "Failed to load overlay tab {0}: {1}", OverlayTabIndex.Value, ex.Message);
             _toast.Show("⚠ Failed to load: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
 
             // Set fallback data so the UI doesn't show "Loading..." forever
@@ -326,6 +369,37 @@ public class ProcessesViewModel : ReactiveViewModel
             }
             _overlayContentChanged.OnNext(Unit.Default);
         }
+    }
+
+    private void UpdateCpuHistory(List<ProcessSnapshot> processes)
+    {
+        var activePids = new HashSet<int>(processes.Count);
+        foreach (var proc in processes)
+        {
+            activePids.Add(proc.Pid);
+            if (!_cpuHistory.TryGetValue(proc.Pid, out var queue))
+            {
+                queue = new Queue<double>(CpuHistoryLength);
+                _cpuHistory[proc.Pid] = queue;
+            }
+            queue.Enqueue(proc.CpuPercent);
+            if (queue.Count > CpuHistoryLength)
+                queue.Dequeue();
+        }
+        var stale = _cpuHistory.Keys.Where(pid => !activePids.Contains(pid)).ToList();
+        foreach (var pid in stale)
+            _cpuHistory.Remove(pid);
+    }
+
+    public IReadOnlyList<double> GetCpuHistory(int pid)
+    {
+        return _cpuHistory.TryGetValue(pid, out var queue) ? queue.ToArray() : [];
+    }
+
+    public long GetMaxWorkingSet()
+    {
+        var list = FilteredProcesses.Value;
+        return list.Count == 0 ? 1 : list.Max(p => p.WorkingSetBytes);
     }
 
     private void CycleSortColumn()
@@ -364,11 +438,91 @@ public class ProcessesViewModel : ReactiveViewModel
         }
     }
 
+    private void HandleSettingsKey(KeyPressed key)
+    {
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.Escape:
+                IsSettingsOpen.Value = false;
+                break;
+            case ConsoleKey.LeftArrow:
+                CycleRefreshRate(-1);
+                break;
+            case ConsoleKey.RightArrow:
+                CycleRefreshRate(1);
+                break;
+            case ConsoleKey.U:
+                if (_updateService.UpdateAvailable)
+                {
+                    _ = PerformUpdateAsync();
+                }
+                break;
+        }
+    }
+
+    private void CycleRefreshRate(int direction)
+    {
+        var current = _settingsService.Settings.RefreshIntervalMs;
+        var idx = Array.IndexOf(RefreshOptions, current);
+        if (idx < 0) idx = 2; // default to 1000ms
+        var newIdx = (idx + direction + RefreshOptions.Length) % RefreshOptions.Length;
+        _settingsService.Settings.RefreshIntervalMs = RefreshOptions[newIdx];
+        _settingsService.Save();
+        _settingsContentChanged.OnNext(Unit.Default);
+    }
+
+    private async Task PerformUpdateAsync()
+    {
+        _toast.Show(Strings.UpdateDownloading, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+        var success = await _updateService.PerformUpdateAsync(progress =>
+        {
+            _toast.Show(progress switch
+            {
+                "Downloading..." => Strings.UpdateDownloading,
+                "Extracting..." => Strings.UpdateInstalling,
+                _ => progress
+            }, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+        });
+
+        if (success)
+        {
+            _toast.Show(Strings.UpdateComplete, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            await Task.Delay(1500);
+            Shutdown();
+        }
+        else
+        {
+            _toast.Show(Strings.UpdateFailed, new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
+    }
+
+    public string GetRefreshRateDisplay()
+    {
+        return _settingsService.Settings.RefreshIntervalMs switch
+        {
+            250 => "250ms",
+            500 => "500ms",
+            1000 => "1s",
+            2000 => "2s",
+            5000 => "5s",
+            _ => $"{_settingsService.Settings.RefreshIntervalMs}ms"
+        };
+    }
+
+    public string GetSettingsFilePath() => SettingsService.FilePath;
+
+    public bool IsUpdateAvailable => _updateService.UpdateAvailable;
+    public string CurrentVersionDisplay => string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
+    public string? LatestVersionDisplay => _updateService.UpdateAvailable
+        ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
+        : null;
+
     public override void OnDeactivating()
     {
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;
+        _cpuHistory.Clear();
         base.OnDeactivating();
     }
 
@@ -381,7 +535,8 @@ public class ProcessesViewModel : ReactiveViewModel
         SortColumn.Dispose();
         IsSearchActive.Dispose(); IsOverlayOpen.Dispose();
         SelectedProcess.Dispose(); OverlayTabIndex.Dispose();
-        StatusMessage.Dispose(); IsKillConfirmPending.Dispose(); ProcessTree.Dispose();
+        StatusMessage.Dispose(); IsKillConfirmPending.Dispose(); IsSettingsOpen.Dispose();
+        _settingsContentChanged.Dispose(); ProcessTree.Dispose();
         ProcessEnv.Dispose(); ProcessHandles.Dispose();
         base.Dispose();
     }

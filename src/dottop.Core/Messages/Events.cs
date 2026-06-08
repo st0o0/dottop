@@ -1,10 +1,10 @@
-// src/dottop.Core/Messages/Events.cs
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
 namespace dottop.Core.Messages;
 
 public sealed record ActionSuccess(string Message);
+
 public sealed record ActionFailure(string Error);
 
 public sealed record MonitoringStream<T>(

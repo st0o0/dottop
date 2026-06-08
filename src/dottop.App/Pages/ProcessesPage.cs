@@ -1,8 +1,8 @@
+using dottop.App.Nodes;
+using dottop.App.Resources;
+using dottop.App.Themes;
 using dottop.Core.Messages;
 using dottop.Core.Models;
-using dottop.Nodes;
-using dottop.Resources;
-using dottop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -10,12 +10,14 @@ using Termina.Reactive;
 using Termina.Rendering;
 using Termina.Terminal;
 
-namespace dottop.Pages;
+namespace dottop.App.Pages;
 
 public class ProcessesPage : ReactivePage<ProcessesViewModel>
 {
     private ModalNode? _overlay;
+    private ModalNode? _settingsModal;
     private DataListNode<ProcessSnapshot>? _list;
+    private DataListNode<string>? _treeList;
     private DataListNode<KeyValuePair<string, string>>? _envList;
     private DataListNode<string>? _handlesList;
 
@@ -26,8 +28,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             {
                 var ramMb = p.WorkingSetBytes / 1024 / 1024;
                 var name = p.Name.Length > 20 ? p.Name[..19] + "…" : p.Name;
-                var cpuBar = MiniBar(p.CpuPercent, 8);
                 var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB";
+                var cpuBar = MiniBar(p.CpuPercent, 8);
+
                 return $" {p.Pid,6}  {name,-20} {cpuBar} {p.CpuPercent,5:F1}%  {ramStr,7}  {p.Group}";
             },
             p => p.CpuPercent switch
@@ -52,6 +55,16 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             ViewModel.IsOverlayOpen,
             _overlay);
 
+        _settingsModal = new ModalNode()
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Primary)
+            .WithBackdrop(BackdropStyle.Solid)
+            .WithBackdropColor(Color.Black)
+            .WithDismissOnEscape(false)
+            .WithPadding(1);
+
+        var conditionalSettings = new ConditionalNode(ViewModel.IsSettingsOpen, _settingsModal);
+
         var mainLayout = Layouts.Vertical()
             .WithChild(new TabBarNode(0))
             .WithChild(BuildSearchBar())
@@ -65,7 +78,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 .Fill())
             .WithChild(BuildStatusBar());
 
-        return Layouts.Stack(mainLayout, conditionalOverlay);
+        return Layouts.Stack(mainLayout, conditionalOverlay, conditionalSettings);
     }
 
     public override void OnNavigatedTo()
@@ -79,6 +92,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .DisposeWith(Subscriptions);
 
         ViewModel.IsKillConfirmPending.Subscribe(_ => UpdateOverlayContent())
+            .DisposeWith(Subscriptions);
+
+        ViewModel.SettingsContentChanged.Subscribe(_ => UpdateSettingsModal())
             .DisposeWith(Subscriptions);
 
         Observable.Interval(TimeSpan.FromSeconds(1))
@@ -96,6 +112,35 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 }
             })
             .DisposeWith(Subscriptions);
+    }
+
+    private void UpdateSettingsModal()
+    {
+        if (_settingsModal is null) return;
+
+        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
+        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
+
+        var layout = Layouts.Vertical()
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode($"  {Strings.SettingsRefreshRate,-20} ◀ {ViewModel.GetRefreshRateDisplay()} ▶")
+                .WithForeground(Theme.Text).Height(1))
+            .WithChild(new TextNode("").Height(1));
+
+        if (ViewModel.IsUpdateAvailable)
+        {
+            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(Theme.Warning).Height(1));
+            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(Theme.Accent).Height(1));
+        }
+        else
+        {
+            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(Theme.TextDim).Height(1));
+        }
+
+        layout.WithChild(new TextNode("").Height(1));
+        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(Theme.TextDim).Height(1));
+
+        _settingsModal.Content = layout;
     }
 
     private ILayoutNode BuildSearchBar()
@@ -187,24 +232,53 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         return Layouts.Vertical().WithChild(content).Fill();
     }
 
-    private static ILayoutNode BuildOverviewTab(ProcessSnapshot proc, bool isKillConfirmPending)
+    private ILayoutNode BuildOverviewTab(ProcessSnapshot proc, bool isKillConfirmPending)
     {
         var ramMb = proc.WorkingSetBytes / 1024 / 1024;
         var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1} GB" : $"{ramMb} MB";
         var cpuBar = MiniBar(proc.CpuPercent, 20);
         var cpuColor = proc.CpuPercent > 80 ? Color.BrightRed : proc.CpuPercent > 50 ? Color.BrightYellow : Color.Cyan;
 
+        var cpuGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(cpuColor)
+            .WithRange(0, 100);
+        foreach (var val in ViewModel.GetCpuHistory(proc.Pid))
+            cpuGraph.Push(val);
+
+        var cpuPanel = new PanelNode()
+            .WithTitle($" CPU {proc.CpuPercent:F1}% ")
+            .WithTitleColor(cpuColor)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(cpuGraph);
+
+        var ramPercent = ramMb >= 1024
+            ? proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100
+            : proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100;
+        var ramGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(Theme.Graph)
+            .WithRange(0, 100);
+        ramGraph.Push(Math.Clamp(ramPercent, 0, 100));
+
+        var ramPanel = new PanelNode()
+            .WithTitle($" RAM {ramStr} ")
+            .WithTitleColor(Theme.Text)
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Border)
+            .WithContent(ramGraph);
+
         var layout = Layouts.Vertical()
-            .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  CPU   {cpuBar}  {proc.CpuPercent:F1}%").WithForeground(cpuColor).Height(1))
-            .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode("").Height(1));
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(cpuPanel.Height(8))
+            .WithChild(ramPanel.Height(5));
 
         if (isKillConfirmPending)
         {
@@ -222,20 +296,34 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             return new TextNode(Strings.LoadingProcessTree).WithForeground(Theme.TextDim);
         }
 
-        var layout = Layouts.Vertical();
-        RenderTree(layout, tree, 0);
-        return layout;
+        var lines = new List<string>();
+        FlattenTree(lines, tree, 0);
+
+        _treeList = new DataListNode<string>(line => line, _ => Theme.Text);
+        _treeList.SetItems(lines);
+        ViewModel.OverlayListNode = _treeList;
+        return _treeList.Fill();
     }
 
-    private static void RenderTree(VerticalLayout layout, ProcessTreeResult node, int depth, bool isLast = true)
+    private static void FlattenTree(List<string> lines, ProcessTreeResult node, int depth,
+        bool isLast = true, string parentPrefix = "")
     {
-        var indent = new string(' ', depth * 3);
-        var connector = depth == 0 ? " ●" : isLast ? " └─" : " ├─";
-        var color = depth == 0 ? Theme.Primary : Theme.TextDim;
-        layout.WithChild(new TextNode($"{indent}{connector} {node.Name} ({node.Pid})")
-            .WithForeground(color).Height(1));
-        for (var i = 0; i < node.Children.Count; i++)
-            RenderTree(layout, node.Children[i], depth + 1, i == node.Children.Count - 1);
+        if (depth == 0)
+        {
+            lines.Add($"  ● {node.Name} ({node.Pid})");
+            for (var i = 0; i < node.Children.Count; i++)
+                FlattenTree(lines, node.Children[i], depth + 1,
+                    i == node.Children.Count - 1, "  ");
+        }
+        else
+        {
+            var connector = isLast ? "└── " : "├── ";
+            lines.Add($"{parentPrefix}{connector}{node.Name} ({node.Pid})");
+            var childPrefix = parentPrefix + (isLast ? "    " : "│   ");
+            for (var i = 0; i < node.Children.Count; i++)
+                FlattenTree(lines, node.Children[i], depth + 1,
+                    i == node.Children.Count - 1, childPrefix);
+        }
     }
 
     private ILayoutNode BuildEnvTab()

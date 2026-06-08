@@ -50,4 +50,12 @@ public static class TestData
         new("svchost", 1003, "0.0.0.0:135",        "0.0.0.0:0",           "Listen",      "TCP"),
         new("spotify", 1005, "192.168.1.10:50000",  "35.186.224.45:4070",  "TimeWait",    "TCP"),
     ];
+
+    public static List<ContainerSnapshot> Containers =>
+    [
+        new("abc123def456", "web-app", "nginx:latest", "running", "Up 3 days",
+            DateTimeOffset.UtcNow.AddDays(-3), 2.5, 50_000_000, 512_000_000, 1024, 2048, ["80:8080", "443:8443"]),
+        new("def789ghi012", "db-backup", "postgres:16", "exited", "Exited (0) 2h ago",
+            DateTimeOffset.UtcNow.AddDays(-5), 0, 0, 512_000_000, 0, 0, []),
+    ];
 }

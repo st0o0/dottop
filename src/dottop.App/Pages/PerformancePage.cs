@@ -1,7 +1,7 @@
+using dottop.App.Nodes;
+using dottop.App.Resources;
+using dottop.App.Themes;
 using dottop.Core.Models;
-using dottop.Nodes;
-using dottop.Resources;
-using dottop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -9,11 +9,12 @@ using Termina.Reactive;
 using Termina.Rendering;
 using Termina.Terminal;
 
-namespace dottop.Pages;
+namespace dottop.App.Pages;
 
 public class PerformancePage : ReactivePage<PerformanceViewModel>
 {
     private ModalNode? _detailModal;
+    private ModalNode? _settingsModal;
     private GraphNode? _detailGraph;
     private GraphNode? _diskActiveGraph;
     private GraphNode? _diskTransferGraph;
@@ -68,6 +69,16 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
 
+        _settingsModal = new ModalNode()
+            .WithBorder(BorderStyle.Rounded)
+            .WithBorderColor(Theme.Primary)
+            .WithBackdrop(BackdropStyle.Solid)
+            .WithBackdropColor(Color.Black)
+            .WithDismissOnEscape(false)
+            .WithPadding(1);
+
+        var conditionalSettings = new ConditionalNode(ViewModel.IsSettingsOpen, _settingsModal);
+
         var bottomRow = Layouts.Horizontal()
             .WithChild(BuildDiskPanel())
             .WithSpacing(1)
@@ -91,7 +102,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                     new TextNode(hint).WithForeground(Theme.TextDim).WithBackground(Theme.StatusBar))
                 .AsLayout().Height(1));
 
-        return Layouts.Stack(mainLayout, conditionalDetail);
+        return Layouts.Stack(mainLayout, conditionalDetail, conditionalSettings);
     }
 
     public override void OnNavigatedTo()
@@ -114,33 +125,36 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
                 if (ViewModel.IsDetailOpen.Value)
                 {
-                    if (ViewModel.DetailSection.Value is PerfDetailSection.Cpu or PerfDetailSection.Ram
-                        && _detailGraph is not null)
+                    switch (ViewModel.DetailSection.Value)
                     {
-                        var value = ViewModel.DetailSection.Value switch
+                        case PerfDetailSection.Cpu or PerfDetailSection.Ram
+                            when _detailGraph is not null:
                         {
-                            PerfDetailSection.Cpu => ViewModel.CpuTotal.Value,
-                            PerfDetailSection.Ram => total > 0 ? (double)used / total * 100 : 0,
-                            _ => 0
-                        };
-                        _detailGraph.Push(value);
-                    }
-
-                    if (ViewModel.DetailSection.Value == PerfDetailSection.Disk)
-                    {
-                        var disks = ViewModel.Disks.Value;
-                        var idx = ViewModel.DiskDetailIndex.Value;
-                        if (idx >= 0 && idx < disks.Count)
-                        {
-                            _diskActiveGraph?.Push(disks[idx].ActiveTimePercent);
-                            _diskTransferGraph?.Push(disks[idx].TransferBytesPerSec);
+                            var value = ViewModel.DetailSection.Value switch
+                            {
+                                PerfDetailSection.Cpu => ViewModel.CpuTotal.Value,
+                                PerfDetailSection.Ram => total > 0 ? (double)used / total * 100 : 0,
+                                _ => 0
+                            };
+                            _detailGraph.Push(value);
+                            break;
                         }
-                    }
+                        case PerfDetailSection.Disk:
+                        {
+                            var disks = ViewModel.Disks.Value;
+                            var idx = ViewModel.DiskDetailIndex.Value;
+                            if (idx >= 0 && idx < disks.Count)
+                            {
+                                _diskActiveGraph?.Push(disks[idx].ActiveTimePercent);
+                                _diskTransferGraph?.Push(disks[idx].TransferBytesPerSec);
+                            }
 
-                    if (ViewModel.DetailSection.Value == PerfDetailSection.Gpu
-                        && ViewModel.Gpu.Value is { } gpuDetail)
-                    {
-                        _detailGraph?.Push(gpuDetail.UsagePercent);
+                            break;
+                        }
+                        case PerfDetailSection.Gpu
+                            when ViewModel.Gpu.Value is { } gpuDetail:
+                            _detailGraph?.Push(gpuDetail.UsagePercent);
+                            break;
                     }
                 }
             })
@@ -151,6 +165,38 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         ViewModel.DetailContentChanged.Subscribe(_ => UpdateDetailModal())
             .DisposeWith(Subscriptions);
+
+        ViewModel.SettingsContentChanged.Subscribe(_ => UpdateSettingsModal())
+            .DisposeWith(Subscriptions);
+    }
+
+    private void UpdateSettingsModal()
+    {
+        if (_settingsModal is null) return;
+
+        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
+        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
+
+        var layout = Layouts.Vertical()
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(new TextNode($"  {Strings.SettingsRefreshRate,-20} ◀ {ViewModel.GetRefreshRateDisplay()} ▶")
+                .WithForeground(Theme.Text).Height(1))
+            .WithChild(new TextNode("").Height(1));
+
+        if (ViewModel.IsUpdateAvailable)
+        {
+            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(Theme.Warning).Height(1));
+            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(Theme.Accent).Height(1));
+        }
+        else
+        {
+            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(Theme.TextDim).Height(1));
+        }
+
+        layout.WithChild(new TextNode("").Height(1));
+        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(Theme.TextDim).Height(1));
+
+        _settingsModal.Content = layout;
     }
 
     private void UpdateDetailModal()
@@ -307,7 +353,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
     private ILayoutNode BuildNetworkDetailInfo()
     {
-        var nets = ViewModel.Networks.Value;
+        var nets = ViewModel.Networks.Value
+            .OrderByDescending(n => n.RxBytesPerSec + n.TxBytesPerSec)
+            .ToList();
         var layout = Layouts.Vertical();
         if (nets.Count == 0)
         {
@@ -315,12 +363,22 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             return layout;
         }
 
-        foreach (var net in nets)
+        var active = nets.Where(n => n.RxBytesPerSec > 0 || n.TxBytesPerSec > 0).ToList();
+        var idle = nets.Where(n => n.RxBytesPerSec == 0 && n.TxBytesPerSec == 0).ToList();
+
+        foreach (var net in active)
         {
             layout.WithChild(new TextNode($" {net.Name}").WithForeground(Theme.Accent).Height(1));
             layout.WithChild(
                 new TextNode($"   ↓ {FormatBytes(net.RxBytesPerSec),-14}  ↑ {FormatBytes(net.TxBytesPerSec)}")
                     .WithForeground(Theme.Text).Height(1));
+        }
+
+        if (idle.Count > 0)
+        {
+            layout.WithChild(new TextNode("").Height(1));
+            layout.WithChild(new TextNode($" {idle.Count} idle adapter(s)")
+                .WithForeground(Theme.TextDim).Height(1));
         }
 
         return layout;

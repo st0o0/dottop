@@ -373,7 +373,8 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 net =>
                 {
                     var pin = ViewModel.IsAdapterPinned(net.Name) ? "● " : "  ";
-                    return $" {pin}{net.Name,-22} {"↓"} {FormatBytes(net.RxBytesPerSec),10}  {"↑"} {FormatBytes(net.TxBytesPerSec),10}";
+                    var name = net.Name.Length > 20 ? net.Name[..19] + "…" : net.Name;
+                    return $" {pin}{name,-20} {"↓"} {FormatBytes(net.RxBytesPerSec),10}  {"↑"} {FormatBytes(net.TxBytesPerSec),10}";
                 },
                 net => ViewModel.IsAdapterPinned(net.Name) ? Theme.Accent
                     : net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? Theme.Text
@@ -384,7 +385,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         _networkList.SetItems(sorted);
 
-        var header = new TextNode($"   {"Adapter",-22} {"Download",13}  {"Upload",13}")
+        var header = new TextNode($"   {"Adapter",-20} {"Download",13}  {"Upload",13}")
             .WithForeground(Theme.Header).Height(1);
 
         return Layouts.Vertical()

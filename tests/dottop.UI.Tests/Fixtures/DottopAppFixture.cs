@@ -68,6 +68,7 @@ public sealed class DottopAppFixture : IAsyncDisposable
         var settingsService = new SettingsService();
         builder.Services.AddSingleton(settingsService);
         builder.Services.AddSingleton(new UpdateService());
+        builder.Services.AddSingleton(new PinService());
 
         // --- Akka with TestSupervisorActor ---
         builder.Services.AddAkka("dottop-test", configurationBuilder =>

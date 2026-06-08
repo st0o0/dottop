@@ -59,6 +59,7 @@ var settingsService = new SettingsService();
 settingsService.Load();
 settingsService.ApplyAll();
 builder.Services.AddSingleton(settingsService);
+builder.Services.AddSingleton(new PinService());
 
 var updateService = new UpdateService();
 builder.Services.AddSingleton(updateService);

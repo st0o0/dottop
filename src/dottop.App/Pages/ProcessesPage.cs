@@ -17,6 +17,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 {
     private ModalNode? _overlay;
     private DataListNode<ProcessSnapshot>? _list;
+    private DataListNode<string>? _treeList;
     private DataListNode<KeyValuePair<string, string>>? _envList;
     private DataListNode<string>? _handlesList;
 
@@ -253,31 +254,32 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             return new TextNode(Strings.LoadingProcessTree).WithForeground(Theme.TextDim);
         }
 
-        var layout = Layouts.Vertical();
-        RenderTree(layout, tree, 0);
-        return layout;
+        var lines = new List<string>();
+        FlattenTree(lines, tree, 0);
+
+        _treeList = new DataListNode<string>(line => line, _ => Theme.Text);
+        _treeList.SetItems(lines);
+        ViewModel.OverlayListNode = _treeList;
+        return _treeList.Fill();
     }
 
-    private static void RenderTree(VerticalLayout layout, ProcessTreeResult node, int depth,
+    private static void FlattenTree(List<string> lines, ProcessTreeResult node, int depth,
         bool isLast = true, string parentPrefix = "")
     {
         if (depth == 0)
         {
-            layout.WithChild(new TextNode($"  ● {node.Name} ({node.Pid})")
-                .WithForeground(Theme.Primary).Height(1));
+            lines.Add($"  ● {node.Name} ({node.Pid})");
             for (var i = 0; i < node.Children.Count; i++)
-                RenderTree(layout, node.Children[i], depth + 1,
+                FlattenTree(lines, node.Children[i], depth + 1,
                     i == node.Children.Count - 1, "  ");
         }
         else
         {
             var connector = isLast ? "└── " : "├── ";
-            var color = depth == 1 ? Theme.Text : Theme.TextDim;
-            layout.WithChild(new TextNode($"{parentPrefix}{connector}{node.Name} ({node.Pid})")
-                .WithForeground(color).Height(1));
+            lines.Add($"{parentPrefix}{connector}{node.Name} ({node.Pid})");
             var childPrefix = parentPrefix + (isLast ? "    " : "│   ");
             for (var i = 0; i < node.Children.Count; i++)
-                RenderTree(layout, node.Children[i], depth + 1,
+                FlattenTree(lines, node.Children[i], depth + 1,
                     i == node.Children.Count - 1, childPrefix);
         }
     }

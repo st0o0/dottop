@@ -208,20 +208,32 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
 
     private void RenderWithColorSpans(IRenderContext ctx, int row, string text, IReadOnlyList<ColorSpan> spans)
     {
-        // Render selection background for the whole row first
-        ctx.SetForeground(_selectedFg);
-        ctx.SetBackground(_selectedBg);
-        ctx.WriteAt(0, row, text);
+        // Build a per-character foreground color map
+        // Default: selection foreground. Spans override with their own foreground.
+        var fgColors = new Color[text.Length];
+        Array.Fill(fgColors, _selectedFg);
 
-        // Overlay color spans with their own foreground but keep selection background
         foreach (var span in spans)
         {
-            if (span.Start >= text.Length) continue;
-            var end = Math.Min(span.Start + span.Length, text.Length);
-            var segment = text[span.Start..end];
-            ctx.SetForeground(span.Foreground);
-            ctx.SetBackground(_selectedBg);
-            ctx.WriteAt(span.Start, row, segment);
+            var start = Math.Max(0, span.Start);
+            var end = Math.Min(start + span.Length, text.Length);
+            for (var i = start; i < end; i++)
+                fgColors[i] = span.Foreground;
+        }
+
+        // Render character by character, batching consecutive same-color segments
+        ctx.SetBackground(_selectedBg);
+        var segStart = 0;
+        while (segStart < text.Length)
+        {
+            var segColor = fgColors[segStart];
+            var segEnd = segStart + 1;
+            while (segEnd < text.Length && fgColors[segEnd] == segColor)
+                segEnd++;
+
+            ctx.SetForeground(segColor);
+            ctx.WriteAt(segStart, row, text[segStart..segEnd]);
+            segStart = segEnd;
         }
 
         ctx.ResetColors();

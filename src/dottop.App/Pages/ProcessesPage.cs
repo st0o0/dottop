@@ -228,15 +228,14 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
-            .WithChild(cpuPanel.Height(6))
-            .WithChild(ramPanel.Height(4))
-            .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(Theme.TextDim).Height(1))
             .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode("").Height(1));
+            .WithChild(new TextNode("").Height(1))
+            .WithChild(cpuPanel.Height(8))
+            .WithChild(ramPanel.Height(5));
 
         if (isKillConfirmPending)
         {

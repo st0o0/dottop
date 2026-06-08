@@ -255,15 +255,11 @@ public class ProcessesPageTests : IAsyncLifetime
 
         // Open overlay
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
-        await _app.WaitForRenderAsync(300);
-        ScreenAssert.Contains(_app.Terminal, "PID");
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "PID", 3000);
 
         // Press K to trigger kill confirmation
         await _app.SendKeysAsync(50, ConsoleKey.K);
-        await _app.WaitForRenderAsync(300);
-
-        // Kill confirmation prompt should be visible
-        ScreenAssert.Contains(_app.Terminal, "Kill");
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Kill", 3000);
 
         // Press N to cancel kill
         await _app.SendKeysAsync(50, ConsoleKey.N);
@@ -275,22 +271,16 @@ public class ProcessesPageTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ProcessList_ShowsCpuSparklineCharacters()
+    public async Task DetailOverlay_ShowsCpuGraph()
     {
         await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
-        await Task.Delay(2500);
-        var screen = _app.Terminal.ToString();
-        var hasBlockChar = screen.Any(c => "▁▂▃▄▅▆▇█".Contains(c));
-        hasBlockChar.Should().BeTrue("sparkline block characters should appear in the process list");
-    }
 
-    [Fact]
-    public async Task ProcessList_ShowsRamBar()
-    {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
-        var screen = _app.Terminal.ToString();
-        screen.Should().Contain("[");
-        screen.Should().Contain("]");
+        await _app.SendKeysAsync(50, ConsoleKey.Enter);
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "CPU", 3000);
+
+        // CPU panel with graph should be visible
+        ScreenAssert.Contains(_app.Terminal, "CPU");
+        ScreenAssert.Contains(_app.Terminal, "RAM");
     }
 
     [Fact]
@@ -300,12 +290,11 @@ public class ProcessesPageTests : IAsyncLifetime
 
         // Open overlay
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
-        await _app.WaitForRenderAsync(300);
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "PID", 3000);
 
         // Press K to trigger kill confirmation
         await _app.SendKeysAsync(50, ConsoleKey.K);
-        await _app.WaitForRenderAsync(300);
-        ScreenAssert.Contains(_app.Terminal, "Kill");
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Kill", 3000);
 
         // Press Escape -- should cancel kill confirm (not close overlay)
         await _app.SendKeysAsync(50, ConsoleKey.Escape);

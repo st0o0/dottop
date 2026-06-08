@@ -127,11 +127,9 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
         registry.Register<MonitoringSupervisor>(supervisor);
 
         // Plugin actors
+        var actorCtx = new PluginActorContextImpl(system, registry, tempSp, tickSource);
         foreach (var plugin in pluginRegistry.LoadedPlugins)
-        {
-            if (plugin.ActorSetup is Action<ActorSystem, IActorRegistry, IServiceProvider, ITickSource> setup)
-                setup(system, registry, tempSp, tickSource);
-        }
+            plugin.ActorSetup?.Invoke(actorCtx);
     });
 });
 
@@ -144,11 +142,9 @@ builder.Services.AddTermina("/", termina =>
     termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
 
     // Plugin routes
+    var routeCtx = new PluginRouteContext(termina);
     foreach (var plugin in pluginRegistry.LoadedPlugins)
-    {
-        if (plugin.RouteSetup is Action<TerminaBuilder> routeSetup)
-            routeSetup(termina);
-    }
+        plugin.RouteSetup?.Invoke(routeCtx);
 });
 
 await builder.Build().RunAsync();

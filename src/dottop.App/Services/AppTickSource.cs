@@ -5,7 +5,7 @@ namespace dottop.App.Services;
 public sealed class AppTickSource : ITickSource
 {
     private readonly List<Action> _subscribers = [];
-    private Timer? _timer;
+    private readonly Timer? _timer;
 
     public TimeSpan CurrentInterval { get; private set; }
 
@@ -31,7 +31,14 @@ public sealed class AppTickSource : ITickSource
     {
         foreach (var sub in _subscribers)
         {
-            try { sub(); } catch { }
+            try
+            {
+                sub();
+            }
+            catch
+            {
+                // noop
+            }
         }
     }
 

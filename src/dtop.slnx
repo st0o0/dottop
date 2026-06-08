@@ -4,6 +4,7 @@
   <Project Path="dtop.Plugin.Example/dtop.Plugin.Example.csproj" />
   <Project Path="dtop.Windows/dtop.Windows.csproj" />
   <Project Path="dtop.Linux/dtop.Linux.csproj" />
+  <Project Path="dtop.Mac/dtop.Mac.csproj" />
   <Project Path="dtop.App/dtop.App.csproj" />
   <Folder Name="/Termina/">
     <Project Path="../lib/termina/src/Termina/Termina.csproj" />

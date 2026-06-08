@@ -10,6 +10,7 @@
         <ProjectReference Include="..\dtop.Plugin\dtop.Plugin.csproj" />
         <ProjectReference Include="..\dtop.Windows\dtop.Windows.csproj" />
         <ProjectReference Include="..\dtop.Linux\dtop.Linux.csproj" />
+        <ProjectReference Include="..\dtop.Mac\dtop.Mac.csproj" />
     </ItemGroup>
 
     <ItemGroup>

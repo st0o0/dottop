@@ -21,6 +21,10 @@ public sealed class PlatformSetup : IServiceSetupContainer
         {
             RegisterLinuxPlatform(services);
         }
+        else if (OperatingSystem.IsMacOS())
+        {
+            RegisterMacPlatform(services);
+        }
 
         RegisterGpu(services);
     }
@@ -32,6 +36,10 @@ public sealed class PlatformSetup : IServiceSetupContainer
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static void RegisterLinuxPlatform(IServiceCollection services)
         => Linux.ServiceCollectionExtensions.AddLinuxPlatform(services);
+
+    [System.Runtime.Versioning.SupportedOSPlatform("macos")]
+    private static void RegisterMacPlatform(IServiceCollection services)
+        => Mac.ServiceCollectionExtensions.AddMacPlatform(services);
 
     private static void RegisterGpu(IServiceCollection services)
     {

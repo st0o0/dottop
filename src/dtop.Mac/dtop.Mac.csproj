@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>dtop.Mac</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\dtop.Core\dtop.Core.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+        <PackageReference Include="Servus" Version="0.34.0" />
+    </ItemGroup>
+</Project>

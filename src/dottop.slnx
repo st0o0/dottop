@@ -9,4 +9,5 @@
   </Folder>
   <Project Path="../tests/dottop.Actors.Tests/dottop.Actors.Tests.csproj" />
   <Project Path="../tests/dottop.UI.Tests/dottop.UI.Tests.csproj" />
+  <Project Path="../tests/dottop.Rendering.Tests/dottop.Rendering.Tests.csproj" />
 </Solution>

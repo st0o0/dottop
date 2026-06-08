@@ -20,19 +20,19 @@ namespace dottop.App.Resources;
 [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
 [System.Diagnostics.DebuggerNonUserCodeAttribute()]
 [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-internal class Strings
+public class Strings
 {
     private static ResourceManager? resourceMan;
     private static CultureInfo? resourceCulture;
 
     [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-    internal Strings() { }
+    public Strings() { }
 
     /// <summary>
     ///   Returns the cached ResourceManager instance used by this class.
     /// </summary>
     [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-    internal static ResourceManager ResourceManager
+    public static ResourceManager ResourceManager
     {
         get
         {
@@ -50,142 +50,142 @@ internal class Strings
     ///   resource lookups using this strongly typed resource class.
     /// </summary>
     [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-    internal static CultureInfo? Culture
+    public static CultureInfo? Culture
     {
         get { return resourceCulture; }
         set { resourceCulture = value; }
     }
 
-    internal static string TabProcesses => ResourceManager.GetString("TabProcesses", resourceCulture) ?? "";
-    internal static string TabPerformance => ResourceManager.GetString("TabPerformance", resourceCulture) ?? "";
-    internal static string TabServices => ResourceManager.GetString("TabServices", resourceCulture) ?? "";
-    internal static string TabNetwork => ResourceManager.GetString("TabNetwork", resourceCulture) ?? "";
+    public static string TabProcesses => ResourceManager.GetString("TabProcesses", resourceCulture) ?? "";
+    public static string TabPerformance => ResourceManager.GetString("TabPerformance", resourceCulture) ?? "";
+    public static string TabServices => ResourceManager.GetString("TabServices", resourceCulture) ?? "";
+    public static string TabNetwork => ResourceManager.GetString("TabNetwork", resourceCulture) ?? "";
 
-    internal static string PanelProcesses => ResourceManager.GetString("PanelProcesses", resourceCulture) ?? "";
-    internal static string HeaderPid => ResourceManager.GetString("HeaderPid", resourceCulture) ?? "";
-    internal static string HeaderName => ResourceManager.GetString("HeaderName", resourceCulture) ?? "";
-    internal static string HeaderCpuPercent => ResourceManager.GetString("HeaderCpuPercent", resourceCulture) ?? "";
-    internal static string HeaderRam => ResourceManager.GetString("HeaderRam", resourceCulture) ?? "";
-    internal static string HeaderGroup => ResourceManager.GetString("HeaderGroup", resourceCulture) ?? "";
-    internal static string HeaderCpuSparkline => ResourceManager.GetString("HeaderCpuSparkline", resourceCulture) ?? "";
-    internal static string HeaderRamBar => ResourceManager.GetString("HeaderRamBar", resourceCulture) ?? "";
-    internal static string HeaderMem => ResourceManager.GetString("HeaderMem", resourceCulture) ?? "";
-    internal static string GroupAll => ResourceManager.GetString("GroupAll", resourceCulture) ?? "";
-    internal static string SearchHint => ResourceManager.GetString("SearchHint", resourceCulture) ?? "";
-    internal static string SearchBarActiveFormat => ResourceManager.GetString("SearchBarActiveFormat", resourceCulture) ?? "";
-    internal static string SearchBarInactiveFormat => ResourceManager.GetString("SearchBarInactiveFormat", resourceCulture) ?? "";
+    public static string PanelProcesses => ResourceManager.GetString("PanelProcesses", resourceCulture) ?? "";
+    public static string HeaderPid => ResourceManager.GetString("HeaderPid", resourceCulture) ?? "";
+    public static string HeaderName => ResourceManager.GetString("HeaderName", resourceCulture) ?? "";
+    public static string HeaderCpuPercent => ResourceManager.GetString("HeaderCpuPercent", resourceCulture) ?? "";
+    public static string HeaderRam => ResourceManager.GetString("HeaderRam", resourceCulture) ?? "";
+    public static string HeaderGroup => ResourceManager.GetString("HeaderGroup", resourceCulture) ?? "";
+    public static string HeaderCpuSparkline => ResourceManager.GetString("HeaderCpuSparkline", resourceCulture) ?? "";
+    public static string HeaderRamBar => ResourceManager.GetString("HeaderRamBar", resourceCulture) ?? "";
+    public static string HeaderMem => ResourceManager.GetString("HeaderMem", resourceCulture) ?? "";
+    public static string GroupAll => ResourceManager.GetString("GroupAll", resourceCulture) ?? "";
+    public static string SearchHint => ResourceManager.GetString("SearchHint", resourceCulture) ?? "";
+    public static string SearchBarActiveFormat => ResourceManager.GetString("SearchBarActiveFormat", resourceCulture) ?? "";
+    public static string SearchBarInactiveFormat => ResourceManager.GetString("SearchBarInactiveFormat", resourceCulture) ?? "";
 
-    internal static string OverlayTabOverview => ResourceManager.GetString("OverlayTabOverview", resourceCulture) ?? "";
-    internal static string OverlayTabProcessTree => ResourceManager.GetString("OverlayTabProcessTree", resourceCulture) ?? "";
-    internal static string OverlayTabEnvironment => ResourceManager.GetString("OverlayTabEnvironment", resourceCulture) ?? "";
-    internal static string OverlayTabHandles => ResourceManager.GetString("OverlayTabHandles", resourceCulture) ?? "";
-    internal static string OverlayKeyboardHints => ResourceManager.GetString("OverlayKeyboardHints", resourceCulture) ?? "";
-    internal static string KillConfirmFormat => ResourceManager.GetString("KillConfirmFormat", resourceCulture) ?? "";
-    internal static string LoadingProcessTree => ResourceManager.GetString("LoadingProcessTree", resourceCulture) ?? "";
-    internal static string LoadingEnvironmentVars => ResourceManager.GetString("LoadingEnvironmentVars", resourceCulture) ?? "";
-    internal static string LoadingHandles => ResourceManager.GetString("LoadingHandles", resourceCulture) ?? "";
-    internal static string NoHandleInfo => ResourceManager.GetString("NoHandleInfo", resourceCulture) ?? "";
-    internal static string ProcessStatusFormat => ResourceManager.GetString("ProcessStatusFormat", resourceCulture) ?? "";
+    public static string OverlayTabOverview => ResourceManager.GetString("OverlayTabOverview", resourceCulture) ?? "";
+    public static string OverlayTabProcessTree => ResourceManager.GetString("OverlayTabProcessTree", resourceCulture) ?? "";
+    public static string OverlayTabEnvironment => ResourceManager.GetString("OverlayTabEnvironment", resourceCulture) ?? "";
+    public static string OverlayTabHandles => ResourceManager.GetString("OverlayTabHandles", resourceCulture) ?? "";
+    public static string OverlayKeyboardHints => ResourceManager.GetString("OverlayKeyboardHints", resourceCulture) ?? "";
+    public static string KillConfirmFormat => ResourceManager.GetString("KillConfirmFormat", resourceCulture) ?? "";
+    public static string LoadingProcessTree => ResourceManager.GetString("LoadingProcessTree", resourceCulture) ?? "";
+    public static string LoadingEnvironmentVars => ResourceManager.GetString("LoadingEnvironmentVars", resourceCulture) ?? "";
+    public static string LoadingHandles => ResourceManager.GetString("LoadingHandles", resourceCulture) ?? "";
+    public static string NoHandleInfo => ResourceManager.GetString("NoHandleInfo", resourceCulture) ?? "";
+    public static string ProcessStatusFormat => ResourceManager.GetString("ProcessStatusFormat", resourceCulture) ?? "";
 
-    internal static string PanelCpu => ResourceManager.GetString("PanelCpu", resourceCulture) ?? "";
-    internal static string PanelRam => ResourceManager.GetString("PanelRam", resourceCulture) ?? "";
-    internal static string PanelDisks => ResourceManager.GetString("PanelDisks", resourceCulture) ?? "";
-    internal static string PanelNetwork => ResourceManager.GetString("PanelNetwork", resourceCulture) ?? "";
-    internal static string TotalLabel => ResourceManager.GetString("TotalLabel", resourceCulture) ?? "";
-    internal static string PerfStatusBar => ResourceManager.GetString("PerfStatusBar", resourceCulture) ?? "";
-    internal static string DetailSectionNetwork => ResourceManager.GetString("DetailSectionNetwork", resourceCulture) ?? "";
-    internal static string DetailTitle => ResourceManager.GetString("DetailTitle", resourceCulture) ?? "";
-    internal static string UsedFormat => ResourceManager.GetString("UsedFormat", resourceCulture) ?? "";
-    internal static string NoDisksFound => ResourceManager.GetString("NoDisksFound", resourceCulture) ?? "";
-    internal static string DiskUsedFormat => ResourceManager.GetString("DiskUsedFormat", resourceCulture) ?? "";
-    internal static string PanelActiveTime => ResourceManager.GetString("PanelActiveTime", resourceCulture) ?? "";
-    internal static string PanelTransferRate => ResourceManager.GetString("PanelTransferRate", resourceCulture) ?? "";
-    internal static string NoActiveAdapters => ResourceManager.GetString("NoActiveAdapters", resourceCulture) ?? "";
-    internal static string PanelGpu => ResourceManager.GetString("PanelGpu", resourceCulture) ?? "";
-    internal static string GpuUsage => ResourceManager.GetString("GpuUsage", resourceCulture) ?? "";
-    internal static string GpuTemperature => ResourceManager.GetString("GpuTemperature", resourceCulture) ?? "";
-    internal static string GpuNoData => ResourceManager.GetString("GpuNoData", resourceCulture) ?? "";
+    public static string PanelCpu => ResourceManager.GetString("PanelCpu", resourceCulture) ?? "";
+    public static string PanelRam => ResourceManager.GetString("PanelRam", resourceCulture) ?? "";
+    public static string PanelDisks => ResourceManager.GetString("PanelDisks", resourceCulture) ?? "";
+    public static string PanelNetwork => ResourceManager.GetString("PanelNetwork", resourceCulture) ?? "";
+    public static string TotalLabel => ResourceManager.GetString("TotalLabel", resourceCulture) ?? "";
+    public static string PerfStatusBar => ResourceManager.GetString("PerfStatusBar", resourceCulture) ?? "";
+    public static string DetailSectionNetwork => ResourceManager.GetString("DetailSectionNetwork", resourceCulture) ?? "";
+    public static string DetailTitle => ResourceManager.GetString("DetailTitle", resourceCulture) ?? "";
+    public static string UsedFormat => ResourceManager.GetString("UsedFormat", resourceCulture) ?? "";
+    public static string NoDisksFound => ResourceManager.GetString("NoDisksFound", resourceCulture) ?? "";
+    public static string DiskUsedFormat => ResourceManager.GetString("DiskUsedFormat", resourceCulture) ?? "";
+    public static string PanelActiveTime => ResourceManager.GetString("PanelActiveTime", resourceCulture) ?? "";
+    public static string PanelTransferRate => ResourceManager.GetString("PanelTransferRate", resourceCulture) ?? "";
+    public static string NoActiveAdapters => ResourceManager.GetString("NoActiveAdapters", resourceCulture) ?? "";
+    public static string PanelGpu => ResourceManager.GetString("PanelGpu", resourceCulture) ?? "";
+    public static string GpuUsage => ResourceManager.GetString("GpuUsage", resourceCulture) ?? "";
+    public static string GpuTemperature => ResourceManager.GetString("GpuTemperature", resourceCulture) ?? "";
+    public static string GpuNoData => ResourceManager.GetString("GpuNoData", resourceCulture) ?? "";
 
-    internal static string PerfNoDisks => ResourceManager.GetString("PerfNoDisks", resourceCulture) ?? "";
-    internal static string PerfNoAdapters => ResourceManager.GetString("PerfNoAdapters", resourceCulture) ?? "";
-    internal static string PerfActiveTime => ResourceManager.GetString("PerfActiveTime", resourceCulture) ?? "";
-    internal static string PerfTransferRate => ResourceManager.GetString("PerfTransferRate", resourceCulture) ?? "";
-    internal static string HintClose => ResourceManager.GetString("HintClose", resourceCulture) ?? "";
+    public static string PerfNoDisks => ResourceManager.GetString("PerfNoDisks", resourceCulture) ?? "";
+    public static string PerfNoAdapters => ResourceManager.GetString("PerfNoAdapters", resourceCulture) ?? "";
+    public static string PerfActiveTime => ResourceManager.GetString("PerfActiveTime", resourceCulture) ?? "";
+    public static string PerfTransferRate => ResourceManager.GetString("PerfTransferRate", resourceCulture) ?? "";
+    public static string HintClose => ResourceManager.GetString("HintClose", resourceCulture) ?? "";
 
-    internal static string PanelServices => ResourceManager.GetString("PanelServices", resourceCulture) ?? "";
-    internal static string HeaderStatus => ResourceManager.GetString("HeaderStatus", resourceCulture) ?? "";
-    internal static string HeaderStartType => ResourceManager.GetString("HeaderStartType", resourceCulture) ?? "";
-    internal static string ServicesSearchHint => ResourceManager.GetString("ServicesSearchHint", resourceCulture) ?? "";
-    internal static string ServicesStatusFormat => ResourceManager.GetString("ServicesStatusFormat", resourceCulture) ?? "";
-    internal static string ServiceDetailName => ResourceManager.GetString("ServiceDetailName", resourceCulture) ?? "";
-    internal static string ServiceDetailDisplay => ResourceManager.GetString("ServiceDetailDisplay", resourceCulture) ?? "";
-    internal static string ServiceDetailDescription => ResourceManager.GetString("ServiceDetailDescription", resourceCulture) ?? "";
-    internal static string ServiceNoDescription => ResourceManager.GetString("ServiceNoDescription", resourceCulture) ?? "";
-    internal static string ServiceDetailHints => ResourceManager.GetString("ServiceDetailHints", resourceCulture) ?? "";
-    internal static string ErrorLoadingServices => ResourceManager.GetString("ErrorLoadingServices", resourceCulture) ?? "";
-    internal static string ErrorFormat => ResourceManager.GetString("ErrorFormat", resourceCulture) ?? "";
+    public static string PanelServices => ResourceManager.GetString("PanelServices", resourceCulture) ?? "";
+    public static string HeaderStatus => ResourceManager.GetString("HeaderStatus", resourceCulture) ?? "";
+    public static string HeaderStartType => ResourceManager.GetString("HeaderStartType", resourceCulture) ?? "";
+    public static string ServicesSearchHint => ResourceManager.GetString("ServicesSearchHint", resourceCulture) ?? "";
+    public static string ServicesStatusFormat => ResourceManager.GetString("ServicesStatusFormat", resourceCulture) ?? "";
+    public static string ServiceDetailName => ResourceManager.GetString("ServiceDetailName", resourceCulture) ?? "";
+    public static string ServiceDetailDisplay => ResourceManager.GetString("ServiceDetailDisplay", resourceCulture) ?? "";
+    public static string ServiceDetailDescription => ResourceManager.GetString("ServiceDetailDescription", resourceCulture) ?? "";
+    public static string ServiceNoDescription => ResourceManager.GetString("ServiceNoDescription", resourceCulture) ?? "";
+    public static string ServiceDetailHints => ResourceManager.GetString("ServiceDetailHints", resourceCulture) ?? "";
+    public static string ErrorLoadingServices => ResourceManager.GetString("ErrorLoadingServices", resourceCulture) ?? "";
+    public static string ErrorFormat => ResourceManager.GetString("ErrorFormat", resourceCulture) ?? "";
 
-    internal static string PanelNetworkConnections => ResourceManager.GetString("PanelNetworkConnections", resourceCulture) ?? "";
-    internal static string HeaderProcess => ResourceManager.GetString("HeaderProcess", resourceCulture) ?? "";
-    internal static string HeaderLocal => ResourceManager.GetString("HeaderLocal", resourceCulture) ?? "";
-    internal static string HeaderRemote => ResourceManager.GetString("HeaderRemote", resourceCulture) ?? "";
-    internal static string NetworkSearchHint => ResourceManager.GetString("NetworkSearchHint", resourceCulture) ?? "";
-    internal static string NetworkStatusFormat => ResourceManager.GetString("NetworkStatusFormat", resourceCulture) ?? "";
+    public static string PanelNetworkConnections => ResourceManager.GetString("PanelNetworkConnections", resourceCulture) ?? "";
+    public static string HeaderProcess => ResourceManager.GetString("HeaderProcess", resourceCulture) ?? "";
+    public static string HeaderLocal => ResourceManager.GetString("HeaderLocal", resourceCulture) ?? "";
+    public static string HeaderRemote => ResourceManager.GetString("HeaderRemote", resourceCulture) ?? "";
+    public static string NetworkSearchHint => ResourceManager.GetString("NetworkSearchHint", resourceCulture) ?? "";
+    public static string NetworkStatusFormat => ResourceManager.GetString("NetworkStatusFormat", resourceCulture) ?? "";
 
     // Settings tab
-    internal static string TabSettings => ResourceManager.GetString("TabSettings", resourceCulture) ?? "";
-    internal static string SettingsTitle => ResourceManager.GetString("SettingsTitle", resourceCulture) ?? "";
-    internal static string SettingsTheme => ResourceManager.GetString("SettingsTheme", resourceCulture) ?? "";
-    internal static string SettingsRefreshRate => ResourceManager.GetString("SettingsRefreshRate", resourceCulture) ?? "";
-    internal static string SettingsDefaultSort => ResourceManager.GetString("SettingsDefaultSort", resourceCulture) ?? "";
-    internal static string SettingsDefaultGroup => ResourceManager.GetString("SettingsDefaultGroup", resourceCulture) ?? "";
-    internal static string SettingsGraphStyle => ResourceManager.GetString("SettingsGraphStyle", resourceCulture) ?? "";
-    internal static string SettingsLanguage => ResourceManager.GetString("SettingsLanguage", resourceCulture) ?? "";
-    internal static string SettingsSaved => ResourceManager.GetString("SettingsSaved", resourceCulture) ?? "";
-    internal static string ThemeDark => ResourceManager.GetString("ThemeDark", resourceCulture) ?? "";
-    internal static string ThemeLight => ResourceManager.GetString("ThemeLight", resourceCulture) ?? "";
-    internal static string ThemeNord => ResourceManager.GetString("ThemeNord", resourceCulture) ?? "";
-    internal static string SortCpu => ResourceManager.GetString("SortCpu", resourceCulture) ?? "";
-    internal static string SortRam => ResourceManager.GetString("SortRam", resourceCulture) ?? "";
-    internal static string SortName => ResourceManager.GetString("SortName", resourceCulture) ?? "";
-    internal static string SortPid => ResourceManager.GetString("SortPid", resourceCulture) ?? "";
-    internal static string GroupApps => ResourceManager.GetString("GroupApps", resourceCulture) ?? "";
-    internal static string GroupBackground => ResourceManager.GetString("GroupBackground", resourceCulture) ?? "";
-    internal static string GroupSystem => ResourceManager.GetString("GroupSystem", resourceCulture) ?? "";
-    internal static string GraphBlocks => ResourceManager.GetString("GraphBlocks", resourceCulture) ?? "";
-    internal static string GraphBraille => ResourceManager.GetString("GraphBraille", resourceCulture) ?? "";
-    internal static string GraphOutline => ResourceManager.GetString("GraphOutline", resourceCulture) ?? "";
-    internal static string GraphAscii => ResourceManager.GetString("GraphAscii", resourceCulture) ?? "";
-    internal static string LangSystem => ResourceManager.GetString("LangSystem", resourceCulture) ?? "";
-    internal static string LangDe => ResourceManager.GetString("LangDe", resourceCulture) ?? "";
-    internal static string LangEn => ResourceManager.GetString("LangEn", resourceCulture) ?? "";
+    public static string TabSettings => ResourceManager.GetString("TabSettings", resourceCulture) ?? "";
+    public static string SettingsTitle => ResourceManager.GetString("SettingsTitle", resourceCulture) ?? "";
+    public static string SettingsTheme => ResourceManager.GetString("SettingsTheme", resourceCulture) ?? "";
+    public static string SettingsRefreshRate => ResourceManager.GetString("SettingsRefreshRate", resourceCulture) ?? "";
+    public static string SettingsDefaultSort => ResourceManager.GetString("SettingsDefaultSort", resourceCulture) ?? "";
+    public static string SettingsDefaultGroup => ResourceManager.GetString("SettingsDefaultGroup", resourceCulture) ?? "";
+    public static string SettingsGraphStyle => ResourceManager.GetString("SettingsGraphStyle", resourceCulture) ?? "";
+    public static string SettingsLanguage => ResourceManager.GetString("SettingsLanguage", resourceCulture) ?? "";
+    public static string SettingsSaved => ResourceManager.GetString("SettingsSaved", resourceCulture) ?? "";
+    public static string ThemeDark => ResourceManager.GetString("ThemeDark", resourceCulture) ?? "";
+    public static string ThemeLight => ResourceManager.GetString("ThemeLight", resourceCulture) ?? "";
+    public static string ThemeNord => ResourceManager.GetString("ThemeNord", resourceCulture) ?? "";
+    public static string SortCpu => ResourceManager.GetString("SortCpu", resourceCulture) ?? "";
+    public static string SortRam => ResourceManager.GetString("SortRam", resourceCulture) ?? "";
+    public static string SortName => ResourceManager.GetString("SortName", resourceCulture) ?? "";
+    public static string SortPid => ResourceManager.GetString("SortPid", resourceCulture) ?? "";
+    public static string GroupApps => ResourceManager.GetString("GroupApps", resourceCulture) ?? "";
+    public static string GroupBackground => ResourceManager.GetString("GroupBackground", resourceCulture) ?? "";
+    public static string GroupSystem => ResourceManager.GetString("GroupSystem", resourceCulture) ?? "";
+    public static string GraphBlocks => ResourceManager.GetString("GraphBlocks", resourceCulture) ?? "";
+    public static string GraphBraille => ResourceManager.GetString("GraphBraille", resourceCulture) ?? "";
+    public static string GraphOutline => ResourceManager.GetString("GraphOutline", resourceCulture) ?? "";
+    public static string GraphAscii => ResourceManager.GetString("GraphAscii", resourceCulture) ?? "";
+    public static string LangSystem => ResourceManager.GetString("LangSystem", resourceCulture) ?? "";
+    public static string LangDe => ResourceManager.GetString("LangDe", resourceCulture) ?? "";
+    public static string LangEn => ResourceManager.GetString("LangEn", resourceCulture) ?? "";
 
     // Update
-    internal static string UpdateAvailable => ResourceManager.GetString("UpdateAvailable", resourceCulture) ?? "";
-    internal static string UpdateDownloading => ResourceManager.GetString("UpdateDownloading", resourceCulture) ?? "";
-    internal static string UpdateInstalling => ResourceManager.GetString("UpdateInstalling", resourceCulture) ?? "";
-    internal static string UpdateComplete => ResourceManager.GetString("UpdateComplete", resourceCulture) ?? "";
-    internal static string UpdateFailed => ResourceManager.GetString("UpdateFailed", resourceCulture) ?? "";
-    internal static string UpdatePressU => ResourceManager.GetString("UpdatePressU", resourceCulture) ?? "";
-    internal static string CurrentVersion => ResourceManager.GetString("CurrentVersion", resourceCulture) ?? "";
+    public static string UpdateAvailable => ResourceManager.GetString("UpdateAvailable", resourceCulture) ?? "";
+    public static string UpdateDownloading => ResourceManager.GetString("UpdateDownloading", resourceCulture) ?? "";
+    public static string UpdateInstalling => ResourceManager.GetString("UpdateInstalling", resourceCulture) ?? "";
+    public static string UpdateComplete => ResourceManager.GetString("UpdateComplete", resourceCulture) ?? "";
+    public static string UpdateFailed => ResourceManager.GetString("UpdateFailed", resourceCulture) ?? "";
+    public static string UpdatePressU => ResourceManager.GetString("UpdatePressU", resourceCulture) ?? "";
+    public static string CurrentVersion => ResourceManager.GetString("CurrentVersion", resourceCulture) ?? "";
 
     // Docker
-    internal static string TabDocker => ResourceManager.GetString("TabDocker", resourceCulture) ?? "";
-    internal static string PanelDocker => ResourceManager.GetString("PanelDocker", resourceCulture) ?? "";
-    internal static string DockerStatusFormat => ResourceManager.GetString("DockerStatusFormat", resourceCulture) ?? "";
-    internal static string DockerNotAvailable => ResourceManager.GetString("DockerNotAvailable", resourceCulture) ?? "";
-    internal static string HintDockerDetailKeys => ResourceManager.GetString("HintDockerDetailKeys", resourceCulture) ?? "";
-    internal static string DockerLogsHeader => ResourceManager.GetString("DockerLogsHeader", resourceCulture) ?? "";
-    internal static string DockerLoadingLogs => ResourceManager.GetString("DockerLoadingLogs", resourceCulture) ?? "";
+    public static string TabDocker => ResourceManager.GetString("TabDocker", resourceCulture) ?? "";
+    public static string PanelDocker => ResourceManager.GetString("PanelDocker", resourceCulture) ?? "";
+    public static string DockerStatusFormat => ResourceManager.GetString("DockerStatusFormat", resourceCulture) ?? "";
+    public static string DockerNotAvailable => ResourceManager.GetString("DockerNotAvailable", resourceCulture) ?? "";
+    public static string HintDockerDetailKeys => ResourceManager.GetString("HintDockerDetailKeys", resourceCulture) ?? "";
+    public static string DockerLogsHeader => ResourceManager.GetString("DockerLogsHeader", resourceCulture) ?? "";
+    public static string DockerLoadingLogs => ResourceManager.GetString("DockerLoadingLogs", resourceCulture) ?? "";
 
     // Modal/Overlay hint keys
-    internal static string HintProcessOverviewKeys => ResourceManager.GetString("HintProcessOverviewKeys", resourceCulture) ?? "";
-    internal static string HintProcessDetailKeys => ResourceManager.GetString("HintProcessDetailKeys", resourceCulture) ?? "";
-    internal static string HintPerfDetailKeys => ResourceManager.GetString("HintPerfDetailKeys", resourceCulture) ?? "";
-    internal static string HintPerfDiskDetailKeys => ResourceManager.GetString("HintPerfDiskDetailKeys", resourceCulture) ?? "";
-    internal static string HintPerfNetworkDetailKeys => ResourceManager.GetString("HintPerfNetworkDetailKeys", resourceCulture) ?? "";
-    internal static string HintServiceDetailKeys => ResourceManager.GetString("HintServiceDetailKeys", resourceCulture) ?? "";
-    internal static string HintNetworkDetailKeys => ResourceManager.GetString("HintNetworkDetailKeys", resourceCulture) ?? "";
-    internal static string HintSettingsKeys => ResourceManager.GetString("HintSettingsKeys", resourceCulture) ?? "";
-    internal static string HintSettingsModalKeys => ResourceManager.GetString("HintSettingsModalKeys", resourceCulture) ?? "";
+    public static string HintProcessOverviewKeys => ResourceManager.GetString("HintProcessOverviewKeys", resourceCulture) ?? "";
+    public static string HintProcessDetailKeys => ResourceManager.GetString("HintProcessDetailKeys", resourceCulture) ?? "";
+    public static string HintPerfDetailKeys => ResourceManager.GetString("HintPerfDetailKeys", resourceCulture) ?? "";
+    public static string HintPerfDiskDetailKeys => ResourceManager.GetString("HintPerfDiskDetailKeys", resourceCulture) ?? "";
+    public static string HintPerfNetworkDetailKeys => ResourceManager.GetString("HintPerfNetworkDetailKeys", resourceCulture) ?? "";
+    public static string HintServiceDetailKeys => ResourceManager.GetString("HintServiceDetailKeys", resourceCulture) ?? "";
+    public static string HintNetworkDetailKeys => ResourceManager.GetString("HintNetworkDetailKeys", resourceCulture) ?? "";
+    public static string HintSettingsKeys => ResourceManager.GetString("HintSettingsKeys", resourceCulture) ?? "";
+    public static string HintSettingsModalKeys => ResourceManager.GetString("HintSettingsModalKeys", resourceCulture) ?? "";
 }

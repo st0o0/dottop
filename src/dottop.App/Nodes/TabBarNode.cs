@@ -7,17 +7,32 @@ namespace dottop.App.Nodes;
 
 public sealed class TabBarNode : LayoutNode
 {
-    private static string[] TabLabels =>
-        [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork, Strings.TabDocker];
+    private static readonly string[] CoreLabels =
+        [Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork];
 
-    private static readonly string[] TabRoutes =
-        ["/", "/performance", "/services", "/network", "/docker"];
+    private static readonly string[] CoreRoutes =
+        ["/", "/performance", "/services", "/network"];
 
     private readonly int _activeIndex;
+    private readonly IReadOnlyList<string> _allLabels;
+    private static IReadOnlyList<string> _allRoutes = CoreRoutes;
 
-    public TabBarNode(int activeIndex)
+    public TabBarNode(int activeIndex, PluginRegistry? pluginRegistry = null)
     {
         _activeIndex = activeIndex;
+        var labels = new List<string>(CoreLabels);
+        var routes = new List<string>(CoreRoutes);
+        if (pluginRegistry is not null)
+        {
+            foreach (var tab in pluginRegistry.PluginTabs)
+            {
+                labels.Add(tab.Label);
+                routes.Add(tab.Route);
+            }
+        }
+
+        _allLabels = labels;
+        _allRoutes = routes;
         HeightConstraint = new SizeConstraint.Fixed(1);
         WidthConstraint = new SizeConstraint.Fill();
     }
@@ -33,9 +48,9 @@ public sealed class TabBarNode : LayoutNode
 
         context.Fill(0, 0, bounds.Width, 1, ' ');
         var x = 1;
-        for (var i = 0; i < TabLabels.Length; i++)
+        for (var i = 0; i < _allLabels.Count; i++)
         {
-            var label = $" {TabLabels[i]} ";
+            var label = $" {_allLabels[i]} ";
             if (i == _activeIndex)
             {
                 context.SetForeground(Theme.SelectionText);
@@ -52,5 +67,5 @@ public sealed class TabBarNode : LayoutNode
         }
     }
 
-    public static string GetRoute(int index) => TabRoutes[Math.Clamp(index, 0, TabRoutes.Length - 1)];
+    public static string GetRoute(int index) => _allRoutes[Math.Clamp(index, 0, _allRoutes.Count - 1)];
 }

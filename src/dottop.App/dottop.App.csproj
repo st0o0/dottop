@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\dottop.Core\dottop.Core.csproj" />
+        <ProjectReference Include="..\dottop.Plugin.Abstractions\dottop.Plugin.Abstractions.csproj" />
         <ProjectReference Include="..\dottop.Windows\dottop.Windows.csproj" />
         <ProjectReference Include="..\dottop.Linux\dottop.Linux.csproj" />
     </ItemGroup>

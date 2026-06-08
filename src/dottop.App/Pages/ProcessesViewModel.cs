@@ -201,6 +201,7 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
+            case ConsoleKey.D5: Navigate("/docker"); break;
             case ConsoleKey.F10:
                 IsSettingsOpen.Value = true;
                 _settingsContentChanged.OnNext(Unit.Default);

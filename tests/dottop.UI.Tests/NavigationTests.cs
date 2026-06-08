@@ -49,6 +49,14 @@ public class NavigationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task D5_NavigatesToDocker()
+    {
+        await _app.Terminal.WaitForTextAsync("1:Processes");
+        await _app.SendKeysAsync(50, ConsoleKey.D5);
+        await _app.Terminal.WaitForTextAsync("5:Docker", 3000);
+    }
+
+    [Fact]
     public async Task TabNavigation_RoundTrip()
     {
         await _app.Terminal.WaitForTextAsync("1:Processes");

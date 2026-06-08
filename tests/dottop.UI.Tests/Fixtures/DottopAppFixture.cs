@@ -89,6 +89,7 @@ public sealed class DottopAppFixture : IAsyncDisposable
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
+            termina.RegisterRoute<DockerPage, DockerViewModel>("/docker", NavigationBehavior.PreserveState);
         });
 
         _host = builder.Build();

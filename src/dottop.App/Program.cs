@@ -5,6 +5,8 @@ using dottop.Pages;
 using dottop.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using Servus.Diagnostics;
 using Termina.Hosting;
 using Termina.Pages;
@@ -12,7 +14,18 @@ using Termina.Pages;
 Console.InputEncoding = System.Text.Encoding.UTF8;
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
+var logPath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+    "dottop", "logs", "dottop-.log");
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Warning()
+    .WriteTo.File(logPath, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+    .CreateLogger();
+
 var builder = Host.CreateApplicationBuilder(args);
+builder.Logging.ClearProviders();
+builder.Services.AddSerilog();
 
 // 1. Platform — conditional registration via extension methods in dottop.Windows / dottop.Linux
 PlatformRegistration.Register(builder.Services);

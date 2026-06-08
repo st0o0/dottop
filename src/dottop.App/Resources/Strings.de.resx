@@ -390,6 +390,9 @@
   <data name="HintPerfDiskDetailKeys" xml:space="preserve">
     <value> ←→: Sektion | ↑↓: Disk | Esc: Schließen</value>
   </data>
+  <data name="HintPerfNetworkDetailKeys" xml:space="preserve">
+    <value> ←→: Sektion | ↑↓: Wählen | P: Pin | Esc: Schließen</value>
+  </data>
   <data name="HintServiceDetailKeys" xml:space="preserve">
     <value> S: Start | X: Stop | R: Restart | Esc: Schließen</value>
   </data>

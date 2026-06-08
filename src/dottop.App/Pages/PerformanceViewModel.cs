@@ -23,6 +23,7 @@ public class PerformanceViewModel : ReactiveViewModel
     private readonly IGpuMetrics _gpuMetrics;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
+    private readonly PinService _pinService;
     private readonly IToastService _toast;
     private CancellationTokenSource? _cts;
 
@@ -57,12 +58,14 @@ public class PerformanceViewModel : ReactiveViewModel
         IGpuMetrics gpuMetrics,
         SettingsService settingsService,
         UpdateService updateService,
+        PinService pinService,
         IToastService toast)
     {
         _supervisor = supervisor;
         _gpuMetrics = gpuMetrics;
         _settingsService = settingsService;
         _updateService = updateService;
+        _pinService = pinService;
         _toast = toast;
 
         GraphStyleSetting = settingsService.Settings.GraphStyle switch
@@ -248,6 +251,10 @@ public class PerformanceViewModel : ReactiveViewModel
                     DiskDetailIndex.Value--;
                     _detailContentChanged.OnNext(Unit.Default);
                 }
+                else if (DetailSection.Value == PerfDetailSection.Network)
+                {
+                    NetworkListNode?.MoveUp();
+                }
                 break;
             case ConsoleKey.DownArrow:
                 if (DetailSection.Value == PerfDetailSection.Disk &&
@@ -256,9 +263,25 @@ public class PerformanceViewModel : ReactiveViewModel
                     DiskDetailIndex.Value++;
                     _detailContentChanged.OnNext(Unit.Default);
                 }
+                else if (DetailSection.Value == PerfDetailSection.Network)
+                {
+                    NetworkListNode?.MoveDown();
+                }
+                break;
+            case ConsoleKey.P:
+                if (DetailSection.Value == PerfDetailSection.Network && GetSelectedAdapter?.Invoke() is { } adapter)
+                {
+                    _pinService.ToggleAdapterPin(adapter.Name);
+                    _detailContentChanged.OnNext(Unit.Default);
+                }
                 break;
         }
     }
+
+    public IScrollableList? NetworkListNode { get; set; }
+    public Func<NetworkSnapshot?>? GetSelectedAdapter { get; set; }
+
+    public bool IsAdapterPinned(string name) => _pinService.IsAdapterPinned(name);
 
     private void HandleSettingsKey(KeyPressed key)
     {

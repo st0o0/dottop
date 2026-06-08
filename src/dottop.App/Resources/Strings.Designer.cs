@@ -183,6 +183,7 @@ internal class Strings
     internal static string HintProcessDetailKeys => ResourceManager.GetString("HintProcessDetailKeys", resourceCulture) ?? "";
     internal static string HintPerfDetailKeys => ResourceManager.GetString("HintPerfDetailKeys", resourceCulture) ?? "";
     internal static string HintPerfDiskDetailKeys => ResourceManager.GetString("HintPerfDiskDetailKeys", resourceCulture) ?? "";
+    internal static string HintPerfNetworkDetailKeys => ResourceManager.GetString("HintPerfNetworkDetailKeys", resourceCulture) ?? "";
     internal static string HintServiceDetailKeys => ResourceManager.GetString("HintServiceDetailKeys", resourceCulture) ?? "";
     internal static string HintNetworkDetailKeys => ResourceManager.GetString("HintNetworkDetailKeys", resourceCulture) ?? "";
     internal static string HintSettingsKeys => ResourceManager.GetString("HintSettingsKeys", resourceCulture) ?? "";

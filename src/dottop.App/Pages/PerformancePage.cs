@@ -21,6 +21,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     private GraphNode? _cpuGraph;
     private GraphNode? _ramGraph;
     private GraphNode? _gpuGraph;
+    private DataListNode<NetworkSnapshot>? _networkList;
     private CpuCoresNode? _coresNode;
 
     public override ILayoutNode BuildLayout()
@@ -245,9 +246,12 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var graphStyle = ViewModel.GraphStyleSetting;
 
-        var footerHint = section == PerfDetailSection.Disk
-            ? Strings.HintPerfDiskDetailKeys
-            : Strings.HintPerfDetailKeys;
+        var footerHint = section switch
+        {
+            PerfDetailSection.Disk => Strings.HintPerfDiskDetailKeys,
+            PerfDetailSection.Network => Strings.HintPerfNetworkDetailKeys,
+            _ => Strings.HintPerfDetailKeys
+        };
         _detailModal.WithFooter(footerHint).WithFooterColor(Theme.TextDim);
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
@@ -353,35 +357,33 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
     private ILayoutNode BuildNetworkDetailInfo()
     {
-        var nets = ViewModel.Networks.Value
-            .OrderByDescending(n => n.RxBytesPerSec + n.TxBytesPerSec)
-            .ToList();
-        var layout = Layouts.Vertical();
+        var nets = ViewModel.Networks.Value;
         if (nets.Count == 0)
-        {
-            layout.WithChild(new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim).Height(1));
-            return layout;
-        }
+            return new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim);
 
-        var active = nets.Where(n => n.RxBytesPerSec > 0 || n.TxBytesPerSec > 0).ToList();
-        var idle = nets.Where(n => n.RxBytesPerSec == 0 && n.TxBytesPerSec == 0).ToList();
+        // Pinned first, then by traffic
+        var sorted = nets
+            .OrderByDescending(n => ViewModel.IsAdapterPinned(n.Name))
+            .ThenByDescending(n => n.RxBytesPerSec + n.TxBytesPerSec)
+            .ToList();
 
-        foreach (var net in active)
-        {
-            layout.WithChild(new TextNode($" {net.Name}").WithForeground(Theme.Accent).Height(1));
-            layout.WithChild(
-                new TextNode($"   ↓ {FormatBytes(net.RxBytesPerSec),-14}  ↑ {FormatBytes(net.TxBytesPerSec)}")
-                    .WithForeground(Theme.Text).Height(1));
-        }
+        _networkList = new DataListNode<NetworkSnapshot>(
+            net =>
+            {
+                var pin = ViewModel.IsAdapterPinned(net.Name) ? "● " : "  ";
+                var traffic = net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0
+                    ? $"↓ {FormatBytes(net.RxBytesPerSec),-10} ↑ {FormatBytes(net.TxBytesPerSec)}"
+                    : "idle";
+                return $" {pin}{net.Name,-20} {traffic}";
+            },
+            net => ViewModel.IsAdapterPinned(net.Name) ? Theme.Accent
+                : net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? Theme.Text
+                : Theme.TextDim);
+        _networkList.SetItems(sorted);
+        ViewModel.NetworkListNode = _networkList;
+        ViewModel.GetSelectedAdapter = () => _networkList.SelectedItem;
 
-        if (idle.Count > 0)
-        {
-            layout.WithChild(new TextNode("").Height(1));
-            layout.WithChild(new TextNode($" {idle.Count} idle adapter(s)")
-                .WithForeground(Theme.TextDim).Height(1));
-        }
-
-        return layout;
+        return _networkList.Fill();
     }
 
     private ILayoutNode BuildGpuDetailInfo()

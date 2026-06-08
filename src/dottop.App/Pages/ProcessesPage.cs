@@ -28,7 +28,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             {
                 var ramMb = p.WorkingSetBytes / 1024 / 1024;
                 var name = p.Name.Length > 20 ? p.Name[..19] + "…" : p.Name;
-                var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB";
+                var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0,4:F1}GB" : $"{ramMb,4}MB";
                 var cpuBar = MiniBar(p.CpuPercent, 8);
                 var pinIcon = ViewModel.IsPinned(p.Pid) ? "● " : "  ";
 

@@ -379,10 +379,10 @@
   </data>
   <!-- Modal/Overlay hint keys -->
   <data name="HintProcessOverviewKeys" xml:space="preserve">
-    <value> ←→: Tabs | K: Kill | Esc: Schließen</value>
+    <value> Tab: Tabs | K: Kill | Esc: Schließen</value>
   </data>
   <data name="HintProcessDetailKeys" xml:space="preserve">
-    <value> ←→: Tabs | ↑↓: Scrollen | Esc: Schließen</value>
+    <value> Tab: Tabs | ↑↓: Scrollen | Esc: Schließen</value>
   </data>
   <data name="HintPerfDetailKeys" xml:space="preserve">
     <value> ←→: Sektion | Esc: Schließen</value>

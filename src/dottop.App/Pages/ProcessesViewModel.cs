@@ -234,14 +234,12 @@ public class ProcessesViewModel : ReactiveViewModel
                 }
 
                 break;
-            case ConsoleKey.LeftArrow:
+            case ConsoleKey.Tab:
                 OverlayListNode = null;
-                OverlayTabIndex.Value = Math.Max(0, OverlayTabIndex.Value - 1);
-                UpdateStatus();
-                _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
-            case ConsoleKey.RightArrow:
-                OverlayListNode = null;
-                OverlayTabIndex.Value = Math.Min(3, OverlayTabIndex.Value + 1);
+                if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                    OverlayTabIndex.Value = OverlayTabIndex.Value <= 0 ? 3 : OverlayTabIndex.Value - 1;
+                else
+                    OverlayTabIndex.Value = OverlayTabIndex.Value >= 3 ? 0 : OverlayTabIndex.Value + 1;
                 UpdateStatus();
                 _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
             case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;

@@ -21,27 +21,24 @@ public sealed class DockerProvider : IDockerProvider
             .Build();
     }
 
-    public bool IsAvailable
+    public async Task<bool> IsAvailableAsync(CancellationToken ct = default)
     {
-        get
-        {
-            if (_isAvailable.HasValue)
-            {
-                return _isAvailable.Value;
-            }
+        if (_isAvailable.HasValue) return _isAvailable.Value;
 
-            try
-            {
-                Task.Run(() => _client.System.PingAsync()).Wait(TimeSpan.FromSeconds(5));
-                _isAvailable = true;
-            }
-            catch (Exception ex)
-            {
-                Trace.Warning("DockerProvider", "Docker ping failed, marking unavailable: {0}", ex.Message);
-                _isAvailable = false;
-            }
-            return _isAvailable.Value;
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(TimeSpan.FromSeconds(5));
+            await _client.System.PingAsync(cts.Token);
+            _isAvailable = true;
         }
+        catch (Exception ex)
+        {
+            Trace.Warning("DockerProvider", "Docker ping failed: {0}", ex.Message);
+            _isAvailable = false;
+        }
+
+        return _isAvailable.Value;
     }
 
     public async Task<IReadOnlyList<ContainerSnapshot>> GetContainersAsync(CancellationToken ct = default)

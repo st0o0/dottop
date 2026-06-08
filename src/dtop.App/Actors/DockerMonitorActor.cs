@@ -191,17 +191,6 @@ public sealed class DockerMonitorActor : ReceiveActor
     {
         CleanupPreviousStream();
 
-        if (!_docker.IsAvailable)
-        {
-            var cts = new CancellationTokenSource();
-            var emptyChannel = Channel.CreateBounded<List<ContainerSnapshot>>(1);
-            emptyChannel.Writer.TryWrite([]);
-            Sender.Tell(new MonitoringStream<List<ContainerSnapshot>>(
-                ChannelHelper.ReadFromChannelAsync(emptyChannel.Reader, cts.Token), cts));
-            Trace.Info(this, "Docker not available");
-            return;
-        }
-
         _streamCts = new CancellationTokenSource();
         _channel = Channel.CreateBounded<List<ContainerSnapshot>>(new BoundedChannelOptions(1)
         {

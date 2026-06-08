@@ -1,3 +1,4 @@
+using dtop.App.Docker;
 using dtop.App.Setup;
 using Microsoft.Extensions.Hosting;
 using Servus.Application.Startup;
@@ -5,11 +6,14 @@ using Servus.Application.Startup;
 Console.InputEncoding = System.Text.Encoding.UTF8;
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
+var dockerProvider = new DockerProvider();
+var dockerAvailable = await dockerProvider.IsAvailableAsync();
+
 var runner = AppBuilder.Create(Host.CreateApplicationBuilder(args), b => b.Build())
+    .WithSetup(new DockerSetup(dockerProvider, dockerAvailable))
     .WithSetup<LoggingSetup>()
     .WithSetup<PlatformSetup>()
     .WithSetup<ServicesSetup>()
-    .WithSetup<DockerSetup>()
     .WithSetup<PluginSetup>()
     .WithSetup<ActorSystemSetup>()
     .WithSetup<TerminaSetup>()

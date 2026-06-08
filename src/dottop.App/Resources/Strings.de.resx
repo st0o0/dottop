@@ -402,4 +402,26 @@
   <data name="HintSettingsModalKeys" xml:space="preserve">
     <value> ←→: Ändern | U: Aktualisieren | Esc: Schließen</value>
   </data>
+  <!-- DockerPage -->
+  <data name="TabDocker" xml:space="preserve">
+    <value>5:Docker</value>
+  </data>
+  <data name="PanelDocker" xml:space="preserve">
+    <value> Docker </value>
+  </data>
+  <data name="DockerStatusFormat" xml:space="preserve">
+    <value> {0} Container | /: Suche | Enter: Detail | S/X/R | Q: Beenden</value>
+  </data>
+  <data name="DockerNotAvailable" xml:space="preserve">
+    <value> Docker nicht verfügbar. Stellen Sie sicher, dass Docker Desktop läuft.</value>
+  </data>
+  <data name="HintDockerDetailKeys" xml:space="preserve">
+    <value> S: Start | X: Stop | R: Restart | Esc: Schließen</value>
+  </data>
+  <data name="DockerLogsHeader" xml:space="preserve">
+    <value>─── Logs (letzte 20 Zeilen) ───</value>
+  </data>
+  <data name="DockerLoadingLogs" xml:space="preserve">
+    <value> Lade Logs...</value>
+  </data>
 </root>

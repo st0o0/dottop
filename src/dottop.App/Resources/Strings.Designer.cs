@@ -169,6 +169,15 @@ internal class Strings
     internal static string UpdatePressU => ResourceManager.GetString("UpdatePressU", resourceCulture) ?? "";
     internal static string CurrentVersion => ResourceManager.GetString("CurrentVersion", resourceCulture) ?? "";
 
+    // Docker
+    internal static string TabDocker => ResourceManager.GetString("TabDocker", resourceCulture) ?? "";
+    internal static string PanelDocker => ResourceManager.GetString("PanelDocker", resourceCulture) ?? "";
+    internal static string DockerStatusFormat => ResourceManager.GetString("DockerStatusFormat", resourceCulture) ?? "";
+    internal static string DockerNotAvailable => ResourceManager.GetString("DockerNotAvailable", resourceCulture) ?? "";
+    internal static string HintDockerDetailKeys => ResourceManager.GetString("HintDockerDetailKeys", resourceCulture) ?? "";
+    internal static string DockerLogsHeader => ResourceManager.GetString("DockerLogsHeader", resourceCulture) ?? "";
+    internal static string DockerLoadingLogs => ResourceManager.GetString("DockerLoadingLogs", resourceCulture) ?? "";
+
     // Modal/Overlay hint keys
     internal static string HintProcessOverviewKeys => ResourceManager.GetString("HintProcessOverviewKeys", resourceCulture) ?? "";
     internal static string HintProcessDetailKeys => ResourceManager.GetString("HintProcessDetailKeys", resourceCulture) ?? "";

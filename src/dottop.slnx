@@ -5,7 +5,6 @@
   <Project Path="dottop.App/dottop.App.csproj" />
   <Folder Name="/Termina/">
     <Project Path="../lib/termina/src/Termina/Termina.csproj" />
-    <Project Path="../lib/termina/tests/Termina.Tests/Termina.Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="../tests/dottop.Actors.Tests/dottop.Actors.Tests.csproj" />

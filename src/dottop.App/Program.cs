@@ -1,6 +1,7 @@
 using Akka.Hosting;
 using Akka.Logger.Serilog;
 using dottop.App.Actors;
+using dottop.App.Docker;
 using dottop.App.Pages;
 using dottop.App.Services;
 using dottop.Core.Platform;
@@ -51,6 +52,7 @@ catch
 }
 
 builder.Services.AddSingleton(gpuMetrics);
+builder.Services.AddSingleton<IDockerProvider, DockerProvider>();
 
 // 3. Settings
 var settingsService = new SettingsService();
@@ -76,6 +78,7 @@ var networkMetrics = tempSp.GetRequiredService<INetworkMetrics>();
 var processClassifier = tempSp.GetRequiredService<IProcessClassifier>();
 var processTreeProvider = tempSp.GetRequiredService<IProcessTreeProvider>();
 var serviceManager = tempSp.GetRequiredService<IServiceManager>();
+var dockerProvider = tempSp.GetRequiredService<IDockerProvider>();
 
 // Initialize disk metrics in background
 _ = Task.Run(() =>
@@ -111,7 +114,7 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
             MonitoringSupervisor.Props(
                 cpuMetrics, memoryMetrics, diskMetrics, networkMetrics,
                 gpuMetrics, processClassifier, processTreeProvider,
-                serviceManager, refreshInterval),
+                serviceManager, dockerProvider, refreshInterval),
             "monitoring-supervisor");
         registry.Register<MonitoringSupervisor>(supervisor);
     });
@@ -124,6 +127,7 @@ builder.Services.AddTermina("/", termina =>
     termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
     termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
     termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
+    termina.RegisterRoute<DockerPage, DockerViewModel>("/docker", NavigationBehavior.PreserveState);
 });
 
 await builder.Build().RunAsync();

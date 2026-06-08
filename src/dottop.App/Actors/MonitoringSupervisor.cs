@@ -16,6 +16,7 @@ public sealed class MonitoringSupervisor : ReceiveActor
     private readonly IActorRef _network;
     private readonly IActorRef _gpu;
     private readonly IActorRef _processSupervisor;
+    private readonly IActorRef _docker;
 
     public static Props Props(
         ICpuMetrics cpuMetrics,
@@ -26,10 +27,11 @@ public sealed class MonitoringSupervisor : ReceiveActor
         IProcessClassifier processClassifier,
         IProcessTreeProvider processTreeProvider,
         IServiceManager serviceManager,
+        IDockerProvider dockerProvider,
         TimeSpan interval) =>
         Akka.Actor.Props.Create(() => new MonitoringSupervisor(
             cpuMetrics, memoryMetrics, diskMetrics, networkMetrics, gpuMetrics,
-            processClassifier, processTreeProvider, serviceManager, interval));
+            processClassifier, processTreeProvider, serviceManager, dockerProvider, interval));
 
     public MonitoringSupervisor(
         ICpuMetrics cpuMetrics,
@@ -40,6 +42,7 @@ public sealed class MonitoringSupervisor : ReceiveActor
         IProcessClassifier processClassifier,
         IProcessTreeProvider processTreeProvider,
         IServiceManager serviceManager,
+        IDockerProvider dockerProvider,
         TimeSpan interval)
     {
         _cpu = Context.ActorOf(CpuMonitorActor.Props(cpuMetrics, interval), "cpu-monitor");
@@ -47,6 +50,7 @@ public sealed class MonitoringSupervisor : ReceiveActor
         _disk = Context.ActorOf(DiskMonitorActor.Props(diskMetrics, interval), "disk-monitor");
         _network = Context.ActorOf(NetworkMonitorActor.Props(networkMetrics, interval), "network-monitor");
         _gpu = Context.ActorOf(GpuMonitorActor.Props(gpuMetrics, interval), "gpu-monitor");
+        _docker = Context.ActorOf(DockerMonitorActor.Props(dockerProvider, interval), "docker-monitor");
 
         _processSupervisor = Context.ActorOf(
             ProcessSupervisor.Props(processClassifier, processTreeProvider, serviceManager, interval),
@@ -73,6 +77,13 @@ public sealed class MonitoringSupervisor : ReceiveActor
         Receive<StartService>(msg => _processSupervisor.Forward(msg));
         Receive<StopService>(msg => _processSupervisor.Forward(msg));
         Receive<RestartService>(msg => _processSupervisor.Forward(msg));
+
+        // Docker commands
+        Receive<StartDockerMonitoring>(msg => _docker.Forward(msg));
+        Receive<StartContainer>(msg => _docker.Forward(msg));
+        Receive<StopContainer>(msg => _docker.Forward(msg));
+        Receive<RestartContainer>(msg => _docker.Forward(msg));
+        Receive<GetContainerLogs>(msg => _docker.Forward(msg));
 
         Trace.Info(this, "Supervisor started with interval={0}ms", interval.TotalMilliseconds);
     }

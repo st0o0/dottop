@@ -35,9 +35,9 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 var name = c.Name.Length > 24 ? c.Name[..23] + "…" : c.Name;
                 var image = c.Image.Length > 24 ? c.Image[..23] + "…" : c.Image;
                 var statusIcon = c.Status is "running" ? "▶" : "■";
-                var cpuStr = c.CpuPercent > 0 ? $"{c.CpuPercent,5:F1}%" : "    —";
+                var cpuStr = $"{c.CpuPercent,5:F1}%";
                 var ramMb = c.MemoryUsageBytes / 1024 / 1024;
-                var ramStr = ramMb > 0 ? (ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb,4}MB") : "    —";
+                var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb,4}MB";
                 var port = c.Ports.Count > 0 ? c.Ports[0] : "—";
                 if (port.Length > 14) port = port[..13] + "…";
                 return $"{indent}{statusIcon} {name,-24} {image,-24} {cpuStr} {ramStr,7}  {port,-14} {c.State}";

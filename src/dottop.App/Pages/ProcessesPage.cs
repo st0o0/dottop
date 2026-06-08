@@ -22,9 +22,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     public override ILayoutNode BuildLayout()
     {
-        const int sparklineStart = 30;
-        const int sparklineLength = 8;
-
         _list = new DataListNode<ProcessSnapshot>(
             p =>
             {
@@ -46,16 +43,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 > 80 => Color.BrightRed,
                 > 50 => Color.BrightYellow,
                 _ => Color.White,
-            },
-            p =>
-            {
-                var color = p.CpuPercent switch
-                {
-                    > 80 => Color.BrightRed,
-                    > 50 => Color.BrightYellow,
-                    _ => Theme.Graph,
-                };
-                return [new ColorSpan(sparklineStart, sparklineLength, color)];
             });
 
         ViewModel.ListNode = _list;

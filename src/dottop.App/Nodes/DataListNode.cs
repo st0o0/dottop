@@ -16,14 +16,11 @@ public interface IScrollableList
     void PageDown();
 }
 
-public readonly record struct ColorSpan(int Start, int Length, Color Foreground);
-
 public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollableList
 {
     private readonly Subject<Unit> _invalidated = new();
     private readonly Func<T, string> _formatter;
     private readonly Func<T, Color>? _colorSelector;
-    private readonly Func<T, IReadOnlyList<ColorSpan>>? _colorSpanSelector;
 
     private IReadOnlyList<T> _items = [];
     private int _selectedIndex;
@@ -34,12 +31,10 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     private Color _selectedFg = Theme.SelectionText;
     private Color _selectedBg = Theme.Selection;
 
-    public DataListNode(Func<T, string> formatter, Func<T, Color>? colorSelector = null,
-        Func<T, IReadOnlyList<ColorSpan>>? colorSpanSelector = null)
+    public DataListNode(Func<T, string> formatter, Func<T, Color>? colorSelector = null)
     {
         _formatter = formatter;
         _colorSelector = colorSelector;
-        _colorSpanSelector = colorSpanSelector;
     }
 
     public Observable<Unit> Invalidated => _invalidated.AsObservable();
@@ -171,72 +166,32 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
                 text = text.PadRight(contentWidth);
             }
 
-            if (itemIdx == _selectedIndex && _colorSpanSelector is not null)
-            {
-                var spans = _colorSpanSelector(item);
-                RenderWithColorSpans(ctx, row, text, spans);
-            }
-            else if (itemIdx == _selectedIndex)
+            if (itemIdx == _selectedIndex)
             {
                 ctx.SetForeground(_selectedFg);
                 ctx.SetBackground(_selectedBg);
-                ctx.WriteAt(0, row, text);
-                ctx.ResetColors();
             }
             else if (_colorSelector is not null)
             {
                 ctx.SetForeground(_colorSelector(item));
                 if (Theme.Background != Color.Default)
+                {
                     ctx.SetBackground(Theme.Background);
-                ctx.WriteAt(0, row, text);
-                ctx.ResetColors();
+                }
             }
-            else
+            else if (Theme.Background != Color.Default)
             {
-                if (Theme.Background != Color.Default)
-                    ctx.SetBackground(Theme.Background);
-                ctx.WriteAt(0, row, text);
-                ctx.ResetColors();
+                ctx.SetBackground(Theme.Background);
             }
+
+            ctx.WriteAt(0, row, text);
+            ctx.ResetColors();
         }
 
         if (showScrollbar)
         {
             RenderScrollbar(ctx, bounds.Width - 1, _viewportHeight);
         }
-    }
-
-    private void RenderWithColorSpans(IRenderContext ctx, int row, string text, IReadOnlyList<ColorSpan> spans)
-    {
-        // Build a per-character foreground color map
-        // Default: selection foreground. Spans override with their own foreground.
-        var fgColors = new Color[text.Length];
-        Array.Fill(fgColors, _selectedFg);
-
-        foreach (var span in spans)
-        {
-            var start = Math.Max(0, span.Start);
-            var end = Math.Min(start + span.Length, text.Length);
-            for (var i = start; i < end; i++)
-                fgColors[i] = span.Foreground;
-        }
-
-        // Render character by character, batching consecutive same-color segments
-        ctx.SetBackground(_selectedBg);
-        var segStart = 0;
-        while (segStart < text.Length)
-        {
-            var segColor = fgColors[segStart];
-            var segEnd = segStart + 1;
-            while (segEnd < text.Length && fgColors[segEnd] == segColor)
-                segEnd++;
-
-            ctx.SetForeground(segColor);
-            ctx.WriteAt(segStart, row, text[segStart..segEnd]);
-            segStart = segEnd;
-        }
-
-        ctx.ResetColors();
     }
 
     private void RenderScrollbar(IRenderContext ctx, int x, int height)

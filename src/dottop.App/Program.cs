@@ -1,5 +1,5 @@
 using Akka.Hosting;
-using Akka.Hosting.Configuration;
+using Akka.Logger.Serilog;
 using dottop.Actors;
 using dottop.Core.Platform;
 using dottop.Pages;
@@ -92,15 +92,18 @@ _ = Task.Run(() =>
 // 6. Akka — supervisor creates children, all ViewModel communication goes through it
 builder.Services.AddAkka("dottop", configurationBuilder =>
 {
-    configurationBuilder.AddHocon("""
-        akka {
-            log-dead-letters = off
-            log-dead-letters-during-shutdown = off
-            stdout-loglevel = Off
-            loglevel = WARNING
-            loggers = ["Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog"]
-        }
-        """, HoconAddMode.Prepend);
+    configurationBuilder.ConfigureLoggers(logging =>
+    {
+        logging.LogLevel = Akka.Event.LogLevel.WarningLevel;
+        logging.AddSerilogLogging();
+        logging.DeadLetterOptions = new DeadLetterOptions
+        {
+            ShouldLog = TriStateValue.None,
+            LogDuringShutdown = false
+        };
+    });
+
+    configurationBuilder.AddHocon("akka.stdout-loglevel = Off", HoconAddMode.Prepend);
 
     configurationBuilder.WithActors((system, registry) =>
     {

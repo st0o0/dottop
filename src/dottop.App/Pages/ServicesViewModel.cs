@@ -7,6 +7,8 @@ using dottop.Core.Models;
 using dottop.Nodes;
 using dottop.Resources;
 using Termina.Input;
+using Termina.Notifications;
+using Termina.Terminal;
 using Termina.Reactive;
 
 namespace dottop.Pages;
@@ -14,6 +16,7 @@ namespace dottop.Pages;
 public class ServicesViewModel : ReactiveViewModel
 {
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
+    private readonly IToastService _toast;
     private IActorRef? _supervisorActor;
 
     public IScrollableList? ListNode { get; set; }
@@ -30,9 +33,10 @@ public class ServicesViewModel : ReactiveViewModel
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
     public ReactiveProperty<ServiceInfo?> SelectedService { get; } = new(null);
 
-    public ServicesViewModel(IRequiredActor<MonitoringSupervisor> supervisor)
+    public ServicesViewModel(IRequiredActor<MonitoringSupervisor> supervisor, IToastService toast)
     {
         _supervisor = supervisor;
+        _toast = toast;
     }
 
     public override void OnActivated()
@@ -185,7 +189,15 @@ public class ServicesViewModel : ReactiveViewModel
         try
         {
             var result = await _supervisorActor.Ask<object>(msg, TimeSpan.FromSeconds(10));
-            StatusMessage.Value = result is ActionSuccess s ? $" {s.Message}" : $" {((ActionFailure)result).Error}";
+            if (result is ActionSuccess s)
+            {
+                _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            }
+            else
+            {
+                var error = ((ActionFailure)result).Error;
+                _toast.Show("Error: " + error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            }
             RefreshServices();
 
             // Update the detail modal with refreshed data
@@ -199,7 +211,10 @@ public class ServicesViewModel : ReactiveViewModel
                 }
             }
         }
-        catch (Exception ex) { StatusMessage.Value = string.Format(Strings.ErrorFormat, ex.Message); }
+        catch (Exception ex)
+        {
+            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
     }
 
     private enum ActionType { Start, Stop, Restart }
@@ -220,10 +235,21 @@ public class ServicesViewModel : ReactiveViewModel
         try
         {
             var result = await _supervisorActor.Ask<object>(msg, TimeSpan.FromSeconds(10));
-            StatusMessage.Value = result is ActionSuccess s ? $" {s.Message}" : $" {((ActionFailure)result).Error}";
+            if (result is ActionSuccess s)
+            {
+                _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            }
+            else
+            {
+                var error = ((ActionFailure)result).Error;
+                _toast.Show("Error: " + error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            }
             RefreshServices();
         }
-        catch (Exception ex) { StatusMessage.Value = string.Format(Strings.ErrorFormat, ex.Message); }
+        catch (Exception ex)
+        {
+            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
     }
 
     public override void Dispose()

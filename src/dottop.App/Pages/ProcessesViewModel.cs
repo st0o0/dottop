@@ -8,6 +8,8 @@ using dottop.Nodes;
 using dottop.Resources;
 using dottop.Services;
 using Termina.Input;
+using Termina.Notifications;
+using Termina.Terminal;
 using Servus;
 using Servus.Diagnostics;
 using Termina.Reactive;
@@ -21,6 +23,7 @@ public class ProcessesViewModel : ReactiveViewModel
     private static readonly TraceChannel _trace = Senf.Tracing.For("ViewModel.Processes");
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
+    private readonly IToastService _toast;
     private IActorRef? _supervisorActor;
     private CancellationTokenSource? _cts;
 
@@ -48,10 +51,12 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public ProcessesViewModel(
         IRequiredActor<MonitoringSupervisor> supervisor,
-        SettingsService settingsService)
+        SettingsService settingsService,
+        IToastService toast)
     {
         _supervisor = supervisor;
         _settingsService = settingsService;
+        _toast = toast;
     }
 
     public override void OnActivated()
@@ -253,6 +258,7 @@ public class ProcessesViewModel : ReactiveViewModel
                 {
                     _supervisorActor.Tell(new KillProcess(killTarget.Pid));
                     IsKillConfirmPending.Value = false;
+                    _toast.Show($"Process {killTarget.Name} ({killTarget.Pid}) killed", new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
                 }
                 break;
             case ConsoleKey.N:
@@ -309,7 +315,16 @@ public class ProcessesViewModel : ReactiveViewModel
         catch (Exception ex)
         {
             _trace.Warning(this, "Failed to load overlay tab {0}: {1}", OverlayTabIndex.Value, ex.Message);
-            StatusMessage.Value = "Failed to load tab data";
+            _toast.Show("⚠ Failed to load: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+
+            // Set fallback data so the UI doesn't show "Loading..." forever
+            switch (OverlayTabIndex.Value)
+            {
+                case 1: ProcessTree.Value = new ProcessTreeResult(SelectedProcess.Value!.Pid, SelectedProcess.Value.Name, []); break;
+                case 2: ProcessEnv.Value = new Dictionary<string, string>(); break;
+                case 3: ProcessHandles.Value = []; break;
+            }
+            _overlayContentChanged.OnNext(Unit.Default);
         }
     }
 

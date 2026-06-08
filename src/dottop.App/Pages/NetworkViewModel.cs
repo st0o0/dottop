@@ -6,6 +6,8 @@ using dottop.Resources;
 using Servus;
 using Servus.Diagnostics;
 using Termina.Input;
+using Termina.Notifications;
+using Termina.Terminal;
 using Termina.Reactive;
 
 namespace dottop.Pages;
@@ -14,6 +16,7 @@ public class NetworkViewModel : ReactiveViewModel
 {
     private static readonly TraceChannel _trace = Senf.Tracing.For("ViewModel.Network");
     private readonly IConnectionProvider _connectionProvider;
+    private readonly IToastService _toast;
 
     public IScrollableList? ListNode { get; set; }
     public Func<ConnectionSnapshot?>? GetSelectedItem { get; set; }
@@ -29,9 +32,10 @@ public class NetworkViewModel : ReactiveViewModel
     public ReactiveProperty<bool> IsDetailOpen { get; } = new(false);
     public ReactiveProperty<ConnectionSnapshot?> SelectedConnection { get; } = new(null);
 
-    public NetworkViewModel(IConnectionProvider connectionProvider)
+    public NetworkViewModel(IConnectionProvider connectionProvider, IToastService toast)
     {
         _connectionProvider = connectionProvider;
+        _toast = toast;
     }
 
     public override void OnActivated()
@@ -54,7 +58,7 @@ public class NetworkViewModel : ReactiveViewModel
         catch (Exception ex)
         {
             _trace.Warning(this, "Failed to refresh connections: {0}", ex.Message);
-            StatusMessage.Value = "Failed to refresh connections";
+            _toast.Show("Error refreshing connections", new ToastOptions(Color: Color.BrightRed));
         }
     }
 

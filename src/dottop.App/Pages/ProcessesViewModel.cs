@@ -27,6 +27,9 @@ public class ProcessesViewModel : ReactiveViewModel
     private IActorRef? _supervisorActor;
     private CancellationTokenSource? _cts;
 
+    private readonly Dictionary<int, Queue<double>> _cpuHistory = new();
+    private const int CpuHistoryLength = 8;
+
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
     public Func<ProcessSnapshot?>? GetSelectedItem { get; set; }
@@ -104,6 +107,7 @@ public class ProcessesViewModel : ReactiveViewModel
             await foreach (var list in stream.Data.WithCancellation(ct))
             {
                 AllProcesses.Value = list;
+                UpdateCpuHistory(list);
                 ApplyFilter();
 
                 if (IsOverlayOpen.Value && SelectedProcess.Value is { } current
@@ -328,6 +332,37 @@ public class ProcessesViewModel : ReactiveViewModel
         }
     }
 
+    private void UpdateCpuHistory(List<ProcessSnapshot> processes)
+    {
+        var activePids = new HashSet<int>(processes.Count);
+        foreach (var proc in processes)
+        {
+            activePids.Add(proc.Pid);
+            if (!_cpuHistory.TryGetValue(proc.Pid, out var queue))
+            {
+                queue = new Queue<double>(CpuHistoryLength);
+                _cpuHistory[proc.Pid] = queue;
+            }
+            queue.Enqueue(proc.CpuPercent);
+            if (queue.Count > CpuHistoryLength)
+                queue.Dequeue();
+        }
+        var stale = _cpuHistory.Keys.Where(pid => !activePids.Contains(pid)).ToList();
+        foreach (var pid in stale)
+            _cpuHistory.Remove(pid);
+    }
+
+    public IReadOnlyList<double> GetCpuHistory(int pid)
+    {
+        return _cpuHistory.TryGetValue(pid, out var queue) ? queue.ToArray() : [];
+    }
+
+    public long GetMaxWorkingSet()
+    {
+        var list = FilteredProcesses.Value;
+        return list.Count == 0 ? 1 : list.Max(p => p.WorkingSetBytes);
+    }
+
     private void CycleSortColumn()
     {
         SortColumn.Value = SortColumn.Value switch
@@ -369,6 +404,7 @@ public class ProcessesViewModel : ReactiveViewModel
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;
+        _cpuHistory.Clear();
         base.OnDeactivating();
     }
 

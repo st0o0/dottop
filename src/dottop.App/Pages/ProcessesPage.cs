@@ -1,6 +1,7 @@
 using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Nodes;
+using dottop.Rendering;
 using dottop.Resources;
 using dottop.Themes;
 using R3;
@@ -26,9 +27,16 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             {
                 var ramMb = p.WorkingSetBytes / 1024 / 1024;
                 var name = p.Name.Length > 20 ? p.Name[..19] + "…" : p.Name;
-                var cpuBar = MiniBar(p.CpuPercent, 8);
                 var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB";
-                return $" {p.Pid,6}  {name,-20} {cpuBar} {p.CpuPercent,5:F1}%  {ramStr,7}  {p.Group}";
+
+                var cpuHistory = ViewModel.GetCpuHistory(p.Pid);
+                var sparkline = SparklineRenderer.Render(cpuHistory);
+
+                var maxWs = ViewModel.GetMaxWorkingSet();
+                var ramPercent = maxWs > 0 ? (double)p.WorkingSetBytes / maxWs * 100 : 0;
+                var ramBar = BarRenderer.Render(ramPercent);
+
+                return $" {p.Pid,6}  {name,-20} {sparkline}  {p.CpuPercent,5:F1}%  {ramBar} {ramStr,7}  {p.Group}";
             },
             p => p.CpuPercent switch
             {
@@ -122,7 +130,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {Strings.HeaderPid,6}  {Strings.HeaderName,-20} {"",8} {Strings.HeaderCpuPercent,6}  {Strings.HeaderRam,7}  {Strings.HeaderGroup}")
+        return new TextNode($" {"PID",6}  {"Name",-20} {"CPU",8}  {"CPU%",6}  {"RAM",8} {"Mem",7}  {Strings.HeaderGroup}")
             .WithForeground(Theme.Header)
             .Height(1);
     }

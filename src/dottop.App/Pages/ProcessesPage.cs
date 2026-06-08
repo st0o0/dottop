@@ -28,15 +28,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 var ramMb = p.WorkingSetBytes / 1024 / 1024;
                 var name = p.Name.Length > 20 ? p.Name[..19] + "…" : p.Name;
                 var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB";
+                var cpuBar = MiniBar(p.CpuPercent, 8);
 
-                var cpuHistory = ViewModel.GetCpuHistory(p.Pid);
-                var sparkline = SparklineRenderer.Render(cpuHistory);
-
-                var maxWs = ViewModel.GetMaxWorkingSet();
-                var ramPercent = maxWs > 0 ? (double)p.WorkingSetBytes / maxWs * 100 : 0;
-                var ramBar = BarRenderer.Render(ramPercent);
-
-                return $" {p.Pid,6}  {name,-20} {sparkline}  {p.CpuPercent,5:F1}%  {ramBar} {ramStr,7}  {p.Group}";
+                return $" {p.Pid,6}  {name,-20} {cpuBar} {p.CpuPercent,5:F1}%  {ramStr,7}  {p.Group}";
             },
             p => p.CpuPercent switch
             {
@@ -130,7 +124,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildHeader()
     {
-        return new TextNode($" {Strings.HeaderPid,6}  {Strings.HeaderName,-20} {Strings.HeaderCpuSparkline,8}  {Strings.HeaderCpuPercent,6}  {Strings.HeaderRamBar,8} {Strings.HeaderMem,7}  {Strings.HeaderGroup}")
+        return new TextNode($" {Strings.HeaderPid,6}  {Strings.HeaderName,-20} {"",8} {Strings.HeaderCpuPercent,6}  {Strings.HeaderRam,7}  {Strings.HeaderGroup}")
             .WithForeground(Theme.Header)
             .Height(1);
     }
@@ -195,16 +189,25 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         return Layouts.Vertical().WithChild(content).Fill();
     }
 
-    private static ILayoutNode BuildOverviewTab(ProcessSnapshot proc, bool isKillConfirmPending)
+    private ILayoutNode BuildOverviewTab(ProcessSnapshot proc, bool isKillConfirmPending)
     {
         var ramMb = proc.WorkingSetBytes / 1024 / 1024;
         var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1} GB" : $"{ramMb} MB";
         var cpuBar = MiniBar(proc.CpuPercent, 20);
         var cpuColor = proc.CpuPercent > 80 ? Color.BrightRed : proc.CpuPercent > 50 ? Color.BrightYellow : Color.Cyan;
 
+        var cpuGraph = new GraphNode()
+            .WithStyle(GraphStyle.Blocks)
+            .WithColor(cpuColor)
+            .WithRange(0, 100);
+        foreach (var val in ViewModel.GetCpuHistory(proc.Pid))
+            cpuGraph.Push(val);
+
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  CPU   {cpuBar}  {proc.CpuPercent:F1}%").WithForeground(cpuColor).Height(1))
+            .WithChild(cpuGraph.Height(4))
+            .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  RAM   {ramStr}").WithForeground(Theme.Text).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Theme.TextDim).Height(1))

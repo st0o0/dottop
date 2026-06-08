@@ -208,6 +208,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         }
 
         var section = ViewModel.DetailSection.Value;
+        if (section != PerfDetailSection.Network) _networkList = null;
         var sections = new List<string> { "CPU", "RAM", "Disk", Strings.DetailSectionNetwork };
         if (ViewModel.GpuAvailable)
         {
@@ -361,29 +362,34 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         if (nets.Count == 0)
             return new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim);
 
-        // Pinned first, then by traffic
         var sorted = nets
             .OrderByDescending(n => ViewModel.IsAdapterPinned(n.Name))
             .ThenByDescending(n => n.RxBytesPerSec + n.TxBytesPerSec)
             .ToList();
 
-        _networkList = new DataListNode<NetworkSnapshot>(
-            net =>
-            {
-                var pin = ViewModel.IsAdapterPinned(net.Name) ? "● " : "  ";
-                var traffic = net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0
-                    ? $"↓ {FormatBytes(net.RxBytesPerSec),-10} ↑ {FormatBytes(net.TxBytesPerSec)}"
-                    : "idle";
-                return $" {pin}{net.Name,-20} {traffic}";
-            },
-            net => ViewModel.IsAdapterPinned(net.Name) ? Theme.Accent
-                : net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? Theme.Text
-                : Theme.TextDim);
-        _networkList.SetItems(sorted);
-        ViewModel.NetworkListNode = _networkList;
-        ViewModel.GetSelectedAdapter = () => _networkList.SelectedItem;
+        if (_networkList is null)
+        {
+            _networkList = new DataListNode<NetworkSnapshot>(
+                net =>
+                {
+                    var pin = ViewModel.IsAdapterPinned(net.Name) ? "● " : "  ";
+                    return $" {pin}{net.Name,-22} {"↓"} {FormatBytes(net.RxBytesPerSec),10}  {"↑"} {FormatBytes(net.TxBytesPerSec),10}";
+                },
+                net => ViewModel.IsAdapterPinned(net.Name) ? Theme.Accent
+                    : net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? Theme.Text
+                    : Theme.TextDim);
+            ViewModel.NetworkListNode = _networkList;
+            ViewModel.GetSelectedAdapter = () => _networkList.SelectedItem;
+        }
 
-        return _networkList.Fill();
+        _networkList.SetItems(sorted);
+
+        var header = new TextNode($"   {"Adapter",-22} {"Download",13}  {"Upload",13}")
+            .WithForeground(Theme.Header).Height(1);
+
+        return Layouts.Vertical()
+            .WithChild(header)
+            .WithChild(_networkList.Fill());
     }
 
     private ILayoutNode BuildGpuDetailInfo()

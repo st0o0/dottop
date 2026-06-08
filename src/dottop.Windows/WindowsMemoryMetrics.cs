@@ -9,7 +9,7 @@ public sealed class WindowsMemoryMetrics : IMemoryMetrics
 {
     public (ulong TotalBytes, ulong UsedBytes) Measure()
     {
-        var status = new MEMORYSTATUSEX { dwLength = 64 };
+        var status = new Memorystatusex { dwLength = 64 };
         if (GlobalMemoryStatusEx(ref status))
         {
             return (status.ullTotalPhys, status.ullTotalPhys - status.ullAvailPhys);
@@ -19,10 +19,10 @@ public sealed class WindowsMemoryMetrics : IMemoryMetrics
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
+    private static extern bool GlobalMemoryStatusEx(ref Memorystatusex lpBuffer);
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct MEMORYSTATUSEX
+    private struct Memorystatusex
     {
         public uint dwLength;
         public uint dwMemoryLoad;

@@ -1,4 +1,4 @@
-namespace dottop.Rendering;
+namespace dottop.App.Rendering;
 
 public static class BarRenderer
 {

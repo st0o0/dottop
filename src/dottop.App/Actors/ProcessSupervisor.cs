@@ -4,11 +4,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class ProcessSupervisor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Process.Supervisor");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Process.Supervisor");
 
     private readonly IActorRef _processMonitor;
     private readonly IActorRef _processAction;
@@ -62,13 +62,13 @@ public sealed class ProcessSupervisor : ReceiveActor
                     System.ComponentModel.Win32Exception => Directive.Resume,
                     _ => Directive.Restart
                 };
-                _trace.Warning(this, "Supervision decision: {0} for {1}", directive, ex.GetType().Name);
+                Trace.Warning(this, "Supervision decision: {0} for {1}", directive, ex.GetType().Name);
                 return directive;
             });
 
     protected override void PostStop()
     {
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

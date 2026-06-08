@@ -7,11 +7,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class ProcessMonitorActor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Process");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Process");
 
     private sealed record Tick;
 
@@ -106,7 +106,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
 
         var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
         Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, _streamCts));
-        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
+        Trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
     }
 
     private void CleanupPreviousStream()
@@ -123,7 +123,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

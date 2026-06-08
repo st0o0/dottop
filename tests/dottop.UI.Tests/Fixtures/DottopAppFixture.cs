@@ -1,8 +1,8 @@
 using Akka.Hosting;
-using dottop.Actors;
+using dottop.App.Actors;
+using dottop.App.Pages;
+using dottop.App.Services;
 using dottop.Core.Platform;
-using dottop.Pages;
-using dottop.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NSubstitute;
@@ -89,7 +89,6 @@ public sealed class DottopAppFixture : IAsyncDisposable
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
-            termina.RegisterRoute<SettingsPage, SettingsViewModel>("/settings", NavigationBehavior.PreserveState);
         });
 
         _host = builder.Build();

@@ -7,7 +7,9 @@
     <Project Path="../lib/termina/src/Termina/Termina.csproj" />
     <Project Path="../lib/termina/tests/Termina.Tests/Termina.Tests.csproj" />
   </Folder>
-  <Project Path="../tests/dottop.Actors.Tests/dottop.Actors.Tests.csproj" />
-  <Project Path="../tests/dottop.UI.Tests/dottop.UI.Tests.csproj" />
-  <Project Path="../tests/dottop.Rendering.Tests/dottop.Rendering.Tests.csproj" />
+  <Folder Name="/Tests/">
+    <Project Path="../tests/dottop.Actors.Tests/dottop.Actors.Tests.csproj" />
+    <Project Path="../tests/dottop.Rendering.Tests/dottop.Rendering.Tests.csproj" />
+    <Project Path="../tests/dottop.UI.Tests/dottop.UI.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -6,11 +6,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class MemoryMonitorActor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Memory");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Memory");
 
     private sealed record Tick;
 
@@ -55,7 +55,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
             TimeSpan.Zero, _interval, Self, new Tick(), Self);
         var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
         Sender.Tell(new MonitoringStream<MemorySnapshot>(stream, _streamCts));
-        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
+        Trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
     }
 
     private void CleanupPreviousStream()
@@ -72,7 +72,7 @@ public sealed class MemoryMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

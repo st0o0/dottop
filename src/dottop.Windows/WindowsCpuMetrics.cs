@@ -48,7 +48,7 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
     {
         try
         {
-            var size = Marshal.SizeOf<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION>() * coreCount;
+            var size = Marshal.SizeOf<SystemProcessorPerformanceInformation>() * coreCount;
             var buffer = Marshal.AllocHGlobal(size);
             try
             {
@@ -64,8 +64,8 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
                 var cores = new List<double>(coreCount);
                 for (var i = 0; i < coreCount; i++)
                 {
-                    var ptr = buffer + i * Marshal.SizeOf<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION>();
-                    var info = Marshal.PtrToStructure<SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION>(ptr);
+                    var ptr = buffer + i * Marshal.SizeOf<SystemProcessorPerformanceInformation>();
+                    var info = Marshal.PtrToStructure<SystemProcessorPerformanceInformation>(ptr);
                     var coreIdle = info.IdleTime;
                     var coreTotal = info.KernelTime + info.UserTime;
 
@@ -96,13 +96,13 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
     }
 
     [DllImport("kernel32.dll")]
-    private static extern bool GetSystemTimes(out FILETIME idle, out FILETIME kernel, out FILETIME user);
+    private static extern bool GetSystemTimes(out Filetime idle, out Filetime kernel, out Filetime user);
 
     [DllImport("ntdll.dll")]
     private static extern int NtQuerySystemInformation(int infoClass, IntPtr buffer, int size, out int returnLength);
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION
+    private struct SystemProcessorPerformanceInformation
     {
         public long IdleTime;
         public long KernelTime;
@@ -113,7 +113,7 @@ public sealed class WindowsCpuMetrics : ICpuMetrics
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct FILETIME
+    private struct Filetime
     {
         public uint Low;
         public uint High;

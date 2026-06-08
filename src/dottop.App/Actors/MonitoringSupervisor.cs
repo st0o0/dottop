@@ -4,11 +4,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class MonitoringSupervisor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Monitoring");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Monitoring");
 
     private readonly IActorRef _cpu;
     private readonly IActorRef _memory;
@@ -74,7 +74,7 @@ public sealed class MonitoringSupervisor : ReceiveActor
         Receive<StopService>(msg => _processSupervisor.Forward(msg));
         Receive<RestartService>(msg => _processSupervisor.Forward(msg));
 
-        _trace.Info(this, "Supervisor started with interval={0}ms", interval.TotalMilliseconds);
+        Trace.Info(this, "Supervisor started with interval={0}ms", interval.TotalMilliseconds);
     }
 
     protected override SupervisorStrategy SupervisorStrategy() =>
@@ -89,13 +89,13 @@ public sealed class MonitoringSupervisor : ReceiveActor
                     UnauthorizedAccessException => Directive.Resume,
                     _ => Directive.Restart
                 };
-                _trace.Warning(this, "Supervision decision: {0} for {1}", directive, ex.GetType().Name);
+                Trace.Warning(this, "Supervision decision: {0} for {1}", directive, ex.GetType().Name);
                 return directive;
             });
 
     protected override void PostStop()
     {
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

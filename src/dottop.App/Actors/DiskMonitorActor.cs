@@ -6,11 +6,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class DiskMonitorActor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Disk");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Disk");
 
     private sealed record Tick;
 
@@ -72,7 +72,7 @@ public sealed class DiskMonitorActor : ReceiveActor
 
         var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
         Sender.Tell(new MonitoringStream<List<DiskSnapshot>>(stream, _streamCts));
-        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
+        Trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
     }
 
     private void CleanupPreviousStream()
@@ -89,7 +89,7 @@ public sealed class DiskMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

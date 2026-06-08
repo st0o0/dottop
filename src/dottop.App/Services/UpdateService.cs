@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace dottop.Services;
+namespace dottop.App.Services;
 
 public class UpdateService
 {

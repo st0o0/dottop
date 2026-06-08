@@ -10,9 +10,9 @@ namespace dottop.Windows;
 [SupportedOSPlatform("windows")]
 public sealed class WindowsConnectionProvider : IConnectionProvider
 {
-    private const int AF_INET = 2;
-    private const int TCP_TABLE_OWNER_PID_ALL = 5;
-    private const int UDP_TABLE_OWNER_PID = 1;
+    private const int AfInet = 2;
+    private const int TcpTableOwnerPidAll = 5;
+    private const int UdpTableOwnerPid = 1;
 
     public List<ConnectionSnapshot> GetConnections()
     {
@@ -40,23 +40,23 @@ public sealed class WindowsConnectionProvider : IConnectionProvider
     {
         var results = new List<ConnectionSnapshot>();
         var size = 0;
-        GetExtendedTcpTable(nint.Zero, ref size, true, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);
+        GetExtendedTcpTable(nint.Zero, ref size, true, AfInet, TcpTableOwnerPidAll, 0);
 
         var buffer = Marshal.AllocHGlobal(size);
         try
         {
-            if (GetExtendedTcpTable(buffer, ref size, true, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0) != 0)
+            if (GetExtendedTcpTable(buffer, ref size, true, AfInet, TcpTableOwnerPidAll, 0) != 0)
             {
                 return results;
             }
 
             var rowCount = Marshal.ReadInt32(buffer);
             var rowPtr = buffer + 4;
-            var rowSize = Marshal.SizeOf<MIB_TCPROW_OWNER_PID>();
+            var rowSize = Marshal.SizeOf<MibTcprowOwnerPid>();
 
             for (var i = 0; i < rowCount; i++)
             {
-                var row = Marshal.PtrToStructure<MIB_TCPROW_OWNER_PID>(rowPtr);
+                var row = Marshal.PtrToStructure<MibTcprowOwnerPid>(rowPtr);
                 var local = new IPEndPoint(row.dwLocalAddr, (ushort)IPAddress.NetworkToHostOrder((short)row.dwLocalPort));
                 var remote = new IPEndPoint(row.dwRemoteAddr, (ushort)IPAddress.NetworkToHostOrder((short)row.dwRemotePort));
                 var state = MapTcpState(row.dwState);
@@ -75,23 +75,23 @@ public sealed class WindowsConnectionProvider : IConnectionProvider
     {
         var results = new List<ConnectionSnapshot>();
         var size = 0;
-        GetExtendedUdpTable(nint.Zero, ref size, true, AF_INET, UDP_TABLE_OWNER_PID, 0);
+        GetExtendedUdpTable(nint.Zero, ref size, true, AfInet, UdpTableOwnerPid, 0);
 
         var buffer = Marshal.AllocHGlobal(size);
         try
         {
-            if (GetExtendedUdpTable(buffer, ref size, true, AF_INET, UDP_TABLE_OWNER_PID, 0) != 0)
+            if (GetExtendedUdpTable(buffer, ref size, true, AfInet, UdpTableOwnerPid, 0) != 0)
             {
                 return results;
             }
 
             var rowCount = Marshal.ReadInt32(buffer);
             var rowPtr = buffer + 4;
-            var rowSize = Marshal.SizeOf<MIB_UDPROW_OWNER_PID>();
+            var rowSize = Marshal.SizeOf<MibUdprowOwnerPid>();
 
             for (var i = 0; i < rowCount; i++)
             {
-                var row = Marshal.PtrToStructure<MIB_UDPROW_OWNER_PID>(rowPtr);
+                var row = Marshal.PtrToStructure<MibUdprowOwnerPid>(rowPtr);
                 var local = new IPEndPoint(row.dwLocalAddr, (ushort)IPAddress.NetworkToHostOrder((short)row.dwLocalPort));
                 var name = processNames.GetValueOrDefault(row.dwOwningPid, "");
 
@@ -122,7 +122,7 @@ public sealed class WindowsConnectionProvider : IConnectionProvider
     };
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct MIB_TCPROW_OWNER_PID
+    private struct MibTcprowOwnerPid
     {
         public int dwState;
         public uint dwLocalAddr;
@@ -133,7 +133,7 @@ public sealed class WindowsConnectionProvider : IConnectionProvider
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct MIB_UDPROW_OWNER_PID
+    private struct MibUdprowOwnerPid
     {
         public uint dwLocalAddr;
         public int dwLocalPort;

@@ -1,28 +1,29 @@
 using Akka.Actor;
 using Akka.Hosting;
-using R3;
-using dottop.Actors;
+using dottop.App.Actors;
+using dottop.App.Nodes;
+using dottop.App.Resources;
+using dottop.App.Services;
 using dottop.Core.Messages;
 using dottop.Core.Models;
-using dottop.Nodes;
-using dottop.Resources;
-using dottop.Services;
-using Termina.Input;
-using Termina.Notifications;
-using Termina.Terminal;
+using R3;
 using Servus;
 using Servus.Diagnostics;
+using Termina.Input;
+using Termina.Notifications;
 using Termina.Reactive;
+using Termina.Terminal;
 
-namespace dottop.Pages;
+namespace dottop.App.Pages;
 
 public enum SortColumn { Name, Cpu, Ram, Pid }
 
 public class ProcessesViewModel : ReactiveViewModel
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("ViewModel.Processes");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("ViewModel.Processes");
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
+    private readonly UpdateService _updateService;
     private readonly IToastService _toast;
     private IActorRef? _supervisorActor;
     private CancellationTokenSource? _cts;
@@ -51,14 +52,22 @@ public class ProcessesViewModel : ReactiveViewModel
     public ReactiveProperty<IReadOnlyDictionary<string, string>?> ProcessEnv { get; } = new(null);
     public ReactiveProperty<IReadOnlyList<string>?> ProcessHandles { get; } = new(null);
     public ReactiveProperty<bool> IsKillConfirmPending { get; } = new(false);
+    public ReactiveProperty<bool> IsSettingsOpen { get; } = new(false);
+
+    private readonly Subject<Unit> _settingsContentChanged = new();
+    public Observable<Unit> SettingsContentChanged => _settingsContentChanged.AsObservable();
+
+    private static readonly int[] RefreshOptions = [250, 500, 1000, 2000, 5000];
 
     public ProcessesViewModel(
         IRequiredActor<MonitoringSupervisor> supervisor,
         SettingsService settingsService,
+        UpdateService updateService,
         IToastService toast)
     {
         _supervisor = supervisor;
         _settingsService = settingsService;
+        _updateService = updateService;
         _toast = toast;
     }
 
@@ -158,6 +167,7 @@ public class ProcessesViewModel : ReactiveViewModel
     private void HandleKey(KeyPressed key)
     {
         if (IsSearchActive.Value) { HandleSearchKey(key); return; }
+        if (IsSettingsOpen.Value) { HandleSettingsKey(key); return; }
         if (IsOverlayOpen.Value) { HandleOverlayKey(key); return; }
 
         switch (key.KeyInfo.Key)
@@ -191,7 +201,10 @@ public class ProcessesViewModel : ReactiveViewModel
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D3: Navigate("/services"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
-            case ConsoleKey.D5: Navigate("/settings"); break;
+            case ConsoleKey.F10:
+                IsSettingsOpen.Value = true;
+                _settingsContentChanged.OnNext(Unit.Default);
+                break;
 
             case ConsoleKey.Q: Shutdown(); break;
         }
@@ -343,7 +356,7 @@ public class ProcessesViewModel : ReactiveViewModel
         }
         catch (Exception ex)
         {
-            _trace.Warning(this, "Failed to load overlay tab {0}: {1}", OverlayTabIndex.Value, ex.Message);
+            Trace.Warning(this, "Failed to load overlay tab {0}: {1}", OverlayTabIndex.Value, ex.Message);
             _toast.Show("⚠ Failed to load: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
 
             // Set fallback data so the UI doesn't show "Loading..." forever
@@ -424,6 +437,85 @@ public class ProcessesViewModel : ReactiveViewModel
         }
     }
 
+    private void HandleSettingsKey(KeyPressed key)
+    {
+        switch (key.KeyInfo.Key)
+        {
+            case ConsoleKey.Escape:
+                IsSettingsOpen.Value = false;
+                break;
+            case ConsoleKey.LeftArrow:
+                CycleRefreshRate(-1);
+                break;
+            case ConsoleKey.RightArrow:
+                CycleRefreshRate(1);
+                break;
+            case ConsoleKey.U:
+                if (_updateService.UpdateAvailable)
+                {
+                    _ = PerformUpdateAsync();
+                }
+                break;
+        }
+    }
+
+    private void CycleRefreshRate(int direction)
+    {
+        var current = _settingsService.Settings.RefreshIntervalMs;
+        var idx = Array.IndexOf(RefreshOptions, current);
+        if (idx < 0) idx = 2; // default to 1000ms
+        var newIdx = (idx + direction + RefreshOptions.Length) % RefreshOptions.Length;
+        _settingsService.Settings.RefreshIntervalMs = RefreshOptions[newIdx];
+        _settingsService.Save();
+        _settingsContentChanged.OnNext(Unit.Default);
+    }
+
+    private async Task PerformUpdateAsync()
+    {
+        _toast.Show(Strings.UpdateDownloading, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+        var success = await _updateService.PerformUpdateAsync(progress =>
+        {
+            _toast.Show(progress switch
+            {
+                "Downloading..." => Strings.UpdateDownloading,
+                "Extracting..." => Strings.UpdateInstalling,
+                _ => progress
+            }, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+        });
+
+        if (success)
+        {
+            _toast.Show(Strings.UpdateComplete, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+            await Task.Delay(1500);
+            Shutdown();
+        }
+        else
+        {
+            _toast.Show(Strings.UpdateFailed, new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+        }
+    }
+
+    public string GetRefreshRateDisplay()
+    {
+        return _settingsService.Settings.RefreshIntervalMs switch
+        {
+            250 => "250ms",
+            500 => "500ms",
+            1000 => "1s",
+            2000 => "2s",
+            5000 => "5s",
+            _ => $"{_settingsService.Settings.RefreshIntervalMs}ms"
+        };
+    }
+
+    public string GetSettingsFilePath() => SettingsService.FilePath;
+
+    public bool IsUpdateAvailable => _updateService.UpdateAvailable;
+    public string CurrentVersionDisplay => string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
+    public string? LatestVersionDisplay => _updateService.UpdateAvailable
+        ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
+        : null;
+
     public override void OnDeactivating()
     {
         _cts?.Cancel();
@@ -442,7 +534,8 @@ public class ProcessesViewModel : ReactiveViewModel
         SortColumn.Dispose();
         IsSearchActive.Dispose(); IsOverlayOpen.Dispose();
         SelectedProcess.Dispose(); OverlayTabIndex.Dispose();
-        StatusMessage.Dispose(); IsKillConfirmPending.Dispose(); ProcessTree.Dispose();
+        StatusMessage.Dispose(); IsKillConfirmPending.Dispose(); IsSettingsOpen.Dispose();
+        _settingsContentChanged.Dispose(); ProcessTree.Dispose();
         ProcessEnv.Dispose(); ProcessHandles.Dispose();
         base.Dispose();
     }

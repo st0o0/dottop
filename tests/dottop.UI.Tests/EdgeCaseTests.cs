@@ -20,7 +20,8 @@ public class EdgeCaseTests : IAsyncLifetime
     public async Task RapidTabSwitching_DoesNotCrash()
     {
         // Switch D1->D2->D3->D4->D5->D1 rapidly with minimal delays
-        await _app.SendKeysAsync(20, ConsoleKey.D1, ConsoleKey.D2, ConsoleKey.D3, ConsoleKey.D4, ConsoleKey.D5, ConsoleKey.D1);
+        await _app.SendKeysAsync(20, ConsoleKey.D1, ConsoleKey.D2, ConsoleKey.D3, ConsoleKey.D4, ConsoleKey.D5,
+            ConsoleKey.D1);
         await _app.WaitForRenderAsync(500);
 
         // App should land on Processes page and not crash
@@ -172,30 +173,5 @@ public class EdgeCaseTests : IAsyncLifetime
         // Page should still show Processes without crash
         ScreenAssert.Contains(_app.Terminal, "1:Processes");
         ScreenAssert.Contains(_app.Terminal, "chrome");
-    }
-
-    [Fact]
-    public async Task SettingsChangeAndNavigateBack_ValuePersists()
-    {
-        // Navigate to Settings
-        await _app.SendKeysAsync(50, ConsoleKey.D5);
-        await _app.Terminal.WaitForTextAsync("Theme", 3000);
-
-        // Change theme from dark to light (press Right)
-        await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
-        await _app.WaitForRenderAsync(300);
-        ScreenAssert.Contains(_app.Terminal, "Light");
-
-        // Navigate to Processes
-        await _app.SendKeysAsync(50, ConsoleKey.D1);
-        await _app.Terminal.WaitForTextAsync("1:Processes", 3000);
-
-        // Navigate back to Settings
-        await _app.SendKeysAsync(50, ConsoleKey.D5);
-        await _app.Terminal.WaitForTextAsync("Theme", 3000);
-        await _app.WaitForRenderAsync(300);
-
-        // Changed value should persist
-        ScreenAssert.Contains(_app.Terminal, "Light");
     }
 }

@@ -6,11 +6,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class GpuMonitorActor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Gpu");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Gpu");
 
     private sealed record Tick;
 
@@ -58,7 +58,7 @@ public sealed class GpuMonitorActor : ReceiveActor
 
         var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
         Sender.Tell(new MonitoringStream<GpuSnapshot>(stream, _streamCts));
-        _trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
+        Trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
     }
 
     private void CleanupPreviousStream()
@@ -75,7 +75,7 @@ public sealed class GpuMonitorActor : ReceiveActor
     protected override void PostStop()
     {
         CleanupPreviousStream();
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

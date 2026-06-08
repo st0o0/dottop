@@ -4,11 +4,11 @@ using dottop.Core.Platform;
 using Servus;
 using Servus.Diagnostics;
 
-namespace dottop.Actors;
+namespace dottop.App.Actors;
 
 public sealed class ServiceActor : ReceiveActor
 {
-    private static readonly TraceChannel _trace = Senf.Tracing.For("Service");
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Service");
 
     public static Props Props(IServiceManager serviceManager) =>
         Akka.Actor.Props.Create(() => new ServiceActor(serviceManager));
@@ -58,7 +58,7 @@ public sealed class ServiceActor : ReceiveActor
 
     protected override void PostStop()
     {
-        _trace.Debug(this, "Stopped");
+        Trace.Debug(this, "Stopped");
         base.PostStop();
     }
 }

@@ -1,6 +1,6 @@
 using Termina.Terminal;
 
-namespace dottop.Themes;
+namespace dottop.App.Themes;
 
 public static class Theme
 {

@@ -164,7 +164,7 @@
     <value>Gesamt:</value>
   </data>
   <data name="PerfStatusBar" xml:space="preserve">
-    <value> Enter: Detail  |  1-5: Tab  |  Q: Beenden</value>
+    <value> Enter: Detail  |  1-4: Tab  |  F10: Einstellungen  |  Q: Beenden</value>
   </data>
   <data name="DetailSectionNetwork" xml:space="preserve">
     <value>Netzwerk</value>
@@ -398,5 +398,8 @@
   </data>
   <data name="HintSettingsKeys" xml:space="preserve">
     <value> ↑↓: Wählen | ←→: Ändern | Home/End: Sprung | Q: Beenden</value>
+  </data>
+  <data name="HintSettingsModalKeys" xml:space="preserve">
+    <value> ←→: Ändern | U: Aktualisieren | Esc: Schließen</value>
   </data>
 </root>

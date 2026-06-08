@@ -1,4 +1,3 @@
-// src/dottop.Core/Messages/Queries.cs
 namespace dottop.Core.Messages;
 
 public sealed record GetProcessTree(int Pid);

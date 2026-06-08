@@ -9,11 +9,10 @@
 
 #nullable enable
 
-namespace dottop.Resources;
-
-using System;
-using System.Resources;
 using System.Globalization;
+using System.Resources;
+
+namespace dottop.App.Resources;
 
 /// <summary>
 ///   A strongly-typed resource class, for looking up localized strings, etc.
@@ -39,7 +38,7 @@ internal class Strings
         {
             if (resourceMan is null)
             {
-                var temp = new ResourceManager("dottop.Resources.Strings", typeof(Strings).Assembly);
+                var temp = new ResourceManager("dottop.App.Resources.Strings", typeof(Strings).Assembly);
                 resourceMan = temp;
             }
             return resourceMan;
@@ -178,4 +177,5 @@ internal class Strings
     internal static string HintServiceDetailKeys => ResourceManager.GetString("HintServiceDetailKeys", resourceCulture) ?? "";
     internal static string HintNetworkDetailKeys => ResourceManager.GetString("HintNetworkDetailKeys", resourceCulture) ?? "";
     internal static string HintSettingsKeys => ResourceManager.GetString("HintSettingsKeys", resourceCulture) ?? "";
+    internal static string HintSettingsModalKeys => ResourceManager.GetString("HintSettingsModalKeys", resourceCulture) ?? "";
 }

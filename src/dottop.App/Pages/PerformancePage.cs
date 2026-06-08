@@ -307,7 +307,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
     private ILayoutNode BuildNetworkDetailInfo()
     {
-        var nets = ViewModel.Networks.Value;
+        var nets = ViewModel.Networks.Value
+            .OrderByDescending(n => n.RxBytesPerSec + n.TxBytesPerSec)
+            .ToList();
         var layout = Layouts.Vertical();
         if (nets.Count == 0)
         {
@@ -315,12 +317,22 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             return layout;
         }
 
-        foreach (var net in nets)
+        var active = nets.Where(n => n.RxBytesPerSec > 0 || n.TxBytesPerSec > 0).ToList();
+        var idle = nets.Where(n => n.RxBytesPerSec == 0 && n.TxBytesPerSec == 0).ToList();
+
+        foreach (var net in active)
         {
             layout.WithChild(new TextNode($" {net.Name}").WithForeground(Theme.Accent).Height(1));
             layout.WithChild(
                 new TextNode($"   ↓ {FormatBytes(net.RxBytesPerSec),-14}  ↑ {FormatBytes(net.TxBytesPerSec)}")
                     .WithForeground(Theme.Text).Height(1));
+        }
+
+        if (idle.Count > 0)
+        {
+            layout.WithChild(new TextNode("").Height(1));
+            layout.WithChild(new TextNode($" {idle.Count} idle adapter(s)")
+                .WithForeground(Theme.TextDim).Height(1));
         }
 
         return layout;

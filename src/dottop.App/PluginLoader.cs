@@ -9,11 +9,12 @@ public static class PluginLoader
     {
         var plugins = new List<IDottopPlugin>();
 
-        // 1. Scan plugins/ directory
-        var pluginsDir = Path.Combine(AppContext.BaseDirectory, "plugins");
-        if (Directory.Exists(pluginsDir))
+        // 1. Scan base directory and plugins/ subdirectory for plugin DLLs
+        var searchDirs = new[] { AppContext.BaseDirectory, Path.Combine(AppContext.BaseDirectory, "plugins") };
+        foreach (var dir in searchDirs)
         {
-            foreach (var dll in Directory.GetFiles(pluginsDir, "dottop.Plugin.*.dll"))
+            if (!Directory.Exists(dir)) continue;
+            foreach (var dll in Directory.GetFiles(dir, "dottop.Plugin.*.dll"))
             {
                 try
                 {
@@ -43,8 +44,10 @@ public static class PluginLoader
         {
             foreach (var type in assembly.GetTypes())
             {
-                if (typeof(IDottopPlugin).IsAssignableFrom(type) && !type.IsAbstract && !type.IsInterface)
+                if (typeof(IDottopPlugin).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false })
+                {
                     plugins.Add((IDottopPlugin)Activator.CreateInstance(type)!);
+                }
             }
         }
         catch

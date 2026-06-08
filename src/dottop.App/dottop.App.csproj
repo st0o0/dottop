@@ -14,7 +14,6 @@
 
     <ItemGroup>
         <PackageReference Include="Akka.Logger.Serilog" Version="1.5.67" />
-        <PackageReference Include="Docker.DotNet.Enhanced" Version="4.2.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
         <PackageReference Include="Akka.Hosting" Version="1.5.68" />
         <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
@@ -30,5 +29,18 @@
         </EmbeddedResource>
         <EmbeddedResource Update="Resources\Strings.de.resx" />
     </ItemGroup>
+
+    <!-- Copy plugin DLLs into the App output so PluginLoader can discover them at runtime -->
+    <Target Name="CopyPlugins" AfterTargets="Build">
+        <ItemGroup>
+            <PluginFiles Include="..\dottop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\dottop.Plugin.Docker.dll"
+                         Condition="Exists('..\dottop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\dottop.Plugin.Docker.dll')" />
+            <PluginFiles Include="..\dottop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Docker.DotNet.dll"
+                         Condition="Exists('..\dottop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Docker.DotNet.dll')" />
+            <PluginFiles Include="..\dottop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Docker.DotNet.Enhanced.dll"
+                         Condition="Exists('..\dottop.Plugin.Docker\bin\$(Configuration)\$(TargetFramework)\Docker.DotNet.Enhanced.dll')" />
+        </ItemGroup>
+        <Copy SourceFiles="@(PluginFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    </Target>
 
 </Project>

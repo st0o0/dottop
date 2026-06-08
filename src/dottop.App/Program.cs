@@ -1,10 +1,12 @@
+using System.Reflection;
 using Akka.Hosting;
 using Akka.Logger.Serilog;
+using dottop.App;
 using dottop.App.Actors;
-using dottop.App.Docker;
 using dottop.App.Pages;
 using dottop.App.Services;
 using dottop.Core.Platform;
+using dottop.Plugin.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -52,7 +54,6 @@ catch
 }
 
 builder.Services.AddSingleton(gpuMetrics);
-builder.Services.AddSingleton<IDockerProvider, DockerProvider>();
 
 // 3. Settings
 var settingsService = new SettingsService();
@@ -67,10 +68,17 @@ _ = updateService.CheckForUpdatesAsync();
 
 var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
 
-// 4. Senf.Tracing
+// 4. Plugin discovery
+var plugins = PluginLoader.DiscoverPlugins().Where(p => p.IsAvailable).ToList();
+foreach (var plugin in plugins)
+    plugin.ConfigureServices(builder.Services);
+var pluginRegistry = new PluginRegistry(plugins);
+builder.Services.AddSingleton(pluginRegistry);
+
+// 5. Senf.Tracing
 builder.Services.AddServusLoggerTracing();
 
-// 5. Build a temporary service provider to resolve platform services for actor construction
+// 6. Build a temporary service provider to resolve platform services for actor construction
 var tempSp = builder.Services.BuildServiceProvider();
 var cpuMetrics = tempSp.GetRequiredService<ICpuMetrics>();
 var memoryMetrics = tempSp.GetRequiredService<IMemoryMetrics>();
@@ -79,7 +87,6 @@ var networkMetrics = tempSp.GetRequiredService<INetworkMetrics>();
 var processClassifier = tempSp.GetRequiredService<IProcessClassifier>();
 var processTreeProvider = tempSp.GetRequiredService<IProcessTreeProvider>();
 var serviceManager = tempSp.GetRequiredService<IServiceManager>();
-var dockerProvider = tempSp.GetRequiredService<IDockerProvider>();
 
 // Initialize disk metrics in background
 _ = Task.Run(() =>
@@ -93,7 +100,7 @@ _ = Task.Run(() =>
     }
 });
 
-// 6. Akka — supervisor creates children, all ViewModel communication goes through it
+// 7. Akka — supervisor creates children, all ViewModel communication goes through it
 builder.Services.AddAkka("dottop", configurationBuilder =>
 {
     configurationBuilder.ConfigureLoggers(logging =>
@@ -115,20 +122,35 @@ builder.Services.AddAkka("dottop", configurationBuilder =>
             MonitoringSupervisor.Props(
                 cpuMetrics, memoryMetrics, diskMetrics, networkMetrics,
                 gpuMetrics, processClassifier, processTreeProvider,
-                serviceManager, dockerProvider, refreshInterval),
+                serviceManager, refreshInterval),
             "monitoring-supervisor");
         registry.Register<MonitoringSupervisor>(supervisor);
+
+        // Plugin actors
+        foreach (var plugin in plugins)
+            plugin.ConfigureActors(system, registry, tempSp, refreshInterval);
     });
 });
 
-// 7. Termina Pages
+// 8. Termina Pages
 builder.Services.AddTermina("/", termina =>
 {
     termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/", NavigationBehavior.PreserveState);
     termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
     termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
     termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
-    termina.RegisterRoute<DockerPage, DockerViewModel>("/docker", NavigationBehavior.PreserveState);
+
+    // Plugin routes (registered via reflection to avoid compile-time dependency)
+    foreach (var plugin in plugins)
+    {
+        if (plugin.TabInfo is { PageType: not null, ViewModelType: not null } tab)
+        {
+            var method = typeof(TerminaBuilder).GetMethods()
+                .First(m => m.Name == "RegisterRoute" && m.GetParameters().Length == 2)
+                .MakeGenericMethod(tab.PageType, tab.ViewModelType);
+            method.Invoke(termina, [tab.Route, NavigationBehavior.PreserveState]);
+        }
+    }
 });
 
 await builder.Build().RunAsync();

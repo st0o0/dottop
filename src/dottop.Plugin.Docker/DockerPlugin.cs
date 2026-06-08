@@ -12,7 +12,7 @@ public sealed class DockerPlugin : IDottopPlugin
     public int Order => 5;
     public bool IsAvailable { get; private set; }
     public PluginTabInfo? TabInfo => IsAvailable
-        ? new PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5)
+        ? new PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5, typeof(DockerPage), typeof(DockerViewModel))
         : null;
 
     private DockerProvider? _provider;

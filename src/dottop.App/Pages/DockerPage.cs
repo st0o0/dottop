@@ -85,7 +85,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(Theme.Primary)
                 .WithContent(Layouts.Vertical()
-                    .WithChild(new TextNode($"   {"Name",-24} {"Image",-24} {"CPU",6} {"RAM",7}  {"Port",-14} {Strings.HeaderStatus}")
+                    .WithChild(new TextNode($"     {"Name",-24} {"Image",-24} {"CPU",6} {"RAM",7}  {"Port",-14} {Strings.HeaderStatus}")
                         .WithForeground(Theme.Header).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())

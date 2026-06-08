@@ -297,22 +297,49 @@ public class ProcessesViewModel : ReactiveViewModel
             switch (OverlayTabIndex.Value)
             {
                 case 1 when ProcessTree.Value is null:
-                    var tree = await _supervisorActor.Ask<ProcessTreeResult>(
-                        new GetProcessTree(proc.Pid), TimeSpan.FromSeconds(5));
-                    ProcessTree.Value = tree;
-                    _overlayContentChanged.OnNext(Unit.Default);
+                    var treeResponse = await _supervisorActor.Ask<object>(
+                        new GetProcessTree(proc.Pid), TimeSpan.FromSeconds(10));
+                    if (treeResponse is ProcessTreeResult tree)
+                    {
+                        ProcessTree.Value = tree;
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
+                    else if (treeResponse is ActionFailure treeFail)
+                    {
+                        _toast?.Show(treeFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        ProcessTree.Value = new ProcessTreeResult(proc.Pid, proc.Name, []);
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
                     break;
                 case 2 when ProcessEnv.Value is null:
-                    var env = await _supervisorActor.Ask<ProcessEnvironmentResult>(
-                        new GetProcessEnvironment(proc.Pid), TimeSpan.FromSeconds(5));
-                    ProcessEnv.Value = env.Variables;
-                    _overlayContentChanged.OnNext(Unit.Default);
+                    var envResponse = await _supervisorActor.Ask<object>(
+                        new GetProcessEnvironment(proc.Pid), TimeSpan.FromSeconds(10));
+                    if (envResponse is ProcessEnvironmentResult env)
+                    {
+                        ProcessEnv.Value = env.Variables;
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
+                    else if (envResponse is ActionFailure envFail)
+                    {
+                        _toast?.Show(envFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        ProcessEnv.Value = new Dictionary<string, string>();
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
                     break;
                 case 3 when ProcessHandles.Value is null:
-                    var handles = await _supervisorActor.Ask<ProcessHandlesResult>(
-                        new GetProcessHandles(proc.Pid), TimeSpan.FromSeconds(5));
-                    ProcessHandles.Value = handles.Handles;
-                    _overlayContentChanged.OnNext(Unit.Default);
+                    var handlesResponse = await _supervisorActor.Ask<object>(
+                        new GetProcessHandles(proc.Pid), TimeSpan.FromSeconds(10));
+                    if (handlesResponse is ProcessHandlesResult handles)
+                    {
+                        ProcessHandles.Value = handles.Handles;
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
+                    else if (handlesResponse is ActionFailure handlesFail)
+                    {
+                        _toast?.Show(handlesFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        ProcessHandles.Value = [];
+                        _overlayContentChanged.OnNext(Unit.Default);
+                    }
                     break;
             }
         }

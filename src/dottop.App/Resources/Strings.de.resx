@@ -145,7 +145,7 @@
   </data>
   <!-- ProcessesViewModel status -->
   <data name="ProcessStatusFormat" xml:space="preserve">
-    <value> {0} Prozesse | Gruppe: {1} | Sort: {2} | /: Suche | Enter: Detail | F10: Einstellungen | Q: Beenden</value>
+    <value> {0} Prozesse | Gruppe: {1} | Sort: {2} | /: Suche | P: Pin | Enter: Detail | F10: Einstellungen | Q: Beenden</value>
   </data>
   <!-- PerformancePage -->
   <data name="PanelCpu" xml:space="preserve">
@@ -410,7 +410,7 @@
     <value> Docker </value>
   </data>
   <data name="DockerStatusFormat" xml:space="preserve">
-    <value> {0} Container | /: Suche | Enter: Detail | S/X/R | F10: Einstellungen | Q: Beenden</value>
+    <value> {0} Container | /: Suche | P: Pin | Enter: Detail | S/X/R | F10: Einstellungen | Q: Beenden</value>
   </data>
   <data name="DockerNotAvailable" xml:space="preserve">
     <value> Docker nicht verfügbar. Stellen Sie sicher, dass Docker Desktop läuft.</value>

@@ -31,6 +31,7 @@ public class DockerViewModel : ReactiveViewModel
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
+    private readonly PinService _pinService;
     private readonly IToastService _toast;
     private IActorRef? _supervisorActor;
     private CancellationTokenSource? _cts;
@@ -63,11 +64,13 @@ public class DockerViewModel : ReactiveViewModel
         IRequiredActor<MonitoringSupervisor> supervisor,
         SettingsService settingsService,
         UpdateService updateService,
+        PinService pinService,
         IToastService toast)
     {
         _supervisor = supervisor;
         _settingsService = settingsService;
         _updateService = updateService;
+        _pinService = pinService;
         _toast = toast;
     }
 
@@ -148,13 +151,15 @@ public class DockerViewModel : ReactiveViewModel
                 });
                 if (expanded)
                 {
-                    foreach (var c in group)
+                    var groupContainers = _pinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
+                    foreach (var c in groupContainers)
                         items.Add(new DockerListItem { Container = c });
                 }
             }
             else
             {
-                foreach (var c in group)
+                var ungroupedContainers = _pinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
+                foreach (var c in ungroupedContainers)
                     items.Add(new DockerListItem { Container = c });
             }
         }
@@ -170,6 +175,7 @@ public class DockerViewModel : ReactiveViewModel
         ApplyFilter();
     }
 
+    public bool IsPinned(string id) => _pinService.IsContainerPinned(id);
 
     private void UpdateStatus()
     {
@@ -240,6 +246,13 @@ public class DockerViewModel : ReactiveViewModel
                     UpdateStatus();
                     _detailContentChanged.OnNext(Unit.Default);
                     _ = LoadLogsAsync(container.Id);
+                }
+                break;
+            case ConsoleKey.P:
+                if (GetSelectedItem?.Invoke() is { } pinContainer)
+                {
+                    _pinService.ToggleContainerPin(pinContainer.Id);
+                    ApplyFilter();
                 }
                 break;
             case ConsoleKey.S: ActionOnSelected(); break;

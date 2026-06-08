@@ -31,7 +31,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 }
 
                 var c = item.Container!;
-                var indent = c.ComposeProject is not null ? "   " : " ";
+                var pinIcon = ViewModel.IsPinned(c.Id) ? " ● " : (c.ComposeProject is not null ? "   " : " ");
                 var name = c.Name.Length > 24 ? c.Name[..23] + "…" : c.Name;
                 var image = c.Image.Length > 24 ? c.Image[..23] + "…" : c.Image;
                 var statusIcon = c.Status is "running" ? "▶" : "■";
@@ -40,11 +40,12 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb,4}MB";
                 var port = c.Ports.Count > 0 ? c.Ports[0] : "—";
                 if (port.Length > 14) port = port[..13] + "…";
-                return $"{indent}{statusIcon} {name,-24} {image,-24} {cpuStr} {ramStr,7}  {port,-14} {c.State}";
+                return $"{pinIcon}{statusIcon} {name,-24} {image,-24} {cpuStr} {ramStr,7}  {port,-14} {c.State}";
             },
             item =>
             {
                 if (item.IsGroup) return Theme.Primary;
+                if (item.Container is not null && ViewModel.IsPinned(item.Container.Id)) return Theme.Accent;
                 return item.Container?.Status switch
                 {
                     "running" => Theme.Text,

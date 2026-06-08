@@ -30,14 +30,19 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 var name = p.Name.Length > 20 ? p.Name[..19] + "…" : p.Name;
                 var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1}GB" : $"{ramMb}MB";
                 var cpuBar = MiniBar(p.CpuPercent, 8);
+                var pinIcon = ViewModel.IsPinned(p.Pid) ? "● " : "  ";
 
-                return $" {p.Pid,6}  {name,-20} {cpuBar} {p.CpuPercent,5:F1}%  {ramStr,7}  {p.Group}";
+                return $" {p.Pid,6}  {pinIcon}{name,-18} {cpuBar} {p.CpuPercent,5:F1}%  {ramStr,7}  {p.Group}";
             },
-            p => p.CpuPercent switch
+            p =>
             {
-                > 80 => Color.BrightRed,
-                > 50 => Color.BrightYellow,
-                _ => Color.White,
+                if (ViewModel.IsPinned(p.Pid)) return Theme.Accent;
+                return p.CpuPercent switch
+                {
+                    > 80 => Color.BrightRed,
+                    > 50 => Color.BrightYellow,
+                    _ => Color.White,
+                };
             });
 
         ViewModel.ListNode = _list;

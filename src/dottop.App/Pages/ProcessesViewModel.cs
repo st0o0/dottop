@@ -24,6 +24,7 @@ public class ProcessesViewModel : ReactiveViewModel
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
+    private readonly PinService _pinService;
     private readonly IToastService _toast;
     private IActorRef? _supervisorActor;
     private CancellationTokenSource? _cts;
@@ -53,6 +54,7 @@ public class ProcessesViewModel : ReactiveViewModel
     public ReactiveProperty<IReadOnlyList<string>?> ProcessHandles { get; } = new(null);
     public ReactiveProperty<bool> IsKillConfirmPending { get; } = new(false);
     public ReactiveProperty<bool> IsSettingsOpen { get; } = new(false);
+    public ReactiveProperty<bool> ShowPinnedOnly { get; } = new(false);
 
     private readonly Subject<Unit> _settingsContentChanged = new();
     public Observable<Unit> SettingsContentChanged => _settingsContentChanged.AsObservable();
@@ -63,11 +65,13 @@ public class ProcessesViewModel : ReactiveViewModel
         IRequiredActor<MonitoringSupervisor> supervisor,
         SettingsService settingsService,
         UpdateService updateService,
+        PinService pinService,
         IToastService toast)
     {
         _supervisor = supervisor;
         _settingsService = settingsService;
         _updateService = updateService;
+        _pinService = pinService;
         _toast = toast;
     }
 
@@ -151,6 +155,11 @@ public class ProcessesViewModel : ReactiveViewModel
             source = source.Where(p => p.Group == group);
         }
 
+        if (ShowPinnedOnly.Value)
+        {
+            source = source.Where(p => _pinService.IsProcessPinned(p.Pid));
+        }
+
         source = SortColumn.Value switch
         {
             Pages.SortColumn.Cpu => source.OrderByDescending(p => p.CpuPercent),
@@ -160,7 +169,8 @@ public class ProcessesViewModel : ReactiveViewModel
             _ => source
         };
 
-        FilteredProcesses.Value = source.ToList();
+        var sorted = source.ToList();
+        FilteredProcesses.Value = _pinService.SortWithPinnedFirst(sorted, p => _pinService.IsProcessPinned(p.Pid)).ToList();
         UpdateStatus();
     }
 
@@ -207,9 +217,23 @@ public class ProcessesViewModel : ReactiveViewModel
                 _settingsContentChanged.OnNext(Unit.Default);
                 break;
 
+            case ConsoleKey.P:
+                if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+                {
+                    ShowPinnedOnly.Value = !ShowPinnedOnly.Value;
+                    ApplyFilter();
+                }
+                else if (GetSelectedItem?.Invoke() is { } selectedProc)
+                {
+                    _pinService.ToggleProcessPin(selectedProc.Pid);
+                    ApplyFilter();
+                }
+                break;
             case ConsoleKey.Q: Shutdown(); break;
         }
     }
+
+    public bool IsPinned(int pid) => _pinService.IsProcessPinned(pid);
 
     private void HandleSearchKey(KeyPressed key)
     {
@@ -533,7 +557,7 @@ public class ProcessesViewModel : ReactiveViewModel
         AllProcesses.Dispose(); FilteredProcesses.Dispose();
         SearchText.Dispose(); SelectedGroup.Dispose();
         SortColumn.Dispose();
-        IsSearchActive.Dispose(); IsOverlayOpen.Dispose();
+        IsSearchActive.Dispose(); IsOverlayOpen.Dispose(); ShowPinnedOnly.Dispose();
         SelectedProcess.Dispose(); OverlayTabIndex.Dispose();
         StatusMessage.Dispose(); IsKillConfirmPending.Dispose(); IsSettingsOpen.Dispose();
         _settingsContentChanged.Dispose(); ProcessTree.Dispose();

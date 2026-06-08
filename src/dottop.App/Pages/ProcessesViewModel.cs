@@ -29,7 +29,7 @@ public class ProcessesViewModel : ReactiveViewModel
     private CancellationTokenSource? _cts;
 
     private readonly Dictionary<int, Queue<double>> _cpuHistory = new();
-    private const int CpuHistoryLength = 8;
+    private const int CpuHistoryLength = 300;
 
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }

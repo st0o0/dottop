@@ -54,7 +54,7 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
     public Observable<Unit> Invalidated => _invalidated.AsObservable();
     public bool IsAnimating { get; private set; }
 
-    public GraphNode(int intervalMs = 80, TimeProvider? timeProvider = null)
+    public GraphNode(int intervalMs = 500, TimeProvider? timeProvider = null)
     {
         _intervalMs = intervalMs;
         _timeProvider = timeProvider ?? TimeProvider.System;

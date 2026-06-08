@@ -50,7 +50,8 @@ public sealed class MonitoringSupervisor : ReceiveActor
         _disk = Context.ActorOf(DiskMonitorActor.Props(diskMetrics, interval), "disk-monitor");
         _network = Context.ActorOf(NetworkMonitorActor.Props(networkMetrics, interval), "network-monitor");
         _gpu = Context.ActorOf(GpuMonitorActor.Props(gpuMetrics, interval), "gpu-monitor");
-        _docker = Context.ActorOf(DockerMonitorActor.Props(dockerProvider, interval), "docker-monitor");
+        var dockerInterval = TimeSpan.FromSeconds(Math.Max(3, interval.TotalSeconds));
+        _docker = Context.ActorOf(DockerMonitorActor.Props(dockerProvider, dockerInterval), "docker-monitor");
 
         _processSupervisor = Context.ActorOf(
             ProcessSupervisor.Props(processClassifier, processTreeProvider, serviceManager, interval),

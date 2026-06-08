@@ -109,7 +109,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     {
         base.OnNavigatedTo();
 
-        Observable.Interval(TimeSpan.FromMilliseconds(200))
+        Observable.Interval(TimeSpan.FromMilliseconds(500))
             .Subscribe(_ =>
             {
                 _cpuGraph?.Push(ViewModel.CpuTotal.Value);

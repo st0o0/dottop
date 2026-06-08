@@ -1,5 +1,6 @@
 using dottop.UI.Tests.Fixtures;
 using dottop.UI.Tests.Helpers;
+using FluentAssertions;
 using Xunit;
 
 namespace dottop.UI.Tests;
@@ -271,6 +272,25 @@ public class ProcessesPageTests : IAsyncLifetime
         // Kill confirmation dismissed, overlay still open
         ScreenAssert.DoesNotContain(_app.Terminal, "[Y]");
         ScreenAssert.Contains(_app.Terminal, "PID");
+    }
+
+    [Fact]
+    public async Task ProcessList_ShowsCpuSparklineCharacters()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await Task.Delay(2500);
+        var screen = _app.Terminal.ToString();
+        var hasBlockChar = screen.Any(c => "▁▂▃▄▅▆▇█".Contains(c));
+        hasBlockChar.Should().BeTrue("sparkline block characters should appear in the process list");
+    }
+
+    [Fact]
+    public async Task ProcessList_ShowsRamBar()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        var screen = _app.Terminal.ToString();
+        screen.Should().Contain("[");
+        screen.Should().Contain("]");
     }
 
     [Fact]

@@ -68,6 +68,9 @@ internal class Strings
     internal static string HeaderCpuPercent => ResourceManager.GetString("HeaderCpuPercent", resourceCulture) ?? "";
     internal static string HeaderRam => ResourceManager.GetString("HeaderRam", resourceCulture) ?? "";
     internal static string HeaderGroup => ResourceManager.GetString("HeaderGroup", resourceCulture) ?? "";
+    internal static string HeaderCpuSparkline => ResourceManager.GetString("HeaderCpuSparkline", resourceCulture) ?? "";
+    internal static string HeaderRamBar => ResourceManager.GetString("HeaderRamBar", resourceCulture) ?? "";
+    internal static string HeaderMem => ResourceManager.GetString("HeaderMem", resourceCulture) ?? "";
     internal static string GroupAll => ResourceManager.GetString("GroupAll", resourceCulture) ?? "";
     internal static string SearchHint => ResourceManager.GetString("SearchHint", resourceCulture) ?? "";
     internal static string SearchBarActiveFormat => ResourceManager.GetString("SearchBarActiveFormat", resourceCulture) ?? "";

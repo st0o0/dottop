@@ -90,6 +90,15 @@
   <data name="HeaderGroup" xml:space="preserve">
     <value>Gruppe</value>
   </data>
+  <data name="HeaderCpuSparkline" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="HeaderRamBar" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="HeaderMem" xml:space="preserve">
+    <value>Mem</value>
+  </data>
   <data name="GroupAll" xml:space="preserve">
     <value>Alle</value>
   </data>

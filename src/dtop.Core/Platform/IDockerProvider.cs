@@ -10,4 +10,13 @@ public interface IDockerProvider
     Task StartAsync(string containerId, CancellationToken ct = default);
     Task StopAsync(string containerId, CancellationToken ct = default);
     Task RestartAsync(string containerId, CancellationToken ct = default);
+    Task<IReadOnlyList<NetworkInfo>> GetNetworksAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<VolumeInfo>> GetVolumesAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<ImageInfo>> GetImagesAsync(CancellationToken ct = default);
+    Task CreateNetworkAsync(string name, string driver = "bridge", CancellationToken ct = default);
+    Task CreateVolumeAsync(string name, string driver = "local", CancellationToken ct = default);
+    Task PullImageAsync(string image, CancellationToken ct = default);
+    Task DeleteNetworkAsync(string id, CancellationToken ct = default);
+    Task DeleteVolumeAsync(string name, CancellationToken ct = default);
+    Task DeleteImageAsync(string id, CancellationToken ct = default);
 }

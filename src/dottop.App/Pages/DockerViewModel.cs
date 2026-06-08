@@ -355,28 +355,50 @@ public class DockerViewModel : ReactiveViewModel
 
     private async void ActionOnSelected(ActionType action = ActionType.Start)
     {
-        if (_supervisorActor is null || GetSelectedItem?.Invoke() is not { } container)
+        if (_supervisorActor is null) return;
+
+        var selected = GetSelectedDisplayItem?.Invoke();
+        if (selected is { IsGroup: true, GroupName: { } groupName })
         {
+            var containers = FilteredContainers.Value
+                .Where(c => c.ComposeProject == groupName)
+                .ToList();
+            if (containers.Count == 0) return;
+
+            var actionName = action switch { ActionType.Stop => "Stopping", ActionType.Restart => "Restarting", _ => "Starting" };
+            _toast.Show($"{actionName} {containers.Count} containers...", new ToastOptions(Duration: TimeSpan.FromSeconds(2)));
+
+            var tasks = containers.Select(c => ExecuteContainerActionAsync(c.Id, action));
+            await Task.WhenAll(tasks);
+
+            _toast.Show($"{action} completed for {groupName}", new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
             return;
         }
 
+        if (GetSelectedItem?.Invoke() is not { } container) return;
+        await ExecuteContainerActionAsync(container.Id, action);
+    }
+
+    private async Task ExecuteContainerActionAsync(string containerId, ActionType action)
+    {
+        if (_supervisorActor is null) return;
+
         object msg = action switch
         {
-            ActionType.Stop => new StopContainer(container.Id),
-            ActionType.Restart => new RestartContainer(container.Id),
-            _ => new StartContainer(container.Id),
+            ActionType.Stop => new StopContainer(containerId),
+            ActionType.Restart => new RestartContainer(containerId),
+            _ => new StartContainer(containerId),
         };
         try
         {
-            var result = await _supervisorActor.Ask<object>(msg, TimeSpan.FromSeconds(10));
+            var result = await _supervisorActor.Ask<object>(msg, TimeSpan.FromSeconds(30));
             if (result is ActionSuccess s)
             {
                 _toast.Show(s.Message, new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
             }
-            else
+            else if (result is ActionFailure f)
             {
-                var error = ((ActionFailure)result).Error;
-                _toast.Show("Error: " + error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
             }
         }
         catch (Exception ex)

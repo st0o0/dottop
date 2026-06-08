@@ -13,12 +13,15 @@ public sealed class DockerMonitorActor : ReceiveActor
     private static readonly TraceChannel Trace = Senf.Tracing.For("Docker");
 
     private sealed record Tick;
+    private sealed record ContainersRefreshed(List<ContainerSnapshot> Containers);
 
     private readonly IDockerProvider _docker;
     private readonly TimeSpan _interval;
     private Channel<List<ContainerSnapshot>>? _channel;
     private ICancelable? _tickSchedule;
     private CancellationTokenSource? _streamCts;
+    private List<ContainerSnapshot> _cached = [];
+    private bool _refreshing;
 
     public static Props Props(IDockerProvider docker, TimeSpan interval) =>
         Akka.Actor.Props.Create(() => new DockerMonitorActor(docker, interval));
@@ -30,20 +33,37 @@ public sealed class DockerMonitorActor : ReceiveActor
 
         Receive<StartDockerMonitoring>(_ => HandleStartMonitoring());
 
-        ReceiveAsync<Tick>(async _ =>
+        Receive<Tick>(_ =>
         {
             if (_channel is null) return;
-            try
+
+            // Write cached data immediately (non-blocking, like CpuMonitorActor)
+            if (_cached.Count > 0)
+                _channel.Writer.TryWrite(_cached);
+
+            // Trigger background refresh if not already running
+            if (!_refreshing)
             {
-                var containers = await _docker.GetContainersAsync();
-                _channel.Writer.TryWrite(containers.ToList());
-            }
-            catch (Exception ex)
-            {
-                Trace.Warning(this, "Docker tick failed: {0}", ex.Message);
+                _refreshing = true;
+                _docker.GetContainersAsync(_streamCts?.Token ?? CancellationToken.None)
+                    .ContinueWith(t =>
+                    {
+                        if (t is { IsCompletedSuccessfully: true, Result: { } result })
+                            return new ContainersRefreshed(result.ToList());
+                        return new ContainersRefreshed([]);
+                    })
+                    .PipeTo(Self);
             }
         });
 
+        Receive<ContainersRefreshed>(msg =>
+        {
+            _refreshing = false;
+            if (msg.Containers.Count > 0)
+                _cached = msg.Containers;
+        });
+
+        // Actions use PipeTo to stay non-blocking
         ReceiveAsync<StartContainer>(async msg =>
         {
             try

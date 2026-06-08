@@ -16,11 +16,14 @@ public interface IScrollableList
     void PageDown();
 }
 
+public readonly record struct ColorSpan(int Start, int Length, Color Foreground);
+
 public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollableList
 {
     private readonly Subject<Unit> _invalidated = new();
     private readonly Func<T, string> _formatter;
     private readonly Func<T, Color>? _colorSelector;
+    private readonly Func<T, IReadOnlyList<ColorSpan>>? _colorSpanSelector;
 
     private IReadOnlyList<T> _items = [];
     private int _selectedIndex;
@@ -31,10 +34,12 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
     private Color _selectedFg = Theme.SelectionText;
     private Color _selectedBg = Theme.Selection;
 
-    public DataListNode(Func<T, string> formatter, Func<T, Color>? colorSelector = null)
+    public DataListNode(Func<T, string> formatter, Func<T, Color>? colorSelector = null,
+        Func<T, IReadOnlyList<ColorSpan>>? colorSpanSelector = null)
     {
         _formatter = formatter;
         _colorSelector = colorSelector;
+        _colorSpanSelector = colorSpanSelector;
     }
 
     public Observable<Unit> Invalidated => _invalidated.AsObservable();
@@ -166,32 +171,60 @@ public sealed class DataListNode<T> : LayoutNode, IInvalidatingNode, IScrollable
                 text = text.PadRight(contentWidth);
             }
 
-            if (itemIdx == _selectedIndex)
+            if (itemIdx == _selectedIndex && _colorSpanSelector is not null)
+            {
+                var spans = _colorSpanSelector(item);
+                RenderWithColorSpans(ctx, row, text, spans);
+            }
+            else if (itemIdx == _selectedIndex)
             {
                 ctx.SetForeground(_selectedFg);
                 ctx.SetBackground(_selectedBg);
+                ctx.WriteAt(0, row, text);
+                ctx.ResetColors();
             }
             else if (_colorSelector is not null)
             {
                 ctx.SetForeground(_colorSelector(item));
                 if (Theme.Background != Color.Default)
-                {
                     ctx.SetBackground(Theme.Background);
-                }
+                ctx.WriteAt(0, row, text);
+                ctx.ResetColors();
             }
-            else if (Theme.Background != Color.Default)
+            else
             {
-                ctx.SetBackground(Theme.Background);
+                if (Theme.Background != Color.Default)
+                    ctx.SetBackground(Theme.Background);
+                ctx.WriteAt(0, row, text);
+                ctx.ResetColors();
             }
-
-            ctx.WriteAt(0, row, text);
-            ctx.ResetColors();
         }
 
         if (showScrollbar)
         {
             RenderScrollbar(ctx, bounds.Width - 1, _viewportHeight);
         }
+    }
+
+    private void RenderWithColorSpans(IRenderContext ctx, int row, string text, IReadOnlyList<ColorSpan> spans)
+    {
+        // Render selection background for the whole row first
+        ctx.SetForeground(_selectedFg);
+        ctx.SetBackground(_selectedBg);
+        ctx.WriteAt(0, row, text);
+
+        // Overlay color spans with their own foreground but keep selection background
+        foreach (var span in spans)
+        {
+            if (span.Start >= text.Length) continue;
+            var end = Math.Min(span.Start + span.Length, text.Length);
+            var segment = text[span.Start..end];
+            ctx.SetForeground(span.Foreground);
+            ctx.SetBackground(_selectedBg);
+            ctx.WriteAt(span.Start, row, segment);
+        }
+
+        ctx.ResetColors();
     }
 
     private void RenderScrollbar(IRenderContext ctx, int x, int height)

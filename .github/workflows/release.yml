@@ -36,6 +36,9 @@ jobs:
           - os: ubuntu-latest
             rid: linux-x64
             artifact: dtop-linux-x64
+          - os: macos-latest
+            rid: osx-arm64
+            artifact: dtop-osx-arm64
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -75,8 +78,8 @@ jobs:
           cp src/dtop.Plugin.Docker/bin/Release/net10.0/Newtonsoft.Json.dll publish/${{ matrix.artifact }}/plugins/
           cp src/dtop.Plugin.Docker/bin/Release/net10.0/Google.Protobuf.dll publish/${{ matrix.artifact }}/plugins/
 
-      - name: Archive (Linux)
-        if: runner.os == 'Linux'
+      - name: Archive (Linux/macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: tar -czf ${{ matrix.artifact }}.tar.gz -C publish ${{ matrix.artifact }}
 
       - name: Archive (Windows)

@@ -57,7 +57,19 @@ public sealed class PlatformSetup : IServiceSetupContainer
         }
 
         // Future: try AMD (ADLX/ROCm) if NVML didn't work
-        // Future: try Apple Metal if on macOS
+
+        // Try Apple GPU on macOS
+        if (!gpu.IsAvailable && OperatingSystem.IsMacOS())
+        {
+            try
+            {
+                gpu = new Mac.MacGpuMetrics();
+            }
+            catch (Exception ex)
+            {
+                Trace.Warning("PlatformSetup", "Apple GPU not available: {0}", ex.Message);
+            }
+        }
 
         services.AddSingleton(gpu);
     }

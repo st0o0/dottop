@@ -1,7 +1,5 @@
 using dottop.UI.Tests.Fixtures;
 using dottop.UI.Tests.Helpers;
-using FluentAssertions;
-using Xunit;
 
 namespace dottop.UI.Tests;
 
@@ -9,20 +7,20 @@ public class ProcessesPageTests : IAsyncLifetime
 {
     private DottopAppFixture _app = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _app = new DottopAppFixture();
         await _app.StartAsync();
         // Already on Processes page (default route)
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "1:Processes");
+        await _app.Terminal.WaitForTextAsync("1:Processes");
     }
 
-    public async Task DisposeAsync() => await _app.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 
     [Fact]
     public async Task ShowsProcessList()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
         ScreenAssert.Contains(_app.Terminal, "code");
         ScreenAssert.Contains(_app.Terminal, "svchost");
     }
@@ -30,7 +28,7 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task Search_FiltersProcesses()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Activate search with '/' character
         await _app.SendStringAsync("/");
@@ -41,13 +39,13 @@ public class ProcessesPageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(300);
 
         ScreenAssert.Contains(_app.Terminal, "chrome");
-        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
+        _app.Terminal.DoesNotContain("svchost");
     }
 
     [Fact]
     public async Task Search_EscapeClearsSearch()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Activate search and filter
         await _app.SendStringAsync("/");
@@ -55,7 +53,7 @@ public class ProcessesPageTests : IAsyncLifetime
         await _app.SendStringAsync("chrome");
         await _app.WaitForRenderAsync(300);
 
-        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
+        _app.Terminal.DoesNotContain("svchost");
 
         // Press Escape to clear search
         await _app.SendKeysAsync(50, ConsoleKey.Escape);
@@ -69,7 +67,7 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task GroupFilter_CyclesThroughGroups()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Press G to cycle to Apps group
         await _app.SendKeysAsync(50, ConsoleKey.G);
@@ -77,13 +75,13 @@ public class ProcessesPageTests : IAsyncLifetime
 
         // Apps group: chrome, code, spotify visible; svchost filtered out
         ScreenAssert.Contains(_app.Terminal, "chrome");
-        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
+        _app.Terminal.DoesNotContain("svchost");
     }
 
     [Fact]
     public async Task Overlay_OpensOnEnter()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Press Enter to open overlay on selected process
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -96,7 +94,7 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task Overlay_LeftRightSwitchesTabs()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open overlay
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -113,7 +111,7 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task Overlay_EscapeCloses()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open overlay
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -128,13 +126,13 @@ public class ProcessesPageTests : IAsyncLifetime
 
         // Overlay should be closed - the process list header is visible again without overlay
         // The PID header in the list is always visible, so check that the overlay-specific content is gone
-        ScreenAssert.DoesNotContain(_app.Terminal, "Handles");
+        _app.Terminal.DoesNotContain("Handles");
     }
 
     [Fact]
     public async Task ListNavigation_ArrowDownMovesSelection()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Press down arrow to move selection
         await _app.SendKeysAsync(50, ConsoleKey.DownArrow);
@@ -152,7 +150,7 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task SearchBar_ShowsSlashFormat_WhenActive()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Activate search
         await _app.SendStringAsync("/");
@@ -168,7 +166,7 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task SortCycling_FullLoop()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Default sort is RAM. Cycle: RAM -> CPU -> Name -> PID -> RAM
         // Press Tab to cycle to CPU sort
@@ -195,25 +193,25 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task GroupFilter_FullLoop()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Default is All. Cycle: All -> Apps -> Background -> Windows -> All
         // Press G to cycle to Apps
         await _app.SendKeysAsync(50, ConsoleKey.G);
         await _app.WaitForRenderAsync(300);
         ScreenAssert.Contains(_app.Terminal, "chrome");
-        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
+        _app.Terminal.DoesNotContain("svchost");
 
         // Press G to cycle to Background
         await _app.SendKeysAsync(50, ConsoleKey.G);
         await _app.WaitForRenderAsync(300);
-        ScreenAssert.DoesNotContain(_app.Terminal, "chrome");
+        _app.Terminal.DoesNotContain("chrome");
 
         // Press G to cycle to Windows
         await _app.SendKeysAsync(50, ConsoleKey.G);
         await _app.WaitForRenderAsync(300);
         ScreenAssert.Contains(_app.Terminal, "svchost");
-        ScreenAssert.DoesNotContain(_app.Terminal, "chrome");
+        _app.Terminal.DoesNotContain("chrome");
 
         // Press G to cycle back to All
         await _app.SendKeysAsync(50, ConsoleKey.G);
@@ -225,7 +223,7 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task Overlay_AllFourTabs()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open overlay (starts on Overview tab)
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -251,32 +249,32 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task KillConfirmation_CancelWithN()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open overlay
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "PID", 3000);
+        await _app.Terminal.WaitForTextAsync("PID", 3000);
 
         // Press K to trigger kill confirmation
         await _app.SendKeysAsync(50, ConsoleKey.K);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Kill", 3000);
+        await _app.Terminal.WaitForTextAsync("Kill", 3000);
 
         // Press N to cancel kill
         await _app.SendKeysAsync(50, ConsoleKey.N);
         await _app.WaitForRenderAsync(300);
 
         // Kill confirmation dismissed, overlay still open
-        ScreenAssert.DoesNotContain(_app.Terminal, "[Y]");
+        _app.Terminal.DoesNotContain("[Y]");
         ScreenAssert.Contains(_app.Terminal, "PID");
     }
 
     [Fact]
     public async Task DetailOverlay_ShowsCpuGraph()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "CPU", 3000);
+        await _app.Terminal.WaitForTextAsync("CPU", 3000);
 
         // CPU panel with graph should be visible
         ScreenAssert.Contains(_app.Terminal, "CPU");
@@ -286,22 +284,22 @@ public class ProcessesPageTests : IAsyncLifetime
     [Fact]
     public async Task KillConfirmation_CancelWithEscape()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open overlay
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "PID", 3000);
+        await _app.Terminal.WaitForTextAsync("PID", 3000);
 
         // Press K to trigger kill confirmation
         await _app.SendKeysAsync(50, ConsoleKey.K);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Kill", 3000);
+        await _app.Terminal.WaitForTextAsync("Kill", 3000);
 
         // Press Escape -- should cancel kill confirm (not close overlay)
         await _app.SendKeysAsync(50, ConsoleKey.Escape);
         await _app.WaitForRenderAsync(300);
 
         // Kill confirmation dismissed but overlay still open (Escape cancels pending kill first)
-        ScreenAssert.DoesNotContain(_app.Terminal, "[Y]");
+        _app.Terminal.DoesNotContain("[Y]");
         ScreenAssert.Contains(_app.Terminal, "PID");
     }
 }

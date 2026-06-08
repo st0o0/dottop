@@ -1,6 +1,5 @@
 using dottop.UI.Tests.Fixtures;
 using dottop.UI.Tests.Helpers;
-using Xunit;
 
 namespace dottop.UI.Tests;
 
@@ -8,7 +7,7 @@ public class NetworkPageTests : IAsyncLifetime
 {
     private DottopAppFixture _app = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _app = new DottopAppFixture();
         await _app.StartAsync();
@@ -16,12 +15,12 @@ public class NetworkPageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(500);
     }
 
-    public async Task DisposeAsync() => await _app.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 
     [Fact]
     public async Task ShowsConnectionList()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
         ScreenAssert.Contains(_app.Terminal, "Established");
         ScreenAssert.Contains(_app.Terminal, "TCP");
     }
@@ -29,7 +28,7 @@ public class NetworkPageTests : IAsyncLifetime
     [Fact]
     public async Task Search_FiltersConnections()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Activate search with '/'
         await _app.SendStringAsync("/");
@@ -40,13 +39,13 @@ public class NetworkPageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(300);
 
         ScreenAssert.Contains(_app.Terminal, "chrome");
-        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
+        _app.Terminal.DoesNotContain("svchost");
     }
 
     [Fact]
     public async Task DetailModal_OpensOnEnter()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Press Enter to open detail modal on selected connection
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -60,7 +59,7 @@ public class NetworkPageTests : IAsyncLifetime
     [Fact]
     public async Task DetailModal_ShowsFullInfo()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Press Enter to open detail modal
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -78,7 +77,7 @@ public class NetworkPageTests : IAsyncLifetime
     [Fact]
     public async Task DetailModal_EscapeCloses()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open detail modal
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -93,6 +92,6 @@ public class NetworkPageTests : IAsyncLifetime
 
         // Detail-specific content should no longer be visible (modal closed)
         // The full endpoint format "PID: 1001" only appears in the modal
-        ScreenAssert.DoesNotContain(_app.Terminal, "PID: 1001");
+        _app.Terminal.DoesNotContain("PID: 1001");
     }
 }

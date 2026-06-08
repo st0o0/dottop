@@ -1,6 +1,3 @@
-using FluentAssertions;
-using Xunit;
-
 namespace dottop.Rendering.Tests;
 
 /// <summary>
@@ -27,32 +24,32 @@ public class CpuHistoryTests
     public void New_queue_is_empty()
     {
         var queue = new Queue<double>(HistoryLength);
-        queue.Should().BeEmpty();
+        Assert.Empty(queue);
     }
 
     [Fact]
     public void Enqueue_adds_values_up_to_limit()
     {
         var queue = CreateHistory(10, 20, 30, 40, 50, 60, 70, 80);
-        queue.Count.Should().Be(HistoryLength);
-        queue.ToArray().Should().Equal(10, 20, 30, 40, 50, 60, 70, 80);
+        Assert.Equal(HistoryLength, queue.Count);
+        Assert.Equal(new double[] { 10, 20, 30, 40, 50, 60, 70, 80 }, queue.ToArray());
     }
 
     [Fact]
     public void Overflow_drops_oldest_values()
     {
         var queue = CreateHistory(10, 20, 30, 40, 50, 60, 70, 80, 90);
-        queue.Count.Should().Be(HistoryLength);
-        queue.Peek().Should().Be(20); // 10 was dropped
-        queue.ToArray().Should().Equal(20, 30, 40, 50, 60, 70, 80, 90);
+        Assert.Equal(HistoryLength, queue.Count);
+        Assert.Equal(20, queue.Peek()); // 10 was dropped
+        Assert.Equal(new double[] { 20, 30, 40, 50, 60, 70, 80, 90 }, queue.ToArray());
     }
 
     [Fact]
     public void Partial_fill_returns_fewer_than_limit()
     {
         var queue = CreateHistory(5, 10, 15);
-        queue.Count.Should().Be(3);
-        queue.ToArray().Should().Equal(5, 10, 15);
+        Assert.Equal(3, queue.Count);
+        Assert.Equal(new double[] { 5, 10, 15 }, queue.ToArray());
     }
 
     [Fact]
@@ -60,9 +57,9 @@ public class CpuHistoryTests
     {
         var queue = CreateHistory(1, 2, 3, 4, 5);
         IReadOnlyList<double> snapshot = queue.ToArray();
-        snapshot.Should().HaveCount(5);
-        snapshot[0].Should().Be(1);
-        snapshot[4].Should().Be(5);
+        Assert.Equal(5, snapshot.Count);
+        Assert.Equal(1, snapshot[0]);
+        Assert.Equal(5, snapshot[4]);
     }
 
     [Fact]
@@ -80,8 +77,8 @@ public class CpuHistoryTests
         foreach (var pid in stale)
             history.Remove(pid);
 
-        history.Should().ContainKey(100);
-        history.Should().NotContainKey(200);
-        history.Should().ContainKey(300);
+        Assert.True(history.ContainsKey(100));
+        Assert.False(history.ContainsKey(200));
+        Assert.True(history.ContainsKey(300));
     }
 }

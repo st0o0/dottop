@@ -1,11 +1,10 @@
 using Akka.Actor;
 using dottop.Actors;
+using dottop.App.Actors;
 using dottop.Core.Messages;
 using dottop.Core.Models;
 using dottop.Core.Platform;
-using FluentAssertions;
 using NSubstitute;
-using Xunit;
 
 namespace dottop.Actors.Tests;
 
@@ -14,13 +13,13 @@ public class CpuMonitorActorTests : IAsyncLifetime
     private readonly ICpuMetrics _cpuMetrics = Substitute.For<ICpuMetrics>();
     private ActorSystem _sys = null!;
 
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
         _sys = ActorSystem.Create("test");
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _sys.Terminate();
     }
@@ -37,14 +36,14 @@ public class CpuMonitorActorTests : IAsyncLifetime
         var stream = await actor.Ask<MonitoringStream<CpuSnapshot>>(
             new StartMonitoring(), TimeSpan.FromSeconds(3));
 
-        stream.Should().NotBeNull();
-        stream.Data.Should().NotBeNull();
+        Assert.NotNull(stream);
+        Assert.NotNull(stream.Data);
 
         await foreach (var snapshot in stream.Data)
         {
-            snapshot.Name.Should().Be("Test CPU");
-            snapshot.TotalPercent.Should().Be(42.0);
-            snapshot.CorePercents.Should().HaveCount(4);
+            Assert.Equal("Test CPU", snapshot.Name);
+            Assert.Equal(42.0, snapshot.TotalPercent);
+            Assert.Equal(4, snapshot.CorePercents.Count);
             break;
         }
 
@@ -64,8 +63,8 @@ public class CpuMonitorActorTests : IAsyncLifetime
         var stream2 = await actor.Ask<MonitoringStream<CpuSnapshot>>(
             new StartMonitoring(), TimeSpan.FromSeconds(3));
 
-        stream1.Cancellation.IsCancellationRequested.Should().BeTrue();
-        stream2.Cancellation.IsCancellationRequested.Should().BeFalse();
+        Assert.True(stream1.Cancellation.IsCancellationRequested);
+        Assert.False(stream2.Cancellation.IsCancellationRequested);
 
         stream2.Cancellation.Cancel();
     }

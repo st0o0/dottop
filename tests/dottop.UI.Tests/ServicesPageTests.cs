@@ -1,6 +1,5 @@
 using dottop.UI.Tests.Fixtures;
 using dottop.UI.Tests.Helpers;
-using Xunit;
 
 namespace dottop.UI.Tests;
 
@@ -8,7 +7,7 @@ public class ServicesPageTests : IAsyncLifetime
 {
     private DottopAppFixture _app = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _app = new DottopAppFixture();
         await _app.StartAsync();
@@ -16,12 +15,12 @@ public class ServicesPageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(500);
     }
 
-    public async Task DisposeAsync() => await _app.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 
     [Fact]
     public async Task ShowsServiceList()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
         ScreenAssert.Contains(_app.Terminal, "Print Spooler");
         ScreenAssert.Contains(_app.Terminal, "Windows Time");
     }
@@ -29,7 +28,7 @@ public class ServicesPageTests : IAsyncLifetime
     [Fact]
     public async Task Search_FiltersServices()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
 
         // Activate search with '/'
         await _app.SendStringAsync("/");
@@ -40,13 +39,13 @@ public class ServicesPageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(300);
 
         ScreenAssert.Contains(_app.Terminal, "Windows Update");
-        ScreenAssert.DoesNotContain(_app.Terminal, "Print Spooler");
+        _app.Terminal.DoesNotContain("Print Spooler");
     }
 
     [Fact]
     public async Task DetailModal_OpensOnEnter()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
 
         // Press Enter to open detail modal on selected service
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -59,7 +58,7 @@ public class ServicesPageTests : IAsyncLifetime
     [Fact]
     public async Task DetailModal_EscapeCloses()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
 
         // Open detail modal
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -73,13 +72,13 @@ public class ServicesPageTests : IAsyncLifetime
         await _app.WaitForRenderAsync(300);
 
         // Internal name should no longer be visible (modal closed)
-        ScreenAssert.DoesNotContain(_app.Terminal, "wuauserv");
+        _app.Terminal.DoesNotContain("wuauserv");
     }
 
     [Fact]
     public async Task DetailModal_StopAction_WorksInsideModal()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
 
         // Open detail modal
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -104,7 +103,7 @@ public class ServicesPageTests : IAsyncLifetime
     [Fact]
     public async Task ServiceAction_StartFromList()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
 
         // Press S on main list to start service
         await _app.SendKeysAsync(50, ConsoleKey.S);
@@ -119,7 +118,7 @@ public class ServicesPageTests : IAsyncLifetime
     [Fact]
     public async Task StartService_FromMainList_ShowsSuccess()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
 
         // Press S on main list to start the selected service
         await _app.SendKeysAsync(50, ConsoleKey.S);
@@ -133,7 +132,7 @@ public class ServicesPageTests : IAsyncLifetime
     [Fact]
     public async Task RestartService_FromDetailModal()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+        await _app.Terminal.WaitForTextAsync("Windows Update");
 
         // Open detail modal
         await _app.SendKeysAsync(50, ConsoleKey.Enter);

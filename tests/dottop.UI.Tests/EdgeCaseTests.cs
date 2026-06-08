@@ -1,6 +1,5 @@
 using dottop.UI.Tests.Fixtures;
 using dottop.UI.Tests.Helpers;
-using Xunit;
 
 namespace dottop.UI.Tests;
 
@@ -8,14 +7,14 @@ public class EdgeCaseTests : IAsyncLifetime
 {
     private DottopAppFixture _app = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _app = new DottopAppFixture();
         await _app.StartAsync();
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "1:Processes");
+        await _app.Terminal.WaitForTextAsync("1:Processes");
     }
 
-    public async Task DisposeAsync() => await _app.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 
     [Fact]
     public async Task RapidTabSwitching_DoesNotCrash()
@@ -25,14 +24,14 @@ public class EdgeCaseTests : IAsyncLifetime
         await _app.WaitForRenderAsync(500);
 
         // App should land on Processes page and not crash
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "1:Processes", 5000);
+        await _app.Terminal.WaitForTextAsync("1:Processes");
         ScreenAssert.Contains(_app.Terminal, "PID");
     }
 
     [Fact]
     public async Task SearchThenEscapeThenNavigateAway_SearchCleared()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Activate search on Processes
         await _app.SendStringAsync("/");
@@ -44,7 +43,7 @@ public class EdgeCaseTests : IAsyncLifetime
 
         // Verify search is active and filtering
         ScreenAssert.Contains(_app.Terminal, "/ chrome");
-        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
+        _app.Terminal.DoesNotContain("svchost");
 
         // Escape to exit search mode (search is modal -- must exit before navigating)
         await _app.SendKeysAsync(50, ConsoleKey.Escape);
@@ -56,22 +55,22 @@ public class EdgeCaseTests : IAsyncLifetime
 
         // Now navigate to Services
         await _app.SendKeysAsync(50, ConsoleKey.D3);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "3:Services", 3000);
+        await _app.Terminal.WaitForTextAsync("3:Services", 3000);
 
         // Come back to Processes
         await _app.SendKeysAsync(50, ConsoleKey.D1);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "1:Processes", 3000);
+        await _app.Terminal.WaitForTextAsync("1:Processes", 3000);
         await _app.WaitForRenderAsync(500);
 
         // All processes should still be visible
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome", 3000);
+        await _app.Terminal.WaitForTextAsync("chrome", 3000);
         ScreenAssert.Contains(_app.Terminal, "svchost");
     }
 
     [Fact]
     public async Task OpenOverlayThenEscapeThenNavigate_OverlayClosesPageSwitches()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open overlay on Processes
         await _app.SendKeysAsync(50, ConsoleKey.Enter);
@@ -85,11 +84,11 @@ public class EdgeCaseTests : IAsyncLifetime
         await _app.WaitForRenderAsync(300);
 
         // Overlay should be closed
-        ScreenAssert.DoesNotContain(_app.Terminal, "Handles");
+        _app.Terminal.DoesNotContain("Handles");
 
         // Now navigate to Services
         await _app.SendKeysAsync(50, ConsoleKey.D3);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "3:Services", 5000);
+        await _app.Terminal.WaitForTextAsync("3:Services");
 
         // Services page should be displayed
         ScreenAssert.Contains(_app.Terminal, "Windows Update");
@@ -98,7 +97,7 @@ public class EdgeCaseTests : IAsyncLifetime
     [Fact]
     public async Task EmptySearchReturnsAllItems()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Activate search
         await _app.SendStringAsync("/");
@@ -119,7 +118,7 @@ public class EdgeCaseTests : IAsyncLifetime
     [Fact]
     public async Task SearchWithNoResults_NoCrash()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Activate search
         await _app.SendStringAsync("/");
@@ -130,9 +129,9 @@ public class EdgeCaseTests : IAsyncLifetime
         await _app.WaitForRenderAsync(300);
 
         // No processes should be visible, but app should not crash
-        ScreenAssert.DoesNotContain(_app.Terminal, "chrome");
-        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
-        ScreenAssert.DoesNotContain(_app.Terminal, "spotify");
+        _app.Terminal.DoesNotContain("chrome");
+        _app.Terminal.DoesNotContain("svchost");
+        _app.Terminal.DoesNotContain("spotify");
 
         // Escape should recover
         await _app.SendKeysAsync(50, ConsoleKey.Escape);
@@ -145,15 +144,15 @@ public class EdgeCaseTests : IAsyncLifetime
     [Fact]
     public async Task MultipleOverlayOpenClose_NoCrash()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Open and close overlay 5 times rapidly
         for (var i = 0; i < 5; i++)
         {
             await _app.SendKeysAsync(30, ConsoleKey.Enter);
-            await _app.WaitForRenderAsync(200);
+            await _app.WaitForRenderAsync();
             await _app.SendKeysAsync(30, ConsoleKey.Escape);
-            await _app.WaitForRenderAsync(200);
+            await _app.WaitForRenderAsync();
         }
 
         // App should still be functional -- process list visible
@@ -164,7 +163,7 @@ public class EdgeCaseTests : IAsyncLifetime
     [Fact]
     public async Task NavigateToSameTab_IsNoOp()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+        await _app.Terminal.WaitForTextAsync("chrome");
 
         // Press D1 while already on Processes -- should be a no-op
         await _app.SendKeysAsync(50, ConsoleKey.D1);
@@ -180,7 +179,7 @@ public class EdgeCaseTests : IAsyncLifetime
     {
         // Navigate to Settings
         await _app.SendKeysAsync(50, ConsoleKey.D5);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Theme", 3000);
+        await _app.Terminal.WaitForTextAsync("Theme", 3000);
 
         // Change theme from dark to light (press Right)
         await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
@@ -189,11 +188,11 @@ public class EdgeCaseTests : IAsyncLifetime
 
         // Navigate to Processes
         await _app.SendKeysAsync(50, ConsoleKey.D1);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "1:Processes", 3000);
+        await _app.Terminal.WaitForTextAsync("1:Processes", 3000);
 
         // Navigate back to Settings
         await _app.SendKeysAsync(50, ConsoleKey.D5);
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Theme", 3000);
+        await _app.Terminal.WaitForTextAsync("Theme", 3000);
         await _app.WaitForRenderAsync(300);
 
         // Changed value should persist

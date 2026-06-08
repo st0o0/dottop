@@ -199,7 +199,10 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var graphStyle = ViewModel.GraphStyleSetting;
 
-        _detailModal.WithFooter(Strings.HintPerfDetailKeys).WithFooterColor(Theme.TextDim);
+        var footerHint = section == PerfDetailSection.Disk
+            ? Strings.HintPerfDiskDetailKeys
+            : Strings.HintPerfDetailKeys;
+        _detailModal.WithFooter(footerHint).WithFooterColor(Theme.TextDim);
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {

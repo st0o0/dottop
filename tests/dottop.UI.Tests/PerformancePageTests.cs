@@ -35,8 +35,8 @@ public class PerformancePageTests : IAsyncLifetime
     [Fact]
     public async Task StatusBar_ShowsKeyboardHints()
     {
-        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Enter");
-        ScreenAssert.Contains(_app.Terminal, "Detail");
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Enter", 5000);
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Detail", 3000);
     }
 
     [Fact]

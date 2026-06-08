@@ -378,6 +378,9 @@
   <data name="HintPerfDetailKeys" xml:space="preserve">
     <value> ←→: Section | Esc: Close</value>
   </data>
+  <data name="HintPerfDiskDetailKeys" xml:space="preserve">
+    <value> ←→: Section | ↑↓: Disk | Esc: Close</value>
+  </data>
   <data name="HintServiceDetailKeys" xml:space="preserve">
     <value> S: Start | X: Stop | R: Restart | Esc: Close</value>
   </data>

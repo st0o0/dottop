@@ -115,4 +115,41 @@ public class ServicesPageTests : IAsyncLifetime
         ScreenAssert.Contains(_app.Terminal, "Windows Update");
         ScreenAssert.Contains(_app.Terminal, "3 services");
     }
+
+    [Fact]
+    public async Task StartService_FromMainList_ShowsSuccess()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+
+        // Press S on main list to start the selected service
+        await _app.SendKeysAsync(50, ConsoleKey.S);
+        await _app.WaitForRenderAsync(500);
+
+        // The action should succeed -- service list should still display correctly
+        ScreenAssert.Contains(_app.Terminal, "Windows Update");
+        ScreenAssert.Contains(_app.Terminal, "3 services");
+    }
+
+    [Fact]
+    public async Task RestartService_FromDetailModal()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Windows Update");
+
+        // Open detail modal
+        await _app.SendKeysAsync(50, ConsoleKey.Enter);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "wuauserv");
+
+        // Press R to restart service from inside the modal
+        await _app.SendKeysAsync(50, ConsoleKey.R);
+        await _app.WaitForRenderAsync(500);
+
+        // Close modal to verify state
+        await _app.SendKeysAsync(50, ConsoleKey.Escape);
+        await _app.WaitForRenderAsync(300);
+
+        // Service list should still be displayed after the restart action
+        ScreenAssert.Contains(_app.Terminal, "Windows Update");
+        ScreenAssert.Contains(_app.Terminal, "3 services");
+    }
 }

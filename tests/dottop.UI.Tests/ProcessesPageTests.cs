@@ -163,4 +163,136 @@ public class ProcessesPageTests : IAsyncLifetime
         // Should show "/ test" format matching Services/Network pages
         ScreenAssert.Contains(_app.Terminal, "/ test");
     }
+
+    [Fact]
+    public async Task SortCycling_FullLoop()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+
+        // Default sort is RAM. Cycle: RAM -> CPU -> Name -> PID -> RAM
+        // Press Tab to cycle to CPU sort
+        await _app.SendKeysAsync(50, ConsoleKey.Tab);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Cpu");
+
+        // Cycle to Name sort
+        await _app.SendKeysAsync(50, ConsoleKey.Tab);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Name");
+
+        // Cycle to PID sort
+        await _app.SendKeysAsync(50, ConsoleKey.Tab);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Pid");
+
+        // Cycle back to RAM sort
+        await _app.SendKeysAsync(50, ConsoleKey.Tab);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Ram");
+    }
+
+    [Fact]
+    public async Task GroupFilter_FullLoop()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+
+        // Default is All. Cycle: All -> Apps -> Background -> Windows -> All
+        // Press G to cycle to Apps
+        await _app.SendKeysAsync(50, ConsoleKey.G);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "chrome");
+        ScreenAssert.DoesNotContain(_app.Terminal, "svchost");
+
+        // Press G to cycle to Background
+        await _app.SendKeysAsync(50, ConsoleKey.G);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.DoesNotContain(_app.Terminal, "chrome");
+
+        // Press G to cycle to Windows
+        await _app.SendKeysAsync(50, ConsoleKey.G);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "svchost");
+        ScreenAssert.DoesNotContain(_app.Terminal, "chrome");
+
+        // Press G to cycle back to All
+        await _app.SendKeysAsync(50, ConsoleKey.G);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "chrome");
+        ScreenAssert.Contains(_app.Terminal, "svchost");
+    }
+
+    [Fact]
+    public async Task Overlay_AllFourTabs()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+
+        // Open overlay (starts on Overview tab)
+        await _app.SendKeysAsync(50, ConsoleKey.Enter);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Overview");
+
+        // Navigate to Process Tree tab
+        await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Process Tree");
+
+        // Navigate to Environment tab
+        await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Environment");
+
+        // Navigate to Modules tab
+        await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Modules");
+    }
+
+    [Fact]
+    public async Task KillConfirmation_CancelWithN()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+
+        // Open overlay
+        await _app.SendKeysAsync(50, ConsoleKey.Enter);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "PID");
+
+        // Press K to trigger kill confirmation
+        await _app.SendKeysAsync(50, ConsoleKey.K);
+        await _app.WaitForRenderAsync(300);
+
+        // Kill confirmation prompt should be visible
+        ScreenAssert.Contains(_app.Terminal, "Kill");
+
+        // Press N to cancel kill
+        await _app.SendKeysAsync(50, ConsoleKey.N);
+        await _app.WaitForRenderAsync(300);
+
+        // Kill confirmation dismissed, overlay still open
+        ScreenAssert.DoesNotContain(_app.Terminal, "[Y]");
+        ScreenAssert.Contains(_app.Terminal, "PID");
+    }
+
+    [Fact]
+    public async Task KillConfirmation_CancelWithEscape()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "chrome");
+
+        // Open overlay
+        await _app.SendKeysAsync(50, ConsoleKey.Enter);
+        await _app.WaitForRenderAsync(300);
+
+        // Press K to trigger kill confirmation
+        await _app.SendKeysAsync(50, ConsoleKey.K);
+        await _app.WaitForRenderAsync(300);
+        ScreenAssert.Contains(_app.Terminal, "Kill");
+
+        // Press Escape -- should cancel kill confirm (not close overlay)
+        await _app.SendKeysAsync(50, ConsoleKey.Escape);
+        await _app.WaitForRenderAsync(300);
+
+        // Kill confirmation dismissed but overlay still open (Escape cancels pending kill first)
+        ScreenAssert.DoesNotContain(_app.Terminal, "[Y]");
+        ScreenAssert.Contains(_app.Terminal, "PID");
+    }
 }

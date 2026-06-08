@@ -108,4 +108,38 @@ public class SettingsPageTests : IAsyncLifetime
         // The SetValue method sets StatusMessage to " ✓ Settings saved"
         ScreenAssert.Contains(_app.Terminal, "✓");
     }
+
+    [Fact]
+    public async Task ArrowLeft_CyclesValueBackward()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Theme");
+
+        // Theme starts at "dark". Pressing Left should wrap to "nord" (dark -> nord wrapping)
+        await _app.SendKeysAsync(50, ConsoleKey.LeftArrow);
+        await _app.WaitForRenderAsync();
+
+        ScreenAssert.Contains(_app.Terminal, "Nord");
+    }
+
+    [Fact]
+    public async Task MultipleValueChanges_EachShowsSaved()
+    {
+        await ScreenAssert.WaitForTextAsync(_app.Terminal, "Theme");
+
+        // Change theme 3 times: dark -> light -> nord -> dark
+        await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
+        await _app.WaitForRenderAsync();
+        ScreenAssert.Contains(_app.Terminal, "Light");
+        ScreenAssert.Contains(_app.Terminal, "✓");
+
+        await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
+        await _app.WaitForRenderAsync();
+        ScreenAssert.Contains(_app.Terminal, "Nord");
+        ScreenAssert.Contains(_app.Terminal, "✓");
+
+        await _app.SendKeysAsync(50, ConsoleKey.RightArrow);
+        await _app.WaitForRenderAsync();
+        ScreenAssert.Contains(_app.Terminal, "Dark");
+        ScreenAssert.Contains(_app.Terminal, "✓");
+    }
 }

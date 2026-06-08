@@ -258,15 +258,28 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         return layout;
     }
 
-    private static void RenderTree(VerticalLayout layout, ProcessTreeResult node, int depth, bool isLast = true)
+    private static void RenderTree(VerticalLayout layout, ProcessTreeResult node, int depth,
+        bool isLast = true, string parentPrefix = "")
     {
-        var indent = new string(' ', depth * 3);
-        var connector = depth == 0 ? " ●" : isLast ? " └─" : " ├─";
-        var color = depth == 0 ? Theme.Primary : Theme.TextDim;
-        layout.WithChild(new TextNode($"{indent}{connector} {node.Name} ({node.Pid})")
-            .WithForeground(color).Height(1));
-        for (var i = 0; i < node.Children.Count; i++)
-            RenderTree(layout, node.Children[i], depth + 1, i == node.Children.Count - 1);
+        if (depth == 0)
+        {
+            layout.WithChild(new TextNode($"  ● {node.Name} ({node.Pid})")
+                .WithForeground(Theme.Primary).Height(1));
+            for (var i = 0; i < node.Children.Count; i++)
+                RenderTree(layout, node.Children[i], depth + 1,
+                    i == node.Children.Count - 1, "  ");
+        }
+        else
+        {
+            var connector = isLast ? "└── " : "├── ";
+            var color = depth == 1 ? Theme.Text : Theme.TextDim;
+            layout.WithChild(new TextNode($"{parentPrefix}{connector}{node.Name} ({node.Pid})")
+                .WithForeground(color).Height(1));
+            var childPrefix = parentPrefix + (isLast ? "    " : "│   ");
+            for (var i = 0; i < node.Children.Count; i++)
+                RenderTree(layout, node.Children[i], depth + 1,
+                    i == node.Children.Count - 1, childPrefix);
+        }
     }
 
     private ILayoutNode BuildEnvTab()

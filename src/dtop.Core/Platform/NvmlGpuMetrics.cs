@@ -1,12 +1,14 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using dtop.Core.Models;
-using dtop.Core.Platform;
+using Servus;
+using Servus.Diagnostics;
 
-namespace dtop.Windows;
+namespace dtop.Core.Platform;
 
 public sealed class NvmlGpuMetrics : IGpuMetrics
 {
+    private static readonly TraceChannel Trace = Senf.Tracing.For("Gpu.Nvml");
     private readonly nint _device;
     private readonly nint _lib;
     private readonly string _name = "NVIDIA GPU";
@@ -72,8 +74,9 @@ public sealed class NvmlGpuMetrics : IGpuMetrics
 
             IsAvailable = true;
         }
-        catch
+        catch (Exception ex)
         {
+            Trace.Warning(this, "NVML init failed: {0}", ex.Message);
             IsAvailable = false;
         }
     }
@@ -107,9 +110,9 @@ public sealed class NvmlGpuMetrics : IGpuMetrics
                 usage = utilization.gpu;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // noop
+            Trace.Warning(this, "NVML call failed: {0}", ex.Message);
         }
 
         try
@@ -121,9 +124,9 @@ public sealed class NvmlGpuMetrics : IGpuMetrics
                 vramUsed = memInfo.used;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // noop
+            Trace.Warning(this, "NVML call failed: {0}", ex.Message);
         }
 
         try
@@ -134,9 +137,9 @@ public sealed class NvmlGpuMetrics : IGpuMetrics
                 temp = temperature;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // noop
+            Trace.Warning(this, "NVML call failed: {0}", ex.Message);
         }
 
         return new GpuSnapshot(_name, usage, vramUsed, vramTotal, temp);

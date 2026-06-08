@@ -36,21 +36,20 @@ public sealed class PlatformSetup : IServiceSetupContainer
     private static void RegisterGpu(IServiceCollection services)
     {
         IGpuMetrics gpu = NoGpuMetrics.Instance;
-        if (OperatingSystem.IsWindows())
+
+        // Try NVML (NVIDIA) — works on Windows + Linux
+        try
         {
-            try
-            {
-                var nvml = new Windows.NvmlGpuMetrics();
-                if (nvml.IsAvailable)
-                {
-                    gpu = nvml;
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.Warning("PlatformSetup", "NVML GPU metrics not available: {0}", ex.Message);
-            }
+            var nvml = new NvmlGpuMetrics();
+            if (nvml.IsAvailable) gpu = nvml;
         }
+        catch (Exception ex)
+        {
+            Trace.Warning("PlatformSetup", "NVML not available: {0}", ex.Message);
+        }
+
+        // Future: try AMD (ADLX/ROCm) if NVML didn't work
+        // Future: try Apple Metal if on macOS
 
         services.AddSingleton(gpu);
     }

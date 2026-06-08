@@ -1,2 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Servus" Version="0.34.0" />
+  </ItemGroup>
 </Project>

@@ -6,19 +6,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\dottop.Core\dottop.Core.csproj"/>
-        <ProjectReference Include="..\dottop.Windows\dottop.Windows.csproj"/>
-        <ProjectReference Include="..\dottop.Linux\dottop.Linux.csproj"/>
+        <ProjectReference Include="..\dottop.Core\dottop.Core.csproj" />
+        <ProjectReference Include="..\dottop.Windows\dottop.Windows.csproj" />
+        <ProjectReference Include="..\dottop.Linux\dottop.Linux.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Akka.Logger.Serilog" Version="1.5.67"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8"/>
-        <PackageReference Include="Akka.Hosting" Version="1.5.68"/>
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0"/>
-        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0"/>
-        <PackageReference Include="Servus" Version="0.34.0"/>
-        <ProjectReference Include="..\..\lib\termina\src\Termina\Termina.csproj"/>
+        <PackageReference Include="Akka.Logger.Serilog" Version="1.5.67" />
+        <PackageReference Include="Docker.DotNet.Enhanced" Version="4.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+        <PackageReference Include="Akka.Hosting" Version="1.5.68" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+        <PackageReference Include="Servus" Version="0.34.0" />
+        <ProjectReference Include="..\..\lib\termina\src\Termina\Termina.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -26,7 +27,7 @@
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>Strings.Designer.cs</LastGenOutput>
         </EmbeddedResource>
-        <EmbeddedResource Update="Resources\Strings.de.resx"/>
+        <EmbeddedResource Update="Resources\Strings.de.resx" />
     </ItemGroup>
 
 </Project>

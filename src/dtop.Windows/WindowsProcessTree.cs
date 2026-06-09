@@ -11,6 +11,12 @@ public sealed class WindowsProcessTree : IProcessTreeProvider
 {
     public ProcessTreeResult BuildTree(int rootPid)
     {
+        var (parentMap, nameMap) = ReadProcessMaps();
+        return ProcessTreeBuilder.Build(rootPid, parentMap, nameMap);
+    }
+
+    private static (Dictionary<int, int> ParentMap, Dictionary<int, string> NameMap) ReadProcessMaps()
+    {
         var parentMap = new Dictionary<int, int>();
         var nameMap = new Dictionary<int, string>();
 
@@ -31,46 +37,10 @@ public sealed class WindowsProcessTree : IProcessTreeProvider
         {
             foreach (var p in Process.GetProcesses())
             {
-                try
-                {
-                    nameMap[p.Id] = p.ProcessName;
-                }
-                catch
-                {
-                    // noop
-                }
+                try { nameMap[p.Id] = p.ProcessName; } catch { }
             }
         }
 
-        var childrenMap = new Dictionary<int, List<int>>();
-        foreach (var (pid, ppid) in parentMap)
-        {
-            if (!childrenMap.TryGetValue(ppid, out var value))
-            {
-                value = [];
-                childrenMap[ppid] = value;
-            }
-
-            value.Add(pid);
-        }
-
-        return BuildNode(rootPid, nameMap, childrenMap, depth: 0);
-    }
-
-    private static ProcessTreeResult BuildNode(int pid, Dictionary<int, string> names,
-        Dictionary<int, List<int>> childrenMap, int depth)
-    {
-        var name = names.GetValueOrDefault(pid, $"PID {pid}");
-        var children = new List<ProcessTreeResult>();
-
-        if (depth < 5 && childrenMap.TryGetValue(pid, out var childPids))
-        {
-            foreach (var childPid in childPids.OrderBy(p => p))
-            {
-                children.Add(BuildNode(childPid, names, childrenMap, depth + 1));
-            }
-        }
-
-        return new ProcessTreeResult(pid, name, children);
+        return (parentMap, nameMap);
     }
 }

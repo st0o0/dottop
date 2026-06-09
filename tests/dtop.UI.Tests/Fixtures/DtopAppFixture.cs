@@ -1,8 +1,8 @@
 using Akka.Hosting;
-using dtop.App;
-using dtop.App.Actors;
-using dtop.App.Pages;
-using dtop.App.Services;
+using dtop;
+using dtop.Actors;
+using dtop.Pages;
+using dtop.Services;
 using dtop.Core.Platform;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -77,7 +77,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
         registry.AddBuiltInTab(new Plugin.PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5));
         builder.Services.AddSingleton(registry);
         builder.Services.AddSingleton<Plugin.ITickSource>(testTickSource);
-        App.Nodes.TabBarNode.RegisterPluginTabs(registry);
+        dtop.Nodes.TabBarNode.RegisterPluginTabs(registry);
 
         // --- Akka with TestSupervisorActor ---
         builder.Services.AddAkka("dtop-test", configurationBuilder =>
@@ -92,7 +92,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
                 var dockerActor = system.ActorOf(
                     Akka.Actor.Props.Create<TestSupervisorActor>(),
                     "docker-monitor");
-                registry.Register<dtop.App.Actors.DockerMonitorActor>(dockerActor);
+                registry.Register<dtop.Actors.DockerMonitorActor>(dockerActor);
             });
         });
 
@@ -104,7 +104,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
-            termina.RegisterRoute<dtop.App.Pages.DockerPage, dtop.App.Pages.DockerViewModel>("/docker", NavigationBehavior.PreserveState);
+            termina.RegisterRoute<dtop.Pages.DockerPage, dtop.Pages.DockerViewModel>("/docker", NavigationBehavior.PreserveState);
         });
 
         _host = builder.Build();

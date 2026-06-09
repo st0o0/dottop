@@ -1,5 +1,5 @@
-using dtop.App.Nodes;
-using dtop.App.Themes;
+using dtop.Nodes;
+using dtop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;

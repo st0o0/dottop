@@ -8,7 +8,6 @@ namespace dtop.Mac;
 public sealed class MacDiskMetrics : IDiskMetrics
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("Mac.DiskMetrics");
-    private Dictionary<string, (ulong Read, ulong Write)> _prev = new();
 
     public void Initialize() { }
 

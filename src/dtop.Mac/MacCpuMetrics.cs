@@ -20,9 +20,8 @@ public sealed class MacCpuMetrics : ICpuMetrics
     private long _prevTotal;
     private long[]? _prevCoreIdle;
     private long[]? _prevCoreTotal;
-    private string? _cpuName;
 
-    public string ProcessorName => _cpuName ??= ReadCpuName();
+    public string ProcessorName => field ??= ReadCpuName();
     public int CoreCount => Environment.ProcessorCount;
 
     public CpuMeasurement Measure()
@@ -32,7 +31,9 @@ public sealed class MacCpuMetrics : ICpuMetrics
             var host = mach_host_self();
             if (host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, out var cpuCount,
                 out var cpuInfo, out var cpuInfoCount) != 0)
+            {
                 return new CpuMeasurement(0, []);
+            }
 
             var coreCount = (int)cpuCount;
             _prevCoreIdle ??= new long[coreCount];

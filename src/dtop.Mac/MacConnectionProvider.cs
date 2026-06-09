@@ -28,7 +28,10 @@ public sealed class MacConnectionProvider : IConnectionProvider
             foreach (var line in output.Split('\n').Skip(1)) // skip header
             {
                 var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length < 9) continue;
+                if (parts.Length < 9)
+                {
+                    continue;
+                }
 
                 var processName = parts[0];
                 int.TryParse(parts[1], out var pid);
@@ -37,9 +40,11 @@ public sealed class MacConnectionProvider : IConnectionProvider
 
                 var state = "";
                 if (parts.Length > 9)
+                {
                     state = parts[9].Trim('(', ')');
+                }
 
-                var arrow = nameField.IndexOf("->");
+                var arrow = nameField.IndexOf("->", StringComparison.Ordinal);
                 string local, remote;
                 if (arrow >= 0)
                 {

@@ -1,6 +1,5 @@
 using Akka.Actor;
 using dtop.Actors;
-using dtop.App.Actors;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using dtop.Core.Platform;

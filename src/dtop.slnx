@@ -5,7 +5,10 @@
   <Project Path="dtop.Windows/dtop.Windows.csproj" />
   <Project Path="dtop.Linux/dtop.Linux.csproj" />
   <Project Path="dtop.Mac/dtop.Mac.csproj" />
-  <Project Path="dtop.App/dtop.App.csproj" />
+  <Folder Name="/Items/">
+    <File Path="../.github/workflows/ci.yml" />
+    <File Path="../.github/workflows/release.yml" />
+  </Folder>
   <Folder Name="/Termina/">
     <Project Path="../lib/termina/src/Termina/Termina.csproj" />
   </Folder>
@@ -14,4 +17,5 @@
     <Project Path="../tests/dtop.Rendering.Tests/dtop.Rendering.Tests.csproj" />
     <Project Path="../tests/dtop.UI.Tests/dtop.UI.Tests.csproj" />
   </Folder>
+  <Project Path="dtop/dtop.csproj" />
 </Solution>

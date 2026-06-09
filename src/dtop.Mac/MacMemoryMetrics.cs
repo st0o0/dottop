@@ -14,7 +14,9 @@ public sealed class MacMemoryMetrics : IMemoryMetrics
         {
             var totalStr = MacCpuMetrics.RunSysctl("hw.memsize");
             if (totalStr is null || !ulong.TryParse(totalStr, out var total))
+            {
                 return (0, 0);
+            }
 
             // Parse vm_stat for memory breakdown
             var psi = new System.Diagnostics.ProcessStartInfo("vm_stat")
@@ -39,14 +41,22 @@ public sealed class MacMemoryMetrics : IMemoryMetrics
                     var parts = line.Split(' ');
                     for (var i = 0; i < parts.Length - 1; i++)
                         if (parts[i] == "of" && ulong.TryParse(parts[i + 1], out var ps))
+                        {
                             pageSize = ps;
+                        }
                 }
                 else if (line.Contains("Pages active:"))
+                {
                     active = ParseVmStatValue(line);
+                }
                 else if (line.Contains("Pages wired"))
+                {
                     wired = ParseVmStatValue(line);
+                }
                 else if (line.Contains("Pages occupied by compressor"))
+                {
                     compressed = ParseVmStatValue(line);
+                }
             }
 
             var used = (active + wired + compressed) * pageSize;
@@ -63,7 +73,11 @@ public sealed class MacMemoryMetrics : IMemoryMetrics
     {
         // Format: "Pages active:                   123456."
         var colon = line.IndexOf(':');
-        if (colon < 0) return 0;
+        if (colon < 0)
+        {
+            return 0;
+        }
+
         var numStr = line[(colon + 1)..].Trim().TrimEnd('.');
         return ulong.TryParse(numStr, out var val) ? val : 0;
     }

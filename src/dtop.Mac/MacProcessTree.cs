@@ -65,7 +65,9 @@ public sealed class MacProcessTree : IProcessTreeProvider
         if (depth < 5 && childrenMap.TryGetValue(pid, out var childPids))
         {
             foreach (var childPid in childPids.OrderBy(p => p))
+            {
                 children.Add(BuildNode(childPid, names, childrenMap, depth + 1));
+            }
         }
         return new ProcessTreeResult(pid, name, children);
     }

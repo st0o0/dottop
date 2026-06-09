@@ -14,8 +14,15 @@ public sealed class TerminaSetup : IServiceSetupContainer
         services.AddTermina("/", termina =>
         {
             // Core routes
+            termina.ConfigureRuntime(x =>
+            {
+                x.PreferRawInput = true;
+                x.ScrollInputMode = ScrollInputMode.AlternateScroll;
+                x.CtrlCHandlingMode = CtrlCHandlingMode.DoublePressWhenRawInput;
+            });
             termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/", NavigationBehavior.PreserveState);
-            termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
+            termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance",
+                NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
 
@@ -32,7 +39,9 @@ public sealed class TerminaSetup : IServiceSetupContainer
             {
                 var routeCtx = new PluginRouteContext(termina);
                 foreach (var plugin in pluginRegistry.LoadedPlugins)
+                {
                     plugin.RouteSetup?.Invoke(routeCtx);
+                }
             }
         });
     }

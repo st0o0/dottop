@@ -39,11 +39,11 @@ public sealed class DiskMonitorActor : ReceiveActor
             }
 
             var disks = DriveInfo.GetDrives()
-                .Where(d => d.IsReady && d.TotalSize > 0)
+                .Where(d => d is { IsReady: true, TotalSize: > 0 })
                 .Select(d =>
                 {
                     var name = d.Name.TrimEnd('\\', '/');
-                    if (name.Length >= 2 && name[1] == ':')
+                    if (name is [_, ':', ..])
                     {
                         name = name[..2];
                     }

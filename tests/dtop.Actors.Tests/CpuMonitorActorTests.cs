@@ -38,7 +38,8 @@ public class CpuMonitorActorTests : IAsyncLifetime
         Assert.NotNull(stream);
         Assert.NotNull(stream.Data);
 
-        await foreach (var snapshot in stream.Data)
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await foreach (var snapshot in stream.Data.WithCancellation(cts.Token))
         {
             Assert.Equal("Test CPU", snapshot.Name);
             Assert.Equal(42.0, snapshot.TotalPercent);

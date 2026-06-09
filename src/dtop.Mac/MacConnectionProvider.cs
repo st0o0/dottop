@@ -34,7 +34,7 @@ public sealed class MacConnectionProvider : IConnectionProvider
                 }
 
                 var processName = parts[0];
-                int.TryParse(parts[1], out var pid);
+                _ = int.TryParse(parts[1], out var pid);
                 var protocol = parts[7]; // TCP or UDP
                 var nameField = parts[8]; // host:port->host:port (ESTABLISHED)
 
@@ -59,6 +59,7 @@ public sealed class MacConnectionProvider : IConnectionProvider
 
                 connections.Add(new ConnectionSnapshot(processName, pid, local, remote, state, protocol));
             }
+
             return connections;
         }
         catch (Exception ex)

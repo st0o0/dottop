@@ -27,6 +27,10 @@ jobs:
       - name: Build
         run: dotnet build src/dtop.slnx -c Release
 
+      - name: Test (Core)
+        run: dotnet test --project tests/dtop.Core.Tests/dtop.Core.Tests.csproj -c Release --no-build
+        timeout-minutes: 3
+
       - name: Test (Actors)
         run: dotnet test --project tests/dtop.Actors.Tests/dtop.Actors.Tests.csproj -c Release --no-build
         timeout-minutes: 3

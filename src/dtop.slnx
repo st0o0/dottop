@@ -14,6 +14,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="../tests/dtop.Actors.Tests/dtop.Actors.Tests.csproj" />
+    <Project Path="../tests/dtop.Core.Tests/dtop.Core.Tests.csproj" />
     <Project Path="../tests/dtop.Rendering.Tests/dtop.Rendering.Tests.csproj" />
     <Project Path="../tests/dtop.UI.Tests/dtop.UI.Tests.csproj" />
   </Folder>

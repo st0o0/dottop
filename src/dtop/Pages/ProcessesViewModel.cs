@@ -37,6 +37,8 @@ public class ProcessesViewModel : ReactiveViewModel
 
     private readonly Dictionary<int, Queue<double>> _cpuHistory = new();
     private const int CpuHistoryLength = 300;
+    private readonly Dictionary<int, Queue<double>> _ramHistory = new();
+    private const int RamHistoryLength = 300;
 
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
@@ -223,7 +225,7 @@ public class ProcessesViewModel : ReactiveViewModel
                     IsOverlayOpen.Value = true;
                     UpdateStatus();
                     _overlayContentChanged.OnNext(Unit.Default);
-                    LoadOverlayTab();
+                    _ = LoadOverlayTab();
                 }
 
                 break;

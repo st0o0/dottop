@@ -54,7 +54,9 @@ public static class PluginLoader
 
         // Scan already-loaded assemblies (NuGet/ProjectReference during development)
         foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
             DiscoverInAssembly(asm, plugins);
+        }
 
         return plugins.DistinctBy(p => p.GetType().FullName).ToList();
     }

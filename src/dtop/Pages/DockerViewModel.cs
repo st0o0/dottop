@@ -16,7 +16,13 @@ using Termina.Terminal;
 
 namespace dtop.Pages;
 
-public enum DockerSubTab { Container, Networks, Volumes, Images }
+public enum DockerSubTab
+{
+    Container,
+    Networks,
+    Volumes,
+    Images
+}
 
 public record DockerListItem
 {
@@ -30,8 +36,8 @@ public record DockerListItem
 public class DockerViewModel : ReactiveViewModel
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("ViewModel.Docker");
-    private readonly HashSet<string> _expandedGroups = new();
-    private readonly HashSet<string> _knownGroups = new();
+    private readonly HashSet<string> _expandedGroups = [];
+    private readonly HashSet<string> _knownGroups = [];
 
     private readonly IRequiredActor<DockerMonitorActor> _dockerActor;
     private readonly SettingsService _settingsService;
@@ -136,10 +142,20 @@ public class DockerViewModel : ReactiveViewModel
                     }
                 }
             }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
             catch
             {
-                try { await Task.Delay(2000, ct); } catch (OperationCanceledException) { return; }
+                try
+                {
+                    await Task.Delay(2000, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
         }
     }
@@ -180,16 +196,22 @@ public class DockerViewModel : ReactiveViewModel
                 });
                 if (expanded)
                 {
-                    var groupContainers = PinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
+                    var groupContainers =
+                        PinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
                     foreach (var c in groupContainers)
+                    {
                         items.Add(new DockerListItem { Container = c });
+                    }
                 }
             }
             else
             {
-                var ungroupedContainers = PinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
+                var ungroupedContainers =
+                    PinService.SortWithPinnedFirst(group, c => _pinService.IsContainerPinned(c.Id));
                 foreach (var c in ungroupedContainers)
+                {
                     items.Add(new DockerListItem { Container = c });
+                }
             }
         }
 
@@ -249,36 +271,52 @@ public class DockerViewModel : ReactiveViewModel
                         InputText.Value += key.KeyInfo.KeyChar;
                         _detailContentChanged.OnNext(Unit.Default);
                     }
+
                     break;
             }
+
             return;
         }
+
         if (IsSearchActive.Value)
         {
             switch (key.KeyInfo.Key)
             {
-                case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
-                case ConsoleKey.Backspace: if (SearchText.Value.Length > 0)
+                case ConsoleKey.Escape:
+                    IsSearchActive.Value = false;
+                    SearchText.Value = "";
+                    break;
+                case ConsoleKey.Backspace:
+                    if (SearchText.Value.Length > 0)
                     {
                         SearchText.Value = SearchText.Value[..^1];
                     }
 
                     break;
-                default: if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
+                default:
+                    if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
                     {
                         SearchText.Value += key.KeyInfo.KeyChar;
                     }
 
                     break;
             }
+
             return;
         }
-        if (IsSettingsOpen.Value) { HandleSettingsKey(key); return; }
+
+        if (IsSettingsOpen.Value)
+        {
+            HandleSettingsKey(key);
+            return;
+        }
+
         if (IsDetailOpen.Value)
         {
             HandleDetailKey(key);
             return;
         }
+
         var activeList = ActiveSubTab.Value switch
         {
             DockerSubTab.Networks => NetworkListNode,
@@ -297,11 +335,15 @@ public class DockerViewModel : ReactiveViewModel
             case ConsoleKey.Tab:
                 if (key.KeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
                 {
-                    ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Container ? DockerSubTab.Images : (DockerSubTab)((int)ActiveSubTab.Value - 1);
+                    ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Container
+                        ? DockerSubTab.Images
+                        : (DockerSubTab)((int)ActiveSubTab.Value - 1);
                 }
                 else
                 {
-                    ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Images ? DockerSubTab.Container : (DockerSubTab)((int)ActiveSubTab.Value + 1);
+                    ActiveSubTab.Value = ActiveSubTab.Value == DockerSubTab.Images
+                        ? DockerSubTab.Container
+                        : (DockerSubTab)((int)ActiveSubTab.Value + 1);
                 }
 
                 _ = LoadSubTabDataAsync();
@@ -337,6 +379,7 @@ public class DockerViewModel : ReactiveViewModel
                     UpdateStatus();
                     _detailContentChanged.OnNext(Unit.Default);
                 }
+
                 break;
             case ConsoleKey.N:
                 IsInputMode.Value = true;
@@ -360,22 +403,26 @@ public class DockerViewModel : ReactiveViewModel
                     _pinService.ToggleContainerPin(pinContainer.Id);
                     ApplyFilter();
                 }
+
                 break;
-            case ConsoleKey.S: if (ActiveSubTab.Value == DockerSubTab.Container)
+            case ConsoleKey.S:
+                if (ActiveSubTab.Value == DockerSubTab.Container)
                 {
-                    ActionOnSelected();
+                    _ = ActionOnSelected();
                 }
 
                 break;
-            case ConsoleKey.X: if (ActiveSubTab.Value == DockerSubTab.Container)
+            case ConsoleKey.X:
+                if (ActiveSubTab.Value == DockerSubTab.Container)
                 {
-                    ActionOnSelected(ActionType.Stop);
+                    _ = ActionOnSelected(ActionType.Stop);
                 }
 
                 break;
-            case ConsoleKey.R: if (ActiveSubTab.Value == DockerSubTab.Container)
+            case ConsoleKey.R:
+                if (ActiveSubTab.Value == DockerSubTab.Container)
                 {
-                    ActionOnSelected(ActionType.Restart);
+                    _ = ActionOnSelected(ActionType.Restart);
                 }
 
                 break;
@@ -403,13 +450,13 @@ public class DockerViewModel : ReactiveViewModel
                 UpdateStatus();
                 break;
             case ConsoleKey.S:
-                ActionOnDetailContainer();
+                _ = ActionOnDetailContainer();
                 break;
             case ConsoleKey.X:
-                ActionOnDetailContainer(ActionType.Stop);
+                _ = ActionOnDetailContainer(ActionType.Stop);
                 break;
             case ConsoleKey.R:
-                ActionOnDetailContainer(ActionType.Restart);
+                _ = ActionOnDetailContainer(ActionType.Restart);
                 break;
             case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
             case ConsoleKey.DownArrow: OverlayListNode?.MoveDown(); break;
@@ -443,12 +490,18 @@ public class DockerViewModel : ReactiveViewModel
         {
             LogContent.Value = "Error: " + ex.Message;
         }
+
         _detailContentChanged.OnNext(Unit.Default);
     }
 
-    private enum ActionType { Start, Stop, Restart }
+    private enum ActionType
+    {
+        Start,
+        Stop,
+        Restart
+    }
 
-    private async void ActionOnDetailContainer(ActionType action = ActionType.Start)
+    private async ValueTask ActionOnDetailContainer(ActionType action = ActionType.Start)
     {
         if (_dockerActorRef is null || SelectedContainer.Value is not { } container)
         {
@@ -471,7 +524,9 @@ public class DockerViewModel : ReactiveViewModel
             else
             {
                 var error = ((ActionFailure)result).Error;
-                _toast.Show("Error: " + error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + error,
+                    new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                        Duration: TimeSpan.FromSeconds(5)));
             }
 
             // Refresh detail if still open
@@ -487,11 +542,13 @@ public class DockerViewModel : ReactiveViewModel
         }
         catch (Exception ex)
         {
-            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("Error: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
-    private async void ActionOnSelected(ActionType action = ActionType.Start)
+    private async ValueTask ActionOnSelected(ActionType action = ActionType.Start)
     {
         if (_dockerActorRef is null)
         {
@@ -509,8 +566,12 @@ public class DockerViewModel : ReactiveViewModel
                 return;
             }
 
-            var actionName = action switch { ActionType.Stop => "Stopping", ActionType.Restart => "Restarting", _ => "Starting" };
-            _toast.Show($"{actionName} {containers.Count} containers...", new ToastOptions(Duration: TimeSpan.FromSeconds(2)));
+            var actionName = action switch
+            {
+                ActionType.Stop => "Stopping", ActionType.Restart => "Restarting", _ => "Starting"
+            };
+            _toast.Show($"{actionName} {containers.Count} containers...",
+                new ToastOptions(Duration: TimeSpan.FromSeconds(2)));
 
             var tasks = containers.Select(c => ExecuteContainerActionAsync(c.Id, action));
             await Task.WhenAll(tasks);
@@ -549,16 +610,20 @@ public class DockerViewModel : ReactiveViewModel
             }
             else if (result is ActionFailure f)
             {
-                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + f.Error,
+                    new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                        Duration: TimeSpan.FromSeconds(5)));
             }
         }
         catch (Exception ex)
         {
-            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("Error: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
-    private async Task LoadSubTabDataAsync()
+    private async ValueTask LoadSubTabDataAsync()
     {
         if (_dockerActorRef is null)
         {
@@ -595,7 +660,11 @@ public class DockerViewModel : ReactiveViewModel
                     break;
             }
         }
-        catch (Exception ex) { Trace.Warning(this, "Failed to load sub-tab data: {0}", ex.Message); }
+        catch (Exception ex)
+        {
+            Trace.Warning(this, "Failed to load sub-tab data: {0}", ex.Message);
+        }
+
         _detailContentChanged.OnNext(Unit.Default);
     }
 
@@ -627,14 +696,18 @@ public class DockerViewModel : ReactiveViewModel
             }
             else if (result is ActionFailure f)
             {
-                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + f.Error,
+                    new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                        Duration: TimeSpan.FromSeconds(5)));
             }
 
             _ = LoadSubTabDataAsync();
         }
         catch (Exception ex)
         {
-            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("Error: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
@@ -665,14 +738,18 @@ public class DockerViewModel : ReactiveViewModel
             }
             else if (result is ActionFailure f)
             {
-                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + f.Error,
+                    new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                        Duration: TimeSpan.FromSeconds(5)));
             }
 
             _ = LoadSubTabDataAsync();
         }
         catch (Exception ex)
         {
-            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("Error: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
@@ -705,15 +782,20 @@ public class DockerViewModel : ReactiveViewModel
             }
             else if (result is ActionFailure f)
             {
-                _toast.Show("Error: " + f.Error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + f.Error,
+                    new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                        Duration: TimeSpan.FromSeconds(5)));
             }
 
             _ = LoadSubTabDataAsync();
         }
         catch (Exception ex)
         {
-            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("Error: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
         }
+
         _detailContentChanged.OnNext(Unit.Default);
     }
 
@@ -743,6 +825,7 @@ public class DockerViewModel : ReactiveViewModel
                 {
                     _ = PerformUpdateAsync();
                 }
+
                 break;
         }
     }
@@ -783,7 +866,8 @@ public class DockerViewModel : ReactiveViewModel
         }
         else
         {
-            _toast.Show(Strings.UpdateFailed, new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show(Strings.UpdateFailed,
+                new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
@@ -803,6 +887,7 @@ public class DockerViewModel : ReactiveViewModel
     public string GetSettingsFilePath() => SettingsService.FilePath;
     public bool IsUpdateAvailable => _updateService.UpdateAvailable;
     public string CurrentVersionDisplay => string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
+
     public string? LatestVersionDisplay => _updateService.UpdateAvailable
         ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
         : null;
@@ -812,12 +897,22 @@ public class DockerViewModel : ReactiveViewModel
         _cts?.Cancel();
         _cts?.Dispose();
         ActiveSubTab.Dispose();
-        AllContainers.Dispose(); FilteredContainers.Dispose(); SearchText.Dispose();
-        Networks.Dispose(); Volumes.Dispose(); Images.Dispose();
-        IsSearchActive.Dispose(); StatusMessage.Dispose(); IsDetailOpen.Dispose();
-        SelectedContainer.Dispose(); IsSettingsOpen.Dispose(); LogContent.Dispose();
-        IsInputMode.Dispose(); InputText.Dispose();
-        _detailContentChanged.Dispose(); _settingsContentChanged.Dispose();
+        AllContainers.Dispose();
+        FilteredContainers.Dispose();
+        SearchText.Dispose();
+        Networks.Dispose();
+        Volumes.Dispose();
+        Images.Dispose();
+        IsSearchActive.Dispose();
+        StatusMessage.Dispose();
+        IsDetailOpen.Dispose();
+        SelectedContainer.Dispose();
+        IsSettingsOpen.Dispose();
+        LogContent.Dispose();
+        IsInputMode.Dispose();
+        InputText.Dispose();
+        _detailContentChanged.Dispose();
+        _settingsContentChanged.Dispose();
         base.Dispose();
     }
 }

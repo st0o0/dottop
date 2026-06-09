@@ -442,7 +442,9 @@ public class DockerPage : ReactivePage<DockerViewModel>
             .WithChild(new TextNode($"  Connected Containers ({network.Containers.Count}):").WithForeground(Theme.Accent).Height(1));
 
         foreach (var c in network.Containers)
+        {
             info.WithChild(new TextNode($"    {c.Name,-24} {c.IPv4Address}").WithForeground(Theme.Text).Height(1));
+        }
 
         _detailModal.Content = info;
     }
@@ -473,7 +475,9 @@ public class DockerPage : ReactivePage<DockerViewModel>
             info.WithChild(new TextNode("").Height(1));
             info.WithChild(new TextNode("  Labels:").WithForeground(Theme.Accent).Height(1));
             foreach (var (k, v) in volume.Labels)
+            {
                 info.WithChild(new TextNode($"    {k} = {v}").WithForeground(Theme.Text).Height(1));
+            }
         }
 
         _detailModal.Content = info;

@@ -89,7 +89,9 @@ public sealed class ProcessMonitorActor : ReceiveActor
             finally
             {
                 foreach (var p in processes)
+                {
                     p.Dispose();
+                }
             }
         });
     }

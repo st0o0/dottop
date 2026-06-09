@@ -95,7 +95,7 @@ public class PerformanceViewModel : ReactiveViewModel
             : $" {Strings.PerfStatusBar}";
     }
 
-    private async Task InitializeAsync()
+    private async ValueTask InitializeAsync()
     {
         var ct = _cts!.Token;
         var supervisor = await _supervisor.GetAsync(ct);
@@ -152,8 +152,7 @@ public class PerformanceViewModel : ReactiveViewModel
         }
     }
 
-    private async Task ConnectStream<TData>(
-        IActorRef supervisor, object startMessage, CancellationToken ct, Action<TData> handler)
+    private async ValueTask ConnectStream<TData>(IActorRef supervisor, object startMessage, CancellationToken ct, Action<TData> handler)
     {
         while (!ct.IsCancellationRequested)
         {
@@ -161,7 +160,9 @@ public class PerformanceViewModel : ReactiveViewModel
             {
                 var stream = await supervisor.Ask<MonitoringStream<TData>>(startMessage, TimeSpan.FromSeconds(60));
                 await foreach (var item in stream.Data.WithCancellation(ct))
+                {
                     handler(item);
+                }
             }
             catch (OperationCanceledException) { return; }
             catch
@@ -209,7 +210,6 @@ public class PerformanceViewModel : ReactiveViewModel
             PerfDetailSection.Ram => PerfDetailSection.Disk,
             PerfDetailSection.Disk => PerfDetailSection.Network,
             PerfDetailSection.Network => GpuAvailable ? PerfDetailSection.Gpu : PerfDetailSection.Cpu,
-            PerfDetailSection.Gpu => PerfDetailSection.Cpu,
             _ => PerfDetailSection.Cpu,
         };
     }

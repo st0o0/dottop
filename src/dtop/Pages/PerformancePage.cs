@@ -252,8 +252,6 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(Theme.Primary).WithBorderColor(Theme.Primary);
 
-        var graphStyle = ViewModel.GraphStyleSetting;
-
         var footerHint = section switch
         {
             PerfDetailSection.Disk => Strings.HintPerfDiskDetailKeys,
@@ -383,7 +381,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 {
                     var pin = ViewModel.IsAdapterPinned(net.Name) ? "● " : "  ";
                     var name = net.Name.Length > 20 ? net.Name[..19] + "…" : net.Name;
-                    return $" {pin}{name,-20} {"↓"} {FormatBytes(net.RxBytesPerSec),10}  {"↑"} {FormatBytes(net.TxBytesPerSec),10}";
+                    return $" {pin}{name,-20} ↓ {FormatBytes(net.RxBytesPerSec),10}  ↑ {FormatBytes(net.TxBytesPerSec),10}";
                 },
                 net => ViewModel.IsAdapterPinned(net.Name) ? Theme.Accent
                     : net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? Theme.Text
@@ -513,10 +511,13 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
                         var layout = Layouts.Vertical();
                         foreach (var net in nets.Take(4))
+                        {
                             layout.WithChild(
                                 new TextNode(
                                         $" {net.Name}  ↓{FormatBytes(net.RxBytesPerSec)}  ↑{FormatBytes(net.TxBytesPerSec)}")
                                     .WithForeground(Theme.Text).Height(1));
+                        }
+
                         return layout;
                     }).AsLayout())
             .Fill();

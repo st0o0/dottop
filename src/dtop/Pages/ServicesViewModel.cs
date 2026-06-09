@@ -67,10 +67,10 @@ public class ServicesViewModel : ReactiveViewModel
     private async Task InitializeAsync()
     {
         _supervisorActor = await _supervisor.GetAsync(CancellationToken.None);
-        RefreshServices();
+        _ = RefreshServices();
     }
 
-    private async void RefreshServices()
+    private async ValueTask RefreshServices()
     {
         if (_supervisorActor is null)
         {
@@ -83,7 +83,11 @@ public class ServicesViewModel : ReactiveViewModel
             AllServices.Value = result;
             ApplyFilter();
         }
-        catch (Exception ex) { Trace.Warning(this, "Failed to load services: {0}", ex.Message); StatusMessage.Value = Strings.ErrorLoadingServices; }
+        catch (Exception ex)
+        {
+            Trace.Warning(this, "Failed to load services: {0}", ex.Message);
+            StatusMessage.Value = Strings.ErrorLoadingServices;
+        }
     }
 
     private void ApplyFilter()
@@ -118,28 +122,41 @@ public class ServicesViewModel : ReactiveViewModel
         {
             switch (key.KeyInfo.Key)
             {
-                case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
-                case ConsoleKey.Backspace: if (SearchText.Value.Length > 0)
+                case ConsoleKey.Escape:
+                    IsSearchActive.Value = false;
+                    SearchText.Value = "";
+                    break;
+                case ConsoleKey.Backspace:
+                    if (SearchText.Value.Length > 0)
                     {
                         SearchText.Value = SearchText.Value[..^1];
                     }
 
                     break;
-                default: if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
+                default:
+                    if (key.KeyInfo.KeyChar is >= ' ' and <= '~')
                     {
                         SearchText.Value += key.KeyInfo.KeyChar;
                     }
 
                     break;
             }
+
             return;
         }
-        if (IsSettingsOpen.Value) { HandleSettingsKey(key); return; }
+
+        if (IsSettingsOpen.Value)
+        {
+            HandleSettingsKey(key);
+            return;
+        }
+
         if (IsDetailOpen.Value)
         {
             HandleDetailKey(key);
             return;
         }
+
         switch (key.KeyInfo.Key)
         {
             case ConsoleKey.UpArrow: ListNode?.MoveUp(); break;
@@ -163,10 +180,11 @@ public class ServicesViewModel : ReactiveViewModel
                     UpdateStatus();
                     _detailContentChanged.OnNext(Unit.Default);
                 }
+
                 break;
-            case ConsoleKey.S: ActionOnSelected(); break;
-            case ConsoleKey.X: ActionOnSelected(ActionType.Stop); break;
-            case ConsoleKey.R: ActionOnSelected(ActionType.Restart); break;
+            case ConsoleKey.S: _ = ActionOnSelected(); break;
+            case ConsoleKey.X: _ = ActionOnSelected(ActionType.Stop); break;
+            case ConsoleKey.R: _ = ActionOnSelected(ActionType.Restart); break;
             case ConsoleKey.D1: Navigate("/"); break;
             case ConsoleKey.D2: Navigate("/performance"); break;
             case ConsoleKey.D4: Navigate("/network"); break;
@@ -190,18 +208,18 @@ public class ServicesViewModel : ReactiveViewModel
                 UpdateStatus();
                 break;
             case ConsoleKey.S:
-                ActionOnDetailService();
+                _ = ActionOnDetailService();
                 break;
             case ConsoleKey.X:
-                ActionOnDetailService(ActionType.Stop);
+                _ = ActionOnDetailService(ActionType.Stop);
                 break;
             case ConsoleKey.R:
-                ActionOnDetailService(ActionType.Restart);
+                _ = ActionOnDetailService(ActionType.Restart);
                 break;
         }
     }
 
-    private async void ActionOnDetailService(ActionType action = ActionType.Start)
+    private async ValueTask ActionOnDetailService(ActionType action = ActionType.Start)
     {
         if (_supervisorActor is null || SelectedService.Value is not { } svc)
         {
@@ -224,9 +242,12 @@ public class ServicesViewModel : ReactiveViewModel
             else
             {
                 var error = ((ActionFailure)result).Error;
-                _toast.Show("Error: " + error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + error,
+                    new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                        Duration: TimeSpan.FromSeconds(5)));
             }
-            RefreshServices();
+
+            _ = RefreshServices();
 
             // Update the detail modal with refreshed data
             if (IsDetailOpen.Value)
@@ -241,13 +262,20 @@ public class ServicesViewModel : ReactiveViewModel
         }
         catch (Exception ex)
         {
-            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("Error: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
-    private enum ActionType { Start, Stop, Restart }
+    private enum ActionType
+    {
+        Start,
+        Stop,
+        Restart
+    }
 
-    private async void ActionOnSelected(ActionType action = ActionType.Start)
+    private async ValueTask ActionOnSelected(ActionType action = ActionType.Start)
     {
         if (_supervisorActor is null || GetSelectedItem?.Invoke() is not { } svc)
         {
@@ -270,13 +298,18 @@ public class ServicesViewModel : ReactiveViewModel
             else
             {
                 var error = ((ActionFailure)result).Error;
-                _toast.Show("Error: " + error, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+                _toast.Show("Error: " + error,
+                    new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                        Duration: TimeSpan.FromSeconds(5)));
             }
-            RefreshServices();
+
+            await RefreshServices();
         }
         catch (Exception ex)
         {
-            _toast.Show("Error: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("Error: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
@@ -298,6 +331,7 @@ public class ServicesViewModel : ReactiveViewModel
                 {
                     _ = PerformUpdateAsync();
                 }
+
                 break;
         }
     }
@@ -338,7 +372,8 @@ public class ServicesViewModel : ReactiveViewModel
         }
         else
         {
-            _toast.Show(Strings.UpdateFailed, new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show(Strings.UpdateFailed,
+                new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
@@ -358,16 +393,23 @@ public class ServicesViewModel : ReactiveViewModel
     public string GetSettingsFilePath() => SettingsService.FilePath;
     public bool IsUpdateAvailable => _updateService.UpdateAvailable;
     public string CurrentVersionDisplay => string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
+
     public string? LatestVersionDisplay => _updateService.UpdateAvailable
         ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
         : null;
 
     public override void Dispose()
     {
-        AllServices.Dispose(); FilteredServices.Dispose(); SearchText.Dispose();
-        IsSearchActive.Dispose(); StatusMessage.Dispose(); IsDetailOpen.Dispose();
-        SelectedService.Dispose(); IsSettingsOpen.Dispose();
-        _detailContentChanged.Dispose(); _settingsContentChanged.Dispose();
+        AllServices.Dispose();
+        FilteredServices.Dispose();
+        SearchText.Dispose();
+        IsSearchActive.Dispose();
+        StatusMessage.Dispose();
+        IsDetailOpen.Dispose();
+        SelectedService.Dispose();
+        IsSettingsOpen.Dispose();
+        _detailContentChanged.Dispose();
+        _settingsContentChanged.Dispose();
         base.Dispose();
     }
 }

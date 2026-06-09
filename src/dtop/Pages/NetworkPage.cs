@@ -147,12 +147,11 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
     private ILayoutNode BuildSearchBar()
     {
-        return ViewModel.IsSearchActive.CombineLatest(ViewModel.SearchText,
-            (active, search) =>
+        return ViewModel.IsSearchActive.CombineLatest(ViewModel.SearchText, ILayoutNode (active, search) =>
             {
                 if (active)
                 {
-                    return (ILayoutNode)new TextNode($" / {search}█  Esc: Exit")
+                    return new TextNode($" / {search}█  Esc: Exit")
                         .WithForeground(Theme.Warning);
                 }
 

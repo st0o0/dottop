@@ -16,7 +16,13 @@ using Termina.Terminal;
 
 namespace dtop.Pages;
 
-public enum SortColumn { Name, Cpu, Ram, Pid }
+public enum SortColumn
+{
+    Name,
+    Cpu,
+    Ram,
+    Pid
+}
 
 public class ProcessesViewModel : ReactiveViewModel
 {
@@ -42,7 +48,7 @@ public class ProcessesViewModel : ReactiveViewModel
     public ReactiveProperty<List<ProcessSnapshot>> AllProcesses { get; } = new([]);
     public ReactiveProperty<List<ProcessSnapshot>> FilteredProcesses { get; } = new([]);
     public ReactiveProperty<string> SearchText { get; } = new("");
-    public ReactiveProperty<ProcessGroup?> SelectedGroup { get; } = new((ProcessGroup?)null);
+    public ReactiveProperty<ProcessGroup?> SelectedGroup { get; } = new(null);
     public ReactiveProperty<SortColumn> SortColumn { get; } = new(Pages.SortColumn.Ram);
     public ReactiveProperty<bool> IsSearchActive { get; } = new(false);
     public ReactiveProperty<bool> IsOverlayOpen { get; } = new(false);
@@ -124,7 +130,7 @@ public class ProcessesViewModel : ReactiveViewModel
                 ApplyFilter();
 
                 if (IsOverlayOpen.Value && SelectedProcess.Value is { } current
-                    && OverlayTabIndex.Value == 0)
+                                        && OverlayTabIndex.Value == 0)
                 {
                     var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
                     if (updated is not null)
@@ -135,8 +141,14 @@ public class ProcessesViewModel : ReactiveViewModel
                 }
             }
         }
-        catch (OperationCanceledException) { }
-        catch (Exception) { }
+        catch (OperationCanceledException)
+        {
+            // noop
+        }
+        catch (Exception)
+        {
+            // noop
+        }
     }
 
     private void ApplyFilter()
@@ -170,15 +182,30 @@ public class ProcessesViewModel : ReactiveViewModel
         };
 
         var sorted = source.ToList();
-        FilteredProcesses.Value = PinService.SortWithPinnedFirst(sorted, p => _pinService.IsProcessPinned(p.Pid)).ToList();
+        FilteredProcesses.Value =
+            PinService.SortWithPinnedFirst(sorted, p => _pinService.IsProcessPinned(p.Pid)).ToList();
         UpdateStatus();
     }
 
     private void HandleKey(KeyPressed key)
     {
-        if (IsSearchActive.Value) { HandleSearchKey(key); return; }
-        if (IsSettingsOpen.Value) { HandleSettingsKey(key); return; }
-        if (IsOverlayOpen.Value) { HandleOverlayKey(key); return; }
+        if (IsSearchActive.Value)
+        {
+            HandleSearchKey(key);
+            return;
+        }
+
+        if (IsSettingsOpen.Value)
+        {
+            HandleSettingsKey(key);
+            return;
+        }
+
+        if (IsOverlayOpen.Value)
+        {
+            HandleOverlayKey(key);
+            return;
+        }
 
         switch (key.KeyInfo.Key)
         {
@@ -198,6 +225,7 @@ public class ProcessesViewModel : ReactiveViewModel
                     _overlayContentChanged.OnNext(Unit.Default);
                     LoadOverlayTab();
                 }
+
                 break;
             default:
                 if (key.KeyInfo.KeyChar == '/')
@@ -228,6 +256,7 @@ public class ProcessesViewModel : ReactiveViewModel
                     _pinService.ToggleProcessPin(selectedProc.Pid);
                     ApplyFilter();
                 }
+
                 break;
             case ConsoleKey.Q: Shutdown(); break;
         }
@@ -239,7 +268,10 @@ public class ProcessesViewModel : ReactiveViewModel
     {
         switch (key.KeyInfo.Key)
         {
-            case ConsoleKey.Escape: IsSearchActive.Value = false; SearchText.Value = ""; break;
+            case ConsoleKey.Escape:
+                IsSearchActive.Value = false;
+                SearchText.Value = "";
+                break;
             case ConsoleKey.Backspace:
                 if (SearchText.Value.Length > 0)
                 {
@@ -284,7 +316,9 @@ public class ProcessesViewModel : ReactiveViewModel
                 }
 
                 UpdateStatus();
-                _overlayContentChanged.OnNext(Unit.Default); LoadOverlayTab(); break;
+                _overlayContentChanged.OnNext(Unit.Default);
+                _ = LoadOverlayTab();
+                break;
             case ConsoleKey.UpArrow: OverlayListNode?.MoveUp(); break;
             case ConsoleKey.DownArrow: OverlayListNode?.MoveDown(); break;
             case ConsoleKey.Home: OverlayListNode?.MoveToTop(); break;
@@ -299,12 +333,15 @@ public class ProcessesViewModel : ReactiveViewModel
 
                 break;
             case ConsoleKey.Y:
-                if (IsKillConfirmPending.Value && SelectedProcess.Value is { } killTarget && _supervisorActor is not null)
+                if (IsKillConfirmPending.Value && SelectedProcess.Value is { } killTarget &&
+                    _supervisorActor is not null)
                 {
                     _supervisorActor.Tell(new KillProcess(killTarget.Pid));
                     IsKillConfirmPending.Value = false;
-                    _toast.Show($"Process {killTarget.Name} ({killTarget.Pid}) killed", new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
+                    _toast.Show($"Process {killTarget.Name} ({killTarget.Pid}) killed",
+                        new ToastOptions(Duration: TimeSpan.FromSeconds(3)));
                 }
+
                 break;
             case ConsoleKey.N:
                 IsKillConfirmPending.Value = false;
@@ -326,7 +363,7 @@ public class ProcessesViewModel : ReactiveViewModel
         UpdateStatus();
     }
 
-    public async void LoadOverlayTab()
+    public async ValueTask LoadOverlayTab()
     {
         if (SelectedProcess.Value is not { } proc || _supervisorActor is null)
         {
@@ -347,10 +384,11 @@ public class ProcessesViewModel : ReactiveViewModel
                     }
                     else if (treeResponse is ActionFailure treeFail)
                     {
-                        _toast?.Show(treeFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        _toast.Show(treeFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
                         ProcessTree.Value = new ProcessTreeResult(proc.Pid, proc.Name, []);
                         _overlayContentChanged.OnNext(Unit.Default);
                     }
+
                     break;
                 case 2 when ProcessEnv.Value is null:
                     var envResponse = await _supervisorActor.Ask<object>(
@@ -362,10 +400,11 @@ public class ProcessesViewModel : ReactiveViewModel
                     }
                     else if (envResponse is ActionFailure envFail)
                     {
-                        _toast?.Show(envFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        _toast.Show(envFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
                         ProcessEnv.Value = new Dictionary<string, string>();
                         _overlayContentChanged.OnNext(Unit.Default);
                     }
+
                     break;
                 case 3 when ProcessHandles.Value is null:
                     var handlesResponse = await _supervisorActor.Ask<object>(
@@ -377,25 +416,31 @@ public class ProcessesViewModel : ReactiveViewModel
                     }
                     else if (handlesResponse is ActionFailure handlesFail)
                     {
-                        _toast?.Show(handlesFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
+                        _toast.Show(handlesFail.Error, new ToastOptions(Color: Color.BrightRed, Icon: "⚠"));
                         ProcessHandles.Value = [];
                         _overlayContentChanged.OnNext(Unit.Default);
                     }
+
                     break;
             }
         }
         catch (Exception ex)
         {
             Trace.Warning(this, "Failed to load overlay tab {0}: {1}", OverlayTabIndex.Value, ex.Message);
-            _toast.Show("⚠ Failed to load: " + ex.Message, new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show("⚠ Failed to load: " + ex.Message,
+                new ToastOptions(Position: ToastPosition.TopCenter, Color: Color.BrightRed,
+                    Duration: TimeSpan.FromSeconds(5)));
 
             // Set fallback data so the UI doesn't show "Loading..." forever
             switch (OverlayTabIndex.Value)
             {
-                case 1: ProcessTree.Value = new ProcessTreeResult(SelectedProcess.Value!.Pid, SelectedProcess.Value.Name, []); break;
+                case 1:
+                    ProcessTree.Value =
+                        new ProcessTreeResult(SelectedProcess.Value!.Pid, SelectedProcess.Value.Name, []); break;
                 case 2: ProcessEnv.Value = new Dictionary<string, string>(); break;
                 case 3: ProcessHandles.Value = []; break;
             }
+
             _overlayContentChanged.OnNext(Unit.Default);
         }
     }
@@ -411,15 +456,19 @@ public class ProcessesViewModel : ReactiveViewModel
                 queue = new Queue<double>(CpuHistoryLength);
                 _cpuHistory[proc.Pid] = queue;
             }
+
             queue.Enqueue(proc.CpuPercent);
             if (queue.Count > CpuHistoryLength)
             {
                 queue.Dequeue();
             }
         }
+
         var stale = _cpuHistory.Keys.Where(pid => !activePids.Contains(pid)).ToList();
         foreach (var pid in stale)
+        {
             _cpuHistory.Remove(pid);
+        }
     }
 
     public IReadOnlyList<double> GetCpuHistory(int pid)
@@ -465,7 +514,8 @@ public class ProcessesViewModel : ReactiveViewModel
         }
         else
         {
-            StatusMessage.Value = string.Format(Strings.ProcessStatusFormat, FilteredProcesses.Value.Count, SelectedGroup.Value?.ToString() ?? Strings.GroupAll, SortColumn.Value);
+            StatusMessage.Value = string.Format(Strings.ProcessStatusFormat, FilteredProcesses.Value.Count,
+                SelectedGroup.Value?.ToString() ?? Strings.GroupAll, SortColumn.Value);
         }
     }
 
@@ -487,6 +537,7 @@ public class ProcessesViewModel : ReactiveViewModel
                 {
                     _ = PerformUpdateAsync();
                 }
+
                 break;
         }
     }
@@ -527,7 +578,8 @@ public class ProcessesViewModel : ReactiveViewModel
         }
         else
         {
-            _toast.Show(Strings.UpdateFailed, new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
+            _toast.Show(Strings.UpdateFailed,
+                new ToastOptions(Color: Color.BrightRed, Duration: TimeSpan.FromSeconds(5)));
         }
     }
 
@@ -548,6 +600,7 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public bool IsUpdateAvailable => _updateService.UpdateAvailable;
     public string CurrentVersionDisplay => string.Format(Strings.CurrentVersion, _updateService.CurrentVersion);
+
     public string? LatestVersionDisplay => _updateService.UpdateAvailable
         ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
         : null;
@@ -565,14 +618,23 @@ public class ProcessesViewModel : ReactiveViewModel
     {
         _cts?.Cancel();
         _cts?.Dispose();
-        AllProcesses.Dispose(); FilteredProcesses.Dispose();
-        SearchText.Dispose(); SelectedGroup.Dispose();
+        AllProcesses.Dispose();
+        FilteredProcesses.Dispose();
+        SearchText.Dispose();
+        SelectedGroup.Dispose();
         SortColumn.Dispose();
-        IsSearchActive.Dispose(); IsOverlayOpen.Dispose(); ShowPinnedOnly.Dispose();
-        SelectedProcess.Dispose(); OverlayTabIndex.Dispose();
-        StatusMessage.Dispose(); IsKillConfirmPending.Dispose(); IsSettingsOpen.Dispose();
-        _settingsContentChanged.Dispose(); ProcessTree.Dispose();
-        ProcessEnv.Dispose(); ProcessHandles.Dispose();
+        IsSearchActive.Dispose();
+        IsOverlayOpen.Dispose();
+        ShowPinnedOnly.Dispose();
+        SelectedProcess.Dispose();
+        OverlayTabIndex.Dispose();
+        StatusMessage.Dispose();
+        IsKillConfirmPending.Dispose();
+        IsSettingsOpen.Dispose();
+        _settingsContentChanged.Dispose();
+        ProcessTree.Dispose();
+        ProcessEnv.Dispose();
+        ProcessHandles.Dispose();
         base.Dispose();
     }
 }

@@ -161,12 +161,12 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .CombineLatest(ViewModel.SearchText, (a, b) => (a, b))
             .CombineLatest(ViewModel.SortColumn, (ab, s) => (ab.a, ab.b, s))
             .CombineLatest(ViewModel.SelectedGroup, (abs, g) => (Active: abs.a, Search: abs.b, Sort: abs.s, Group: g))
-            .Select(t =>
+            .Select(ILayoutNode (t) =>
             {
                 var groupLabel = t.Group?.ToString() ?? Strings.GroupAll;
                 if (t.Active)
                 {
-                    return (ILayoutNode)new TextNode($" / {t.Search}█  Esc: Exit")
+                    return new TextNode($" / {t.Search}█  Esc: Exit")
                         .WithForeground(Theme.Warning);
                 }
 
@@ -233,7 +233,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildOverlayTab(ProcessSnapshot proc, int tab)
     {
-        ILayoutNode content = tab switch
+        var content = tab switch
         {
             0 => BuildOverviewTab(proc, ViewModel.IsKillConfirmPending.Value),
             1 => BuildTreeTab(),
@@ -248,7 +248,6 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         var ramMb = proc.WorkingSetBytes / 1024 / 1024;
         var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1} GB" : $"{ramMb} MB";
-        var cpuBar = MiniBar(proc.CpuPercent, 20);
         var cpuColor = proc.CpuPercent > 80 ? Color.BrightRed : proc.CpuPercent > 50 ? Color.BrightYellow : Color.Cyan;
 
         var cpuGraph = new GraphNode()
@@ -256,7 +255,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithColor(cpuColor)
             .WithRange(0, 100);
         foreach (var val in ViewModel.GetCpuHistory(proc.Pid))
+        {
             cpuGraph.Push(val);
+        }
 
         var cpuPanel = new PanelNode()
             .WithTitle($" CPU {proc.CpuPercent:F1}% ")
@@ -265,9 +266,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithBorderColor(Theme.Border)
             .WithContent(cpuGraph);
 
-        var ramPercent = ramMb >= 1024
-            ? proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100
-            : proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100;
+        var ramPercent = proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100;
         var ramGraph = new GraphNode()
             .WithStyle(GraphStyle.Blocks)
             .WithColor(Theme.Graph)
@@ -324,8 +323,9 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         {
             lines.Add($"  ● {node.Name} ({node.Pid})");
             for (var i = 0; i < node.Children.Count; i++)
-                FlattenTree(lines, node.Children[i], depth + 1,
-                    i == node.Children.Count - 1, "  ");
+            {
+                FlattenTree(lines, node.Children[i], depth + 1, i == node.Children.Count - 1, "  ");
+            }
         }
         else
         {
@@ -333,8 +333,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             lines.Add($"{parentPrefix}{connector}{node.Name} ({node.Pid})");
             var childPrefix = parentPrefix + (isLast ? "    " : "│   ");
             for (var i = 0; i < node.Children.Count; i++)
+            {
                 FlattenTree(lines, node.Children[i], depth + 1,
                     i == node.Children.Count - 1, childPrefix);
+            }
         }
     }
 

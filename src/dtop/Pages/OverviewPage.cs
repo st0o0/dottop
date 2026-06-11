@@ -64,7 +64,8 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
         return Layouts.Vertical()
             .WithChild(new TabBarNode(0))
             .WithChild(ViewModel.ActivePreset
-                .Select<int, ILayoutNode>(BuildGridForPreset)
+                .CombineLatest(ViewModel.ShowCpu, ViewModel.ShowMemory, ViewModel.ShowNetDisk, ViewModel.ShowProcesses,
+                    (preset, _, _, _, _) => BuildGridForPreset(preset))
                 .AsLayout().Fill())
             .WithChild(ViewModel.StatusHint
                 .Select<string, ILayoutNode>(hint =>
@@ -119,6 +120,11 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     /// <summary>Preset 0 – Standard: top CPU[+GPU], middle MEM|NET/DISK, bottom Processes</summary>
     private ILayoutNode BuildPreset0Standard()
     {
+        var showCpu = ViewModel.ShowCpu.Value;
+        var showMem = ViewModel.ShowMemory.Value;
+        var showNet = ViewModel.ShowNetDisk.Value;
+        var showProc = ViewModel.ShowProcesses.Value;
+
         if (ViewModel.GpuAvailable)
         {
             var grid = new GridNode(3, 2)
@@ -128,30 +134,54 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                     new SizeConstraint.Percent(20),
                     new SizeConstraint.Fill());
 
-            grid.SetCell(0, 0, BuildCpuPanel());
-            grid.SetCell(0, 1, BuildGpuPanel());
-            grid.SetCell(1, 0, BuildMemoryPanel());
-            grid.SetCell(1, 1, BuildNetDiskPanel());
-            grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
+            if (showCpu) grid.SetCell(0, 0, BuildCpuPanel());
+            grid.SetCell(0, showCpu ? 1 : 0, BuildGpuPanel(), colSpan: showCpu ? 1 : 2);
+
+            if (showMem && showNet)
+            {
+                grid.SetCell(1, 0, BuildMemoryPanel());
+                grid.SetCell(1, 1, BuildNetDiskPanel());
+            }
+            else if (showMem)
+            {
+                grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
+            }
+            else if (showNet)
+            {
+                grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+            }
+
+            if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
 
             return grid;
         }
         else
         {
-            // No GPU: single-column, stack mem+net/disk in row 1 side by side via a sub-layout
-            var grid = new GridNode(3, 1)
-                .WithColumnWidths(new SizeConstraint.Fill())
+            // No GPU: 2-column grid, CPU spans both columns
+            var grid = new GridNode(3, 2)
+                .WithColumnWidths(new SizeConstraint.Percent(60), new SizeConstraint.Fill())
                 .WithRowHeights(
                     new SizeConstraint.Percent(30),
                     new SizeConstraint.Percent(20),
                     new SizeConstraint.Fill());
 
-            grid.SetCell(0, 0, BuildCpuPanel());
-            grid.SetCell(1, 0, Layouts.Horizontal()
-                .WithChild(BuildMemoryPanel())
-                .WithSpacing(1)
-                .WithChild(BuildNetDiskPanel()));
-            grid.SetCell(2, 0, BuildProcessPanel());
+            if (showCpu) grid.SetCell(0, 0, BuildCpuPanel(), colSpan: 2);
+
+            if (showMem && showNet)
+            {
+                grid.SetCell(1, 0, BuildMemoryPanel());
+                grid.SetCell(1, 1, BuildNetDiskPanel());
+            }
+            else if (showMem)
+            {
+                grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
+            }
+            else if (showNet)
+            {
+                grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+            }
+
+            if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
 
             return grid;
         }
@@ -160,12 +190,15 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     /// <summary>Preset 1 – CPU Focus: top CPU (full-width), bottom Processes (full-width)</summary>
     private ILayoutNode BuildPreset1CpuFocus()
     {
+        var showCpu = ViewModel.ShowCpu.Value;
+        var showProc = ViewModel.ShowProcesses.Value;
+
         var grid = new GridNode(2, 2)
             .WithColumnWidths(new SizeConstraint.Fill(), new SizeConstraint.Fill())
             .WithRowHeights(new SizeConstraint.Percent(50), new SizeConstraint.Fill());
 
-        grid.SetCell(0, 0, BuildCpuPanel(), colSpan: 2);
-        grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 2);
+        if (showCpu) grid.SetCell(0, 0, BuildCpuPanel(), colSpan: 2);
+        if (showProc) grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 2);
 
         return grid;
     }
@@ -173,18 +206,37 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     /// <summary>Preset 2 – Resource Grid: 3-col resource row, then NET/DISK + Processes</summary>
     private ILayoutNode BuildPreset2ResourceGrid()
     {
+        var showCpu = ViewModel.ShowCpu.Value;
+        var showMem = ViewModel.ShowMemory.Value;
+        var showNet = ViewModel.ShowNetDisk.Value;
+        var showProc = ViewModel.ShowProcesses.Value;
+
         if (ViewModel.GpuAvailable)
         {
             var grid = new GridNode(2, 3)
                 .WithColumnWidths(new SizeConstraint.Fill(), new SizeConstraint.Fill(), new SizeConstraint.Fill())
                 .WithRowHeights(new SizeConstraint.Percent(35), new SizeConstraint.Fill());
 
-            grid.SetCell(0, 0, BuildCpuPanel());
-            grid.SetCell(0, 1, BuildMemoryPanel());
-            grid.SetCell(0, 2, BuildGpuPanel());
+            // Row 0: CPU | Memory | GPU — place only visible panels, pack left
+            var row0Col = 0;
+            if (showCpu) grid.SetCell(0, row0Col++, BuildCpuPanel());
+            if (showMem) grid.SetCell(0, row0Col++, BuildMemoryPanel());
+            grid.SetCell(0, row0Col, BuildGpuPanel());
 
-            grid.SetCell(1, 0, BuildNetDiskPanel());
-            grid.SetCell(1, 1, BuildProcessPanel(), colSpan: 2);
+            // Row 1: Net/Disk | Processes
+            if (showNet && showProc)
+            {
+                grid.SetCell(1, 0, BuildNetDiskPanel());
+                grid.SetCell(1, 1, BuildProcessPanel(), colSpan: 2);
+            }
+            else if (showNet)
+            {
+                grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 3);
+            }
+            else if (showProc)
+            {
+                grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 3);
+            }
 
             return grid;
         }
@@ -194,11 +246,13 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                 .WithColumnWidths(new SizeConstraint.Fill(), new SizeConstraint.Fill(), new SizeConstraint.Fill())
                 .WithRowHeights(new SizeConstraint.Percent(35), new SizeConstraint.Fill());
 
-            grid.SetCell(0, 0, BuildCpuPanel());
-            grid.SetCell(0, 1, BuildMemoryPanel());
-            grid.SetCell(0, 2, BuildNetDiskPanel());
+            // Row 0: CPU | Memory | Net/Disk — place only visible panels, pack left
+            var row0Col = 0;
+            if (showCpu) grid.SetCell(0, row0Col++, BuildCpuPanel());
+            if (showMem) grid.SetCell(0, row0Col++, BuildMemoryPanel());
+            if (showNet) grid.SetCell(0, row0Col, BuildNetDiskPanel());
 
-            grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 3);
+            if (showProc) grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 3);
 
             return grid;
         }
@@ -207,12 +261,15 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     /// <summary>Preset 3 – Minimal: compact CPU strip, then Processes</summary>
     private ILayoutNode BuildPreset3Minimal()
     {
+        var showCpu = ViewModel.ShowCpu.Value;
+        var showProc = ViewModel.ShowProcesses.Value;
+
         var grid = new GridNode(2, 1)
             .WithColumnWidths(new SizeConstraint.Fill())
             .WithRowHeights(new SizeConstraint.Percent(15), new SizeConstraint.Fill());
 
-        grid.SetCell(0, 0, BuildCpuStripPanel());
-        grid.SetCell(1, 0, BuildProcessPanel());
+        if (showCpu) grid.SetCell(0, 0, BuildCpuStripPanel());
+        if (showProc) grid.SetCell(1, 0, BuildProcessPanel());
 
         return grid;
     }
@@ -230,7 +287,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                     .WithChild(
                         ViewModel.CpuTotal
                             .Select<double, ILayoutNode>(pct =>
-                                new TextNode($" {Strings.TotalLabel} {pct:F1}%  {ViewModel.CpuName.Value}")
+                                new TextNode($" {ViewModel.CpuName.Value}  —  {Strings.TotalLabel} {pct:F1}%")
                                     .WithForeground(Theme.Accent))
                             .AsLayout().Height(1))
                     .WithChild(_coresNode!)

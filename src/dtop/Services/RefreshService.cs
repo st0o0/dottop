@@ -26,6 +26,7 @@ public sealed class RefreshService : IRefreshService, ITickSource, IDisposable
     public Observable<Tick> Ticks => _ticks.AsObservable();
 
     TimeSpan ITickSource.CurrentInterval => Interval.Value;
+    ReadOnlyReactiveProperty<TimeSpan> IRefreshService.Interval => Interval;
 
     public RefreshService(TimeSpan initialInterval, TimeProvider? timeProvider = null)
     {
@@ -39,38 +40,41 @@ public sealed class RefreshService : IRefreshService, ITickSource, IDisposable
 
     private void Shift(int direction)
     {
-        var idx = Array.IndexOf(Steps, Interval.Value);
-        if (idx < 0)
+        lock (_gate)
         {
-            idx = 2;
-        }
+            var idx = Array.IndexOf(Steps, Interval.Value);
+            var next = Math.Clamp(idx + direction, 0, Steps.Length - 1);
+            if (idx < 0 || Steps[next] == Interval.Value)
+            {
+                return;
+            }
 
-        var next = Math.Clamp(idx + direction, 0, Steps.Length - 1);
-        if (Steps[next] == Interval.Value)
-        {
-            return;
+            Interval.Value = Steps[next];
+            StartTimerCore();
         }
-
-        Interval.Value = Steps[next];
-        StartTimer();
     }
 
     private void StartTimer()
     {
         lock (_gate)
         {
-            _timer?.Dispose();
-            _timer = Observable.Interval(Interval.Value, _timeProvider)
-                .Subscribe(_ =>
-                {
-                    if (IsPaused.Value)
-                    {
-                        return;
-                    }
-
-                    _ticks.OnNext(new Tick(_seq++, Interval.Value));
-                });
+            StartTimerCore();
         }
+    }
+
+    private void StartTimerCore()
+    {
+        _timer?.Dispose();
+        _timer = Observable.Interval(Interval.Value, _timeProvider)
+            .Subscribe(_ =>
+            {
+                if (IsPaused.Value)
+                {
+                    return;
+                }
+
+                _ticks.OnNext(new Tick(Interlocked.Increment(ref _seq) - 1, Interval.Value));
+            });
     }
 
     private static TimeSpan SnapToStep(TimeSpan value) =>

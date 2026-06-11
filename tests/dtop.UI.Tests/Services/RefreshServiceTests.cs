@@ -101,4 +101,20 @@ public class RefreshServiceTests
         time.Advance(TimeSpan.FromMilliseconds(500));
         Assert.Equal(1, called);
     }
+
+    [Fact]
+    public void Dispose_CompletesTicks_AndStopsEmission()
+    {
+        var time = new FakeTimeProvider();
+        var svc = new RefreshService(TimeSpan.FromMilliseconds(500), time);
+        var completed = false;
+        var count = 0;
+        svc.Ticks.Subscribe(_ => count++, onCompleted: _ => completed = true);
+
+        svc.Dispose();
+        time.Advance(TimeSpan.FromMilliseconds(2000));
+
+        Assert.True(completed);
+        Assert.Equal(0, count);
+    }
 }

@@ -5,7 +5,7 @@ namespace dtop.Services;
 
 public interface IRefreshService
 {
-    ReactiveProperty<TimeSpan> Interval { get; }
+    ReadOnlyReactiveProperty<TimeSpan> Interval { get; }
     ReactiveProperty<bool> IsPaused { get; }
     Observable<Tick> Ticks { get; }
     void SpeedUp();

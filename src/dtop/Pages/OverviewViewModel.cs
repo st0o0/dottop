@@ -5,6 +5,7 @@ using dtop.Core.Messages;
 using dtop.Core.Models;
 using dtop.Core.Platform;
 using dtop.Nodes;
+using Termina.Layout;
 using dtop.Resources;
 using dtop.Services;
 using R3;

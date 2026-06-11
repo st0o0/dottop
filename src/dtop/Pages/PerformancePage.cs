@@ -50,12 +50,12 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
     {
         var graphStyle = ViewModel.GraphStyleSetting;
 
-        _cpuGraph = new GraphNode(_cpuHistory)
+        _cpuGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _ramGraph = new GraphNode(_ramHistory)
+        _ramGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
@@ -70,32 +70,32 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithDismissOnEscape(false)
             .WithPadding(1);
 
-        _cpuDetailGraph = new GraphNode(_cpuHistory)
+        _cpuDetailGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _ramDetailGraph = new GraphNode(_ramHistory)
+        _ramDetailGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _gpuDetailGraph = new GraphNode(_gpuHistory)
+        _gpuDetailGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _diskActiveGraph = new GraphNode(new MetricHistory())
+        _diskActiveGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _diskTransferGraph = new GraphNode(new MetricHistory())
+        _diskTransferGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100_000_000);
 
-        _gpuGraph = new GraphNode(_gpuHistory)
+        _gpuGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
@@ -150,14 +150,20 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 // always shows its own full history the moment it becomes visible, and
                 // makes it impossible for one metric's samples to leak into another's.
                 _cpuHistory.Push(ViewModel.CpuTotal.Value);
+                _cpuGraph?.SetData(_cpuHistory.Snapshot());
+                _cpuDetailGraph?.SetData(_cpuHistory.Snapshot());
 
                 var total = ViewModel.RamTotal.Value;
                 var used = ViewModel.RamUsed.Value;
                 _ramHistory.Push(total > 0 ? (double)used / total * 100 : 0);
+                _ramGraph?.SetData(_ramHistory.Snapshot());
+                _ramDetailGraph?.SetData(_ramHistory.Snapshot());
 
                 if (ViewModel is { GpuAvailable: true, Gpu.Value: { } gpu })
                 {
                     _gpuHistory.Push(gpu.UsagePercent);
+                    _gpuGraph?.SetData(_gpuHistory.Snapshot());
+                    _gpuDetailGraph?.SetData(_gpuHistory.Snapshot());
                 }
 
                 foreach (var disk in ViewModel.Disks.Value)
@@ -333,8 +339,8 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         // Point the disk graphs at the selected disk's own continuously-fed history,
         // so switching disks shows that disk's full history with no carry-over.
-        _diskActiveGraph!.WithHistory(GetOrAdd(_diskActiveHistory, disk.Name));
-        _diskTransferGraph!.WithHistory(GetOrAdd(_diskTransferHistory, disk.Name));
+        _diskActiveGraph!.SetData(GetOrAdd(_diskActiveHistory, disk.Name).Snapshot());
+        _diskTransferGraph!.SetData(GetOrAdd(_diskTransferHistory, disk.Name).Snapshot());
 
         var usedGb = disk.UsedBytes / 1024.0 / 1024 / 1024;
         var totalGb = disk.TotalBytes / 1024.0 / 1024 / 1024;

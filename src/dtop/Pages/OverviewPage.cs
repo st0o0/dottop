@@ -27,17 +27,17 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     {
         var graphStyle = ViewModel.GraphStyleSetting;
 
-        _cpuGraph = new GraphNode(_cpuHistory)
+        _cpuGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _ramGraph = new GraphNode(_ramHistory)
+        _ramGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _gpuGraph = new GraphNode(_gpuHistory)
+        _gpuGraph = new GraphNode()
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
@@ -83,14 +83,17 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                 if (ViewModel.IsPaused.Value) return;
 
                 _cpuHistory.Push(ViewModel.CpuTotal.Value);
+                _cpuGraph?.SetData(_cpuHistory.Snapshot());
 
                 var total = ViewModel.RamTotal.Value;
                 var used = ViewModel.RamUsed.Value;
                 _ramHistory.Push(total > 0 ? (double)used / total * 100 : 0);
+                _ramGraph?.SetData(_ramHistory.Snapshot());
 
                 if (ViewModel is { GpuAvailable: true, Gpu.Value: { } gpu })
                 {
                     _gpuHistory.Push(gpu.UsagePercent);
+                    _gpuGraph?.SetData(_gpuHistory.Snapshot());
                 }
             })
             .DisposeWith(Subscriptions);

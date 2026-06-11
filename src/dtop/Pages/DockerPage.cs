@@ -342,10 +342,11 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
         var cpuColor = container.CpuPercent > 80 ? Theme.Error
             : container.CpuPercent > 50 ? Theme.Warning : Theme.Graph;
-        var cpuGraph = new GraphNode(MetricHistory.From([container.CpuPercent]))
+        var cpuGraph = new GraphNode()
             .WithStyle(GraphStyle.Blocks)
             .WithColor(cpuColor)
             .WithRange(0, 100);
+        cpuGraph.SetData([container.CpuPercent]);
 
         var cpuPanel = new PanelNode()
             .WithTitle($" CPU {container.CpuPercent:F1}% ")
@@ -360,10 +361,11 @@ public class DockerPage : ReactivePage<DockerViewModel>
         var ramStr = ramMb >= 1024 ? $"{ramMb / 1024:F1} GB" : $"{ramMb:F0} MB";
         var ramLimitStr = ramLimitMb >= 1024 ? $"{ramLimitMb / 1024:F1} GB" : $"{ramLimitMb:F0} MB";
 
-        var ramGraph = new GraphNode(MetricHistory.From([Math.Clamp(ramPercent, 0, 100)]))
+        var ramGraph = new GraphNode()
             .WithStyle(GraphStyle.Blocks)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
+        ramGraph.SetData([Math.Clamp(ramPercent, 0, 100)]);
 
         var ramPanel = new PanelNode()
             .WithTitle($" RAM {ramStr} / {ramLimitStr} ")

@@ -49,11 +49,11 @@ public class SettingsService
         var themeChanged = _lastTheme != Settings.Theme;
         _lastTheme = Settings.Theme;
 
-        Theme.Apply(Settings.Theme);
+        ThemeService.Instance.ApplyBuiltIn(Settings.Theme);
 
         if (themeChanged)
         {
-            Theme.SetTerminalBackground();
+            ThemeService.Instance.SetTerminalBackground();
             Console.Write("\x1b[2J\x1b[H");
         }
 

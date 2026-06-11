@@ -38,7 +38,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             {
                 if (ViewModel.IsPinned(p.Pid))
                 {
-                    return Theme.Accent;
+                    return ThemeService.Instance.Current.Accent;
                 }
 
                 return p.CpuPercent switch
@@ -54,7 +54,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         _overlay = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -66,7 +66,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
         _settingsModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -80,7 +80,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelProcesses)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Theme.Primary)
+                .WithBorderColor(ThemeService.Instance.Current.Accent)
                 .WithContent(Layouts.Vertical()
                     .WithChild(BuildHeader())
                     .WithChild(_list.Fill()))
@@ -130,27 +130,27 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             return;
         }
 
-        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
-        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
+        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.SettingsRefreshRate,-20} ◀ {ViewModel.GetRefreshRateDisplay()} ▶")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode("").Height(1));
 
         if (ViewModel.IsUpdateAvailable)
         {
-            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(Theme.Warning).Height(1));
-            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(Theme.Accent).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(ThemeService.Instance.Current.Warning).Height(1));
+            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(ThemeService.Instance.Current.Accent).Height(1));
         }
         else
         {
-            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(Theme.TextDim).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
         }
 
         layout.WithChild(new TextNode("").Height(1));
-        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(Theme.TextDim).Height(1));
+        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         _settingsModal.Content = layout;
     }
@@ -167,11 +167,11 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 if (t.Active)
                 {
                     return new TextNode($" / {t.Search}█  Esc: Exit")
-                        .WithForeground(Theme.Warning);
+                        .WithForeground(ThemeService.Instance.Current.Warning);
                 }
 
                 return new TextNode(string.Format(Strings.SearchBarInactiveFormat, groupLabel, t.Sort) + " ↓")
-                    .WithForeground(Theme.TextDim);
+                    .WithForeground(ThemeService.Instance.Current.TextDim);
             })
             .AsLayout()
             .Height(1);
@@ -180,7 +180,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     private ILayoutNode BuildHeader()
     {
         return new TextNode($" {Strings.HeaderPid,6}  {Strings.HeaderName,-20} {"",8} {Strings.HeaderCpuPercent,6}  {Strings.HeaderRam,7}  {Strings.HeaderGroup}")
-            .WithForeground(Theme.Header)
+            .WithForeground(ThemeService.Instance.Current.Header)
             .Height(1);
     }
 
@@ -200,30 +200,30 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             var tabNode = new TextNode($" {tabLabels[i]} ");
             if (i == activeTab)
             {
-                tabNode.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
+                tabNode.WithForeground(ThemeService.Instance.Current.SelectionText).WithBackground(ThemeService.Instance.Current.Selection);
             }
             else
             {
-                tabNode.WithForeground(Theme.Secondary);
+                tabNode.WithForeground(ThemeService.Instance.Current.TextDim);
             }
 
             header.WithChild(tabNode.Height(1));
         }
 
         _overlay.WithTitle($" {proc.Name} — PID {proc.Pid} ");
-        _overlay.WithTitleColor(Theme.Primary);
+        _overlay.WithTitleColor(ThemeService.Instance.Current.Accent);
 
         if (ViewModel.IsKillConfirmPending.Value)
         {
-            _overlay.WithFooter("").WithFooterColor(Theme.TextDim);
+            _overlay.WithFooter("").WithFooterColor(ThemeService.Instance.Current.TextDim);
         }
         else if (activeTab == 0)
         {
-            _overlay.WithFooter(Strings.HintProcessOverviewKeys).WithFooterColor(Theme.TextDim);
+            _overlay.WithFooter(Strings.HintProcessOverviewKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
         }
         else
         {
-            _overlay.WithFooter(Strings.HintProcessDetailKeys).WithFooterColor(Theme.TextDim);
+            _overlay.WithFooter(Strings.HintProcessDetailKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
         }
 
         _overlay.Content = Layouts.Vertical()
@@ -260,30 +260,30 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithTitle($" CPU {proc.CpuPercent:F1}% ")
             .WithTitleColor(cpuColor)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Border)
+            .WithBorderColor(ThemeService.Instance.Current.Border)
             .WithContent(cpuGraph);
 
         var ramPercent = proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100;
         var ramGraph = new GraphNode()
             .WithStyle(GraphStyle.Blocks)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
         ramGraph.SetData([Math.Clamp(ramPercent, 0, 100)]);
 
         var ramPanel = new PanelNode()
             .WithTitle($" RAM {ramStr} ")
-            .WithTitleColor(Theme.Text)
+            .WithTitleColor(ThemeService.Instance.Current.Foreground)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Border)
+            .WithBorderColor(ThemeService.Instance.Current.Border)
             .WithContent(ramGraph);
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  PID        {proc.Pid}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  Parent     {proc.ParentPid}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  Threads    {proc.ThreadCount}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  Handles    {proc.HandleCount}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  {Strings.HeaderGroup}     {proc.Group}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(cpuPanel.Height(8))
             .WithChild(ramPanel.Height(5));
@@ -291,7 +291,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         if (isKillConfirmPending)
         {
             layout.WithChild(new TextNode(string.Format(Strings.KillConfirmFormat, proc.Name, proc.Pid))
-                .WithForeground(Theme.Error).Height(1));
+                .WithForeground(ThemeService.Instance.Current.Error).Height(1));
         }
 
         return layout;
@@ -301,13 +301,13 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (ViewModel.ProcessTree.Value is not { } tree)
         {
-            return new TextNode(Strings.LoadingProcessTree).WithForeground(Theme.TextDim);
+            return new TextNode(Strings.LoadingProcessTree).WithForeground(ThemeService.Instance.Current.TextDim);
         }
 
         var lines = new List<string>();
         FlattenTree(lines, tree, 0);
 
-        _treeList = new DataListNode<string>(line => line, _ => Theme.Text);
+        _treeList = new DataListNode<string>(line => line, _ => ThemeService.Instance.Current.Foreground);
         _treeList.SetItems(lines);
         ViewModel.OverlayListNode = _treeList;
         return _treeList.Fill();
@@ -341,12 +341,12 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (ViewModel.ProcessEnv.Value is not { } env)
         {
-            return new TextNode(Strings.LoadingEnvironmentVars).WithForeground(Theme.TextDim);
+            return new TextNode(Strings.LoadingEnvironmentVars).WithForeground(ThemeService.Instance.Current.TextDim);
         }
 
         _envList = new DataListNode<KeyValuePair<string, string>>(
             kv => $" {kv.Key}={kv.Value}",
-            _ => Theme.Text);
+            _ => ThemeService.Instance.Current.Foreground);
         _envList.SetItems(env.OrderBy(kv => kv.Key).ToList());
         ViewModel.OverlayListNode = _envList;
         return _envList.Fill();
@@ -356,17 +356,17 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         if (ViewModel.ProcessHandles.Value is not { } handles)
         {
-            return new TextNode(Strings.LoadingHandles).WithForeground(Theme.TextDim);
+            return new TextNode(Strings.LoadingHandles).WithForeground(ThemeService.Instance.Current.TextDim);
         }
 
         if (handles.Count == 0)
         {
-            return new TextNode(Strings.NoHandleInfo).WithForeground(Theme.TextDim);
+            return new TextNode(Strings.NoHandleInfo).WithForeground(ThemeService.Instance.Current.TextDim);
         }
 
         _handlesList = new DataListNode<string>(
             h => $" {h}",
-            _ => Theme.Text);
+            _ => ThemeService.Instance.Current.Foreground);
         _handlesList.SetItems(handles.ToList());
         ViewModel.OverlayListNode = _handlesList;
         return _handlesList.Fill();
@@ -376,7 +376,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
+                new TextNode($" {msg}").WithForeground(ThemeService.Instance.Current.StatusBarText).WithBackground(ThemeService.Instance.Current.StatusBar))
             .AsLayout()
             .Height(1);
     }

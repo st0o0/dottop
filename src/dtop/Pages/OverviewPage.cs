@@ -29,17 +29,17 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
 
         _cpuGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _ramGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _gpuGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _coresNode = new CpuCoresNode();
@@ -56,7 +56,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             {
                 > 80 => Color.BrightRed,
                 > 50 => Color.BrightYellow,
-                _ => Theme.Text,
+                _ => ThemeService.Instance.Current.Foreground,
             });
 
         ViewModel.ProcessListNode = _processList;
@@ -69,7 +69,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                 .AsLayout().Fill())
             .WithChild(ViewModel.StatusHint
                 .Select<string, ILayoutNode>(hint =>
-                    new TextNode(hint).WithForeground(Theme.TextDim).WithBackground(Theme.StatusBar))
+                    new TextNode(hint).WithForeground(ThemeService.Instance.Current.TextDim).WithBackground(ThemeService.Instance.Current.StatusBar))
                 .AsLayout().Height(1));
     }
 
@@ -130,7 +130,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
 
         if (ViewModel.GpuAvailable)
         {
-            bool hasMiddleRow = showMem || showNet;
+            var hasMiddleRow = showMem || showNet;
 
             GridNode grid;
             if (hasMiddleRow)
@@ -145,18 +145,24 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                 if (showCpu) grid.SetCell(0, 0, BuildCpuPanel());
                 grid.SetCell(0, showCpu ? 1 : 0, BuildGpuPanel(), colSpan: showCpu ? 1 : 2);
 
-                if (showMem && showNet)
+                switch (showMem)
                 {
-                    grid.SetCell(1, 0, BuildMemoryPanel());
-                    grid.SetCell(1, 1, BuildNetDiskPanel());
-                }
-                else if (showMem)
-                {
-                    grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
-                }
-                else if (showNet)
-                {
-                    grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+                    case true when showNet:
+                        grid.SetCell(1, 0, BuildMemoryPanel());
+                        grid.SetCell(1, 1, BuildNetDiskPanel());
+                        break;
+                    case true:
+                        grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
+                        break;
+                    default:
+                    {
+                        if (showNet)
+                        {
+                            grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+                        }
+
+                        break;
+                    }
                 }
 
                 if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
@@ -180,7 +186,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
         else
         {
             // No GPU: 2-column grid, CPU spans both columns
-            bool hasMiddleRow = showMem || showNet;
+            var hasMiddleRow = showMem || showNet;
 
             GridNode grid;
             if (hasMiddleRow)
@@ -194,18 +200,24 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
 
                 if (showCpu) grid.SetCell(0, 0, BuildCpuPanel(), colSpan: 2);
 
-                if (showMem && showNet)
+                switch (showMem)
                 {
-                    grid.SetCell(1, 0, BuildMemoryPanel());
-                    grid.SetCell(1, 1, BuildNetDiskPanel());
-                }
-                else if (showMem)
-                {
-                    grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
-                }
-                else if (showNet)
-                {
-                    grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+                    case true when showNet:
+                        grid.SetCell(1, 0, BuildMemoryPanel());
+                        grid.SetCell(1, 1, BuildNetDiskPanel());
+                        break;
+                    case true:
+                        grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
+                        break;
+                    default:
+                    {
+                        if (showNet)
+                        {
+                            grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+                        }
+
+                        break;
+                    }
                 }
 
                 if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
@@ -263,19 +275,25 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             if (showMem) grid.SetCell(0, row0Col++, BuildMemoryPanel());
             grid.SetCell(0, row0Col, BuildGpuPanel(), colSpan: 3 - row0Col);
 
-            // Row 1: Net/Disk | Processes
-            if (showNet && showProc)
+            switch (showNet)
             {
-                grid.SetCell(1, 0, BuildNetDiskPanel());
-                grid.SetCell(1, 1, BuildProcessPanel(), colSpan: 2);
-            }
-            else if (showNet)
-            {
-                grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 3);
-            }
-            else if (showProc)
-            {
-                grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 3);
+                // Row 1: Net/Disk | Processes
+                case true when showProc:
+                    grid.SetCell(1, 0, BuildNetDiskPanel());
+                    grid.SetCell(1, 1, BuildProcessPanel(), colSpan: 2);
+                    break;
+                case true:
+                    grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 3);
+                    break;
+                default:
+                {
+                    if (showProc)
+                    {
+                        grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 3);
+                    }
+
+                    break;
+                }
             }
 
             return grid;
@@ -321,14 +339,14 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
                         ViewModel.CpuTotal
                             .Select<double, ILayoutNode>(pct =>
                                 new TextNode($" {ViewModel.CpuName.Value}  —  {Strings.TotalLabel} {pct:F1}%")
-                                    .WithForeground(Theme.Accent))
+                                    .WithForeground(ThemeService.Instance.Current.Accent))
                             .AsLayout().Height(1))
                     .WithChild(_coresNode!)
                     .WithChild(_cpuGraph!.Fill()))
@@ -340,12 +358,12 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 ViewModel.CpuTotal
                     .Select<double, ILayoutNode>(pct =>
                         new TextNode($" {Strings.TotalLabel} {pct:F1}%  {BuildBar(pct, 30)}  {ViewModel.CpuName.Value}")
-                            .WithForeground(Theme.Accent))
+                            .WithForeground(ThemeService.Instance.Current.Accent))
                     .AsLayout())
             .Fill();
     }
@@ -355,7 +373,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelRam)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -366,7 +384,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                                 var totalGb = total / 1024.0 / 1024 / 1024;
                                 var pct = total > 0 ? (double)used / total * 100 : 0;
                                 return new TextNode($" {usedGb:F1} / {totalGb:F1} GiB  {pct:F1}%")
-                                    .WithForeground(Theme.Text);
+                                    .WithForeground(ThemeService.Instance.Current.Foreground);
                             }).AsLayout().Height(1))
                     .WithChild(_ramGraph!.Fill())
                     .Fill())
@@ -378,7 +396,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelGpu)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -387,18 +405,18 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                             {
                                 if (gpu is null)
                                 {
-                                    return new TextNode(Strings.GpuNoData).WithForeground(Theme.TextDim);
+                                    return new TextNode(Strings.GpuNoData).WithForeground(ThemeService.Instance.Current.TextDim);
                                 }
 
                                 var vramMb = gpu.VramUsedBytes / 1024.0 / 1024;
                                 var vramTotalMb = gpu.VramTotalBytes / 1024.0 / 1024;
                                 return Layouts.Vertical()
-                                    .WithChild(new TextNode($" {gpu.Name}").WithForeground(Theme.Accent).Height(1))
+                                    .WithChild(new TextNode($" {gpu.Name}").WithForeground(ThemeService.Instance.Current.Accent).Height(1))
                                     .WithChild(new TextNode(
                                             $" {Strings.GpuUsage} {gpu.UsagePercent:F0}%  {Strings.GpuTemperature} {gpu.TemperatureCelsius:F0}°C")
-                                        .WithForeground(Theme.Text).Height(1))
+                                        .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
                                     .WithChild(new TextNode($" VRAM {vramMb:F0}/{vramTotalMb:F0}MB")
-                                        .WithForeground(Theme.Text).Height(1));
+                                        .WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
                             }).AsLayout())
                     .WithChild(_gpuGraph!.Fill()))
             .Fill();
@@ -409,7 +427,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
         return new PanelNode()
             .WithTitle(" NET/DISK ")
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 ViewModel.Networks.CombineLatest<IReadOnlyList<NetworkSnapshot>, IReadOnlyList<DiskSnapshot>, ILayoutNode>(
                     ViewModel.Disks,
@@ -427,7 +445,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                             var name = net.Name.Length > 12 ? net.Name[..11] + "…" : net.Name;
                             layout.WithChild(new TextNode(
                                     $" {name,-12} ↓{FormatBytes(net.RxBytesPerSec),9}  ↑{FormatBytes(net.TxBytesPerSec),9}")
-                                .WithForeground(net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? Theme.Text : Theme.TextDim)
+                                .WithForeground(net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? ThemeService.Instance.Current.Foreground : ThemeService.Instance.Current.TextDim)
                                 .Height(1));
                         }
 
@@ -442,12 +460,12 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                             var totalGb = disk.TotalBytes / 1024.0 / 1024 / 1024;
                             layout.WithChild(
                                 new TextNode($" {disk.Name,-4} {usedGb:F0}/{totalGb:F0}GB {disk.UsedPercent:F0}%")
-                                    .WithForeground(Theme.Text).Height(1));
+                                    .WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
                         }
 
                         if (topNets.Count == 0 && disks.Count == 0)
                         {
-                            layout.WithChild(new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim));
+                            layout.WithChild(new TextNode(Strings.NoActiveAdapters).WithForeground(ThemeService.Instance.Current.TextDim));
                         }
 
                         return layout;
@@ -458,13 +476,13 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     private ILayoutNode BuildProcessPanel()
     {
         var header = new TextNode($" {"PID",6}  {"Name",-22} {"CPU%",6}  {"RAM",7}")
-            .WithForeground(Theme.Header)
+            .WithForeground(ThemeService.Instance.Current.Header)
             .Height(1);
 
         return new PanelNode()
             .WithTitle(Strings.PanelProcesses)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(header)

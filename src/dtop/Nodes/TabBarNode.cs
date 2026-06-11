@@ -53,12 +53,12 @@ public sealed class TabBarNode : LayoutNode
             var label = $" {_allLabels[i]} ";
             if (i == _activeIndex)
             {
-                context.SetForeground(Theme.SelectionText);
-                context.SetBackground(Theme.Selection);
+                context.SetForeground(ThemeService.Instance.Current.SelectionText);
+                context.SetBackground(ThemeService.Instance.Current.Selection);
             }
             else
             {
-                context.SetForeground(Theme.Secondary);
+                context.SetForeground(ThemeService.Instance.Current.TextDim);
             }
 
             context.WriteAt(x, 0, label);

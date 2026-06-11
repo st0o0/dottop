@@ -52,19 +52,19 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         _cpuGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _ramGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _coresNode = new CpuCoresNode();
 
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -72,39 +72,39 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         _cpuDetailGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _ramDetailGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _gpuDetailGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _diskActiveGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         _diskTransferGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100_000_000);
 
         _gpuGraph = new GraphNode()
             .WithStyle(graphStyle)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
         var conditionalDetail = new ConditionalNode(ViewModel.IsDetailOpen, _detailModal);
 
         _settingsModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -132,7 +132,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithChild(bottomRow.Fill())
             .WithChild(ViewModel.StatusHint
                 .Select<string, ILayoutNode>(hint =>
-                    new TextNode(hint).WithForeground(Theme.TextDim).WithBackground(Theme.StatusBar))
+                    new TextNode(hint).WithForeground(ThemeService.Instance.Current.TextDim).WithBackground(ThemeService.Instance.Current.StatusBar))
                 .AsLayout().Height(1));
 
         return Layouts.Stack(mainLayout, conditionalDetail, conditionalSettings);
@@ -191,27 +191,27 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             return;
         }
 
-        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
-        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
+        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.SettingsRefreshRate,-20} ◀ {ViewModel.GetRefreshRateDisplay()} ▶")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode("").Height(1));
 
         if (ViewModel.IsUpdateAvailable)
         {
-            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(Theme.Warning).Height(1));
-            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(Theme.Accent).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(ThemeService.Instance.Current.Warning).Height(1));
+            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(ThemeService.Instance.Current.Accent).Height(1));
         }
         else
         {
-            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(Theme.TextDim).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
         }
 
         layout.WithChild(new TextNode("").Height(1));
-        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(Theme.TextDim).Height(1));
+        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         _settingsModal.Content = layout;
     }
@@ -243,11 +243,11 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             var node = new TextNode($" {sections[i]} ");
             if (i == sectionIdx)
             {
-                node.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
+                node.WithForeground(ThemeService.Instance.Current.SelectionText).WithBackground(ThemeService.Instance.Current.Selection);
             }
             else
             {
-                node.WithForeground(Theme.Secondary);
+                node.WithForeground(ThemeService.Instance.Current.TextDim);
             }
 
             tabBar.WithChild(node);
@@ -255,15 +255,15 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var (color, title, info) = section switch
         {
-            PerfDetailSection.Cpu => (Theme.Graph, "CPU", BuildCpuDetailInfo()),
-            PerfDetailSection.Ram => (Theme.Graph, "RAM", BuildRamDetailInfo()),
-            PerfDetailSection.Disk => (Theme.Graph, "Disk", BuildDiskDetailInfo()),
-            PerfDetailSection.Network => (Theme.Graph, Strings.DetailSectionNetwork, BuildNetworkDetailInfo()),
-            PerfDetailSection.Gpu => (Theme.Graph, "GPU", BuildGpuDetailInfo()),
-            _ => (Theme.Text, "", Layouts.Vertical())
+            PerfDetailSection.Cpu => (ThemeService.Instance.Current.Accent, "CPU", BuildCpuDetailInfo()),
+            PerfDetailSection.Ram => (ThemeService.Instance.Current.Accent, "RAM", BuildRamDetailInfo()),
+            PerfDetailSection.Disk => (ThemeService.Instance.Current.Accent, "Disk", BuildDiskDetailInfo()),
+            PerfDetailSection.Network => (ThemeService.Instance.Current.Accent, Strings.DetailSectionNetwork, BuildNetworkDetailInfo()),
+            PerfDetailSection.Gpu => (ThemeService.Instance.Current.Accent, "GPU", BuildGpuDetailInfo()),
+            _ => (ThemeService.Instance.Current.Foreground, "", Layouts.Vertical())
         };
 
-        _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(Theme.Primary).WithBorderColor(Theme.Primary);
+        _detailModal.WithTitle(string.Format(Strings.DetailTitle, title)).WithTitleColor(ThemeService.Instance.Current.Accent).WithBorderColor(ThemeService.Instance.Current.Accent);
 
         var footerHint = section switch
         {
@@ -271,7 +271,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             PerfDetailSection.Network => Strings.HintPerfNetworkDetailKeys,
             _ => Strings.HintPerfDetailKeys
         };
-        _detailModal.WithFooter(footerHint).WithFooterColor(Theme.TextDim);
+        _detailModal.WithFooter(footerHint).WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {
@@ -309,7 +309,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return Layouts.Vertical()
             .WithChild(new TextNode(
                     $" {ViewModel.CpuName.Value}  —  {Strings.TotalLabel} {ViewModel.CpuTotal.Value:F1}%")
-                .WithForeground(Theme.Accent).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Accent).Height(1))
             .WithChild(coresNode);
     }
 
@@ -321,9 +321,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         return Layouts.Vertical()
             .WithChild(new TextNode(string.Format(Strings.UsedFormat, usedGb, totalGb, pct))
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode($" {BuildBar(pct, 40)}")
-                .WithForeground(Theme.Accent).Height(1));
+                .WithForeground(ThemeService.Instance.Current.Accent).Height(1));
     }
 
     private ILayoutNode BuildDiskDetailInfo()
@@ -331,7 +331,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var disks = ViewModel.Disks.Value;
         if (disks.Count == 0)
         {
-            return new TextNode(Strings.NoDisksFound).WithForeground(Theme.TextDim);
+            return new TextNode(Strings.NoDisksFound).WithForeground(ThemeService.Instance.Current.TextDim);
         }
 
         var idx = Math.Clamp(ViewModel.DiskDetailIndex.Value, 0, disks.Count - 1);
@@ -351,11 +351,11 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             var label = new TextNode($" {disks[i].Name} ");
             if (i == idx)
             {
-                label.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
+                label.WithForeground(ThemeService.Instance.Current.SelectionText).WithBackground(ThemeService.Instance.Current.Selection);
             }
             else
             {
-                label.WithForeground(Theme.TextDim);
+                label.WithForeground(ThemeService.Instance.Current.TextDim);
             }
 
             diskTabs.WithChild(label);
@@ -365,22 +365,22 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithChild(diskTabs.Height(1))
             .WithChild(new TextNode(string.Format(Strings.DiskUsedFormat, disk.Name, usedGb, totalGb, disk.UsedPercent,
                     BuildBar(disk.UsedPercent, 20)))
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode(
                     $" Read: {FormatBytes(disk.ReadBytesPerSec)}  Write: {FormatBytes(disk.WriteBytesPerSec)}  Active: {disk.ActiveTimePercent:F0}%")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode("").Height(1))
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelActiveTime)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Theme.Primary)
+                .WithBorderColor(ThemeService.Instance.Current.Accent)
                 .WithContent(_diskActiveGraph!)
                 .HeightPercent(50)
                 .Fill())
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelTransferRate)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Theme.Primary)
+                .WithBorderColor(ThemeService.Instance.Current.Accent)
                 .WithContent(_diskTransferGraph!)
                 .Fill());
     }
@@ -390,7 +390,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var nets = ViewModel.Networks.Value;
         if (nets.Count == 0)
         {
-            return new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim);
+            return new TextNode(Strings.NoActiveAdapters).WithForeground(ThemeService.Instance.Current.TextDim);
         }
 
         var sorted = nets
@@ -407,9 +407,9 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                     var name = net.Name.Length > 20 ? net.Name[..19] + "…" : net.Name;
                     return $" {pin}{name,-20} ↓ {FormatBytes(net.RxBytesPerSec),10}  ↑ {FormatBytes(net.TxBytesPerSec),10}";
                 },
-                net => ViewModel.IsAdapterPinned(net.Name) ? Theme.Accent
-                    : net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? Theme.Text
-                    : Theme.TextDim);
+                net => ViewModel.IsAdapterPinned(net.Name) ? ThemeService.Instance.Current.Accent
+                    : net.RxBytesPerSec > 0 || net.TxBytesPerSec > 0 ? ThemeService.Instance.Current.Foreground
+                    : ThemeService.Instance.Current.TextDim);
             ViewModel.NetworkListNode = _networkList;
             ViewModel.GetSelectedAdapter = () => _networkList.SelectedItem;
         }
@@ -417,7 +417,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         _networkList.SetItems(sorted);
 
         var header = new TextNode($"   {"Adapter",-20} {"Download",13}  {"Upload",13}")
-            .WithForeground(Theme.Header).Height(1);
+            .WithForeground(ThemeService.Instance.Current.Header).Height(1);
 
         return Layouts.Vertical()
             .WithChild(header)
@@ -429,21 +429,21 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         var gpu = ViewModel.Gpu.Value;
         if (gpu is null)
         {
-            return new TextNode(Strings.GpuNoData).WithForeground(Theme.TextDim);
+            return new TextNode(Strings.GpuNoData).WithForeground(ThemeService.Instance.Current.TextDim);
         }
 
         var vramUsedMb = gpu.VramUsedBytes / 1024.0 / 1024;
         var vramTotalMb = gpu.VramTotalBytes / 1024.0 / 1024;
 
         return Layouts.Vertical()
-            .WithChild(new TextNode($" {gpu.Name}").WithForeground(Theme.Accent).Height(1))
+            .WithChild(new TextNode($" {gpu.Name}").WithForeground(ThemeService.Instance.Current.Accent).Height(1))
             .WithChild(new TextNode($" {Strings.GpuUsage} {gpu.UsagePercent:F0}%  {BuildBar(gpu.UsagePercent, 20)}")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode(
                     $" VRAM: {vramUsedMb:F0} / {vramTotalMb:F0} MB  ({gpu.VramUsedPercent:F1}%)  {BuildBar(gpu.VramUsedPercent, 20)}")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode($" {Strings.GpuTemperature} {gpu.TemperatureCelsius:F0}°C")
-                .WithForeground(gpu.TemperatureCelsius > 80 ? Color.BrightRed : Theme.Text).Height(1));
+                .WithForeground(gpu.TemperatureCelsius > 80 ? Color.BrightRed : ThemeService.Instance.Current.Foreground).Height(1));
     }
 
     private ILayoutNode BuildCpuPanel()
@@ -451,14 +451,14 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
                         ViewModel.CpuTotal
                             .Select<double, ILayoutNode>(pct =>
                                 new TextNode($" {Strings.TotalLabel} {pct:F1}%")
-                                    .WithForeground(Theme.Accent))
+                                    .WithForeground(ThemeService.Instance.Current.Accent))
                             .AsLayout().Height(1))
                     .WithChild(_coresNode!)
                     .WithChild(_cpuGraph!.Fill()))
@@ -470,7 +470,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelRam)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -481,7 +481,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                                 var totalGb = total / 1024.0 / 1024 / 1024;
                                 var pct = total > 0 ? (double)used / total * 100 : 0;
                                 return new TextNode($" {usedGb:F1} / {totalGb:F1} GiB  {pct:F1}%")
-                                    .WithForeground(Theme.Text);
+                                    .WithForeground(ThemeService.Instance.Current.Foreground);
                             }).AsLayout().Height(1))
                     .WithChild(_ramGraph!.Fill())
                     .Fill())
@@ -493,14 +493,14 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelDisks)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 ViewModel.Disks
                     .Select<IReadOnlyList<DiskSnapshot>, ILayoutNode>(disks =>
                     {
                         if (disks.Count == 0)
                         {
-                            return new TextNode(Strings.NoDisksFound).WithForeground(Theme.TextDim);
+                            return new TextNode(Strings.NoDisksFound).WithForeground(ThemeService.Instance.Current.TextDim);
                         }
 
                         var layout = Layouts.Vertical();
@@ -510,7 +510,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                             var totalGb = disk.TotalBytes / 1024.0 / 1024 / 1024;
                             layout.WithChild(
                                 new TextNode($" {disk.Name,-4} {usedGb:F0}/{totalGb:F0}GB {disk.UsedPercent:F0}%")
-                                    .WithForeground(Theme.Text).Height(1));
+                                    .WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
                         }
 
                         return layout;
@@ -523,14 +523,14 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelNetwork)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 ViewModel.Networks
                     .Select<IReadOnlyList<NetworkSnapshot>, ILayoutNode>(nets =>
                     {
                         if (nets.Count == 0)
                         {
-                            return new TextNode(Strings.NoActiveAdapters).WithForeground(Theme.TextDim);
+                            return new TextNode(Strings.NoActiveAdapters).WithForeground(ThemeService.Instance.Current.TextDim);
                         }
 
                         var layout = Layouts.Vertical();
@@ -539,7 +539,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                             layout.WithChild(
                                 new TextNode(
                                         $" {net.Name}  ↓{FormatBytes(net.RxBytesPerSec)}  ↑{FormatBytes(net.TxBytesPerSec)}")
-                                    .WithForeground(Theme.Text).Height(1));
+                                    .WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
                         }
 
                         return layout;
@@ -552,7 +552,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         return new PanelNode()
             .WithTitle(Strings.PanelGpu)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -561,16 +561,16 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                             {
                                 if (gpu is null)
                                 {
-                                    return new TextNode(Strings.GpuNoData).WithForeground(Theme.TextDim);
+                                    return new TextNode(Strings.GpuNoData).WithForeground(ThemeService.Instance.Current.TextDim);
                                 }
 
                                 var vramMb = gpu.VramUsedBytes / 1024.0 / 1024;
                                 var vramTotalMb = gpu.VramTotalBytes / 1024.0 / 1024;
                                 return Layouts.Vertical()
                                     .WithChild(new TextNode($" {gpu.UsagePercent:F0}%  {gpu.TemperatureCelsius:F0}°C")
-                                        .WithForeground(Theme.Text).Height(1))
+                                        .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
                                     .WithChild(new TextNode($" VRAM {vramMb:F0}/{vramTotalMb:F0}MB")
-                                        .WithForeground(Theme.Text).Height(1));
+                                        .WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
                             }).AsLayout())
                     .WithChild(_gpuGraph!.Fill()))
             .Fill();

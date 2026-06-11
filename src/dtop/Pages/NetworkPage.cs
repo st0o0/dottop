@@ -36,10 +36,10 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             },
             c => c.State switch
             {
-                "Established" => Theme.Text,
-                "LISTEN" => Theme.TextDim,
-                "TimeWait" or "CloseWait" => Theme.TextDim,
-                _ => Theme.TextDim
+                "Established" => ThemeService.Instance.Current.Foreground,
+                "LISTEN" => ThemeService.Instance.Current.TextDim,
+                "TimeWait" or "CloseWait" => ThemeService.Instance.Current.TextDim,
+                _ => ThemeService.Instance.Current.TextDim
             });
 
         ViewModel.ListNode = _list;
@@ -47,7 +47,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -57,7 +57,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
         _settingsModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -71,10 +71,10 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelNetworkConnections)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Theme.Primary)
+                .WithBorderColor(ThemeService.Instance.Current.Accent)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderProcess,-16} {Strings.HeaderPid,6} {"Proto",-4} {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus}")
-                        .WithForeground(Theme.Header).Height(1))
+                        .WithForeground(ThemeService.Instance.Current.Header).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
             .WithChild(BuildStatusBar());
@@ -102,27 +102,27 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             return;
         }
 
-        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
-        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
+        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.SettingsRefreshRate,-20} ◀ {ViewModel.GetRefreshRateDisplay()} ▶")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode("").Height(1));
 
         if (ViewModel.IsUpdateAvailable)
         {
-            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(Theme.Warning).Height(1));
-            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(Theme.Accent).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(ThemeService.Instance.Current.Warning).Height(1));
+            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(ThemeService.Instance.Current.Accent).Height(1));
         }
         else
         {
-            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(Theme.TextDim).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
         }
 
         layout.WithChild(new TextNode("").Height(1));
-        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(Theme.TextDim).Height(1));
+        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         _settingsModal.Content = layout;
     }
@@ -134,15 +134,15 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
             return;
         }
 
-        _detailModal.WithTitle($" {conn.ProcessName} ").WithTitleColor(Theme.Primary);
-        _detailModal.WithFooter(Strings.HintNetworkDetailKeys).WithFooterColor(Theme.TextDim);
+        _detailModal.WithTitle($" {conn.ProcessName} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _detailModal.WithFooter(Strings.HintNetworkDetailKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
         _detailModal.Content = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  Process:   {conn.ProcessName} (PID: {conn.Pid})").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Protocol:  {conn.Protocol}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Local:     {conn.LocalEndpoint}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  Remote:    {conn.RemoteEndpoint}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  State:     {conn.State}").WithForeground(Theme.TextDim).Height(1));
+            .WithChild(new TextNode($"  Process:   {conn.ProcessName} (PID: {conn.Pid})").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  Protocol:  {conn.Protocol}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  Local:     {conn.LocalEndpoint}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  Remote:    {conn.RemoteEndpoint}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  State:     {conn.State}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()
@@ -152,11 +152,11 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 if (active)
                 {
                     return new TextNode($" / {search}█  Esc: Exit")
-                        .WithForeground(Theme.Warning);
+                        .WithForeground(ThemeService.Instance.Current.Warning);
                 }
 
                 return new TextNode(Strings.NetworkSearchHint)
-                    .WithForeground(Theme.TextDim);
+                    .WithForeground(ThemeService.Instance.Current.TextDim);
             }).AsLayout().Height(1);
     }
 
@@ -164,7 +164,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
+                new TextNode($" {msg}").WithForeground(ThemeService.Instance.Current.StatusBarText).WithBackground(ThemeService.Instance.Current.StatusBar))
             .AsLayout().Height(1);
     }
 }

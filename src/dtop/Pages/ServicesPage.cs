@@ -27,14 +27,14 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                 var statusText = s.Status == ServiceStatus.Running ? "Running" : "Stopped";
                 return $" {statusIcon} {name,-32} {statusText,-8} {s.StartType,-10}";
             },
-            s => s.Status == ServiceStatus.Running ? Theme.Text : Theme.TextDim);
+            s => s.Status == ServiceStatus.Running ? ThemeService.Instance.Current.Foreground : ThemeService.Instance.Current.TextDim);
 
         ViewModel.ListNode = _list;
         ViewModel.GetSelectedItem = () => _list.SelectedItem;
 
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -44,7 +44,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
 
         _settingsModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -58,10 +58,10 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelServices)
                 .WithBorder(BorderStyle.Rounded)
-                .WithBorderColor(Theme.Primary)
+                .WithBorderColor(ThemeService.Instance.Current.Accent)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderName,-32} {Strings.HeaderStatus,-8} {Strings.HeaderStartType,-10}")
-                        .WithForeground(Theme.Header).Height(1))
+                        .WithForeground(ThemeService.Instance.Current.Header).Height(1))
                     .WithChild(_list.Fill()))
                 .Fill())
             .WithChild(BuildStatusBar());
@@ -89,27 +89,27 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
             return;
         }
 
-        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
-        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
+        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.SettingsRefreshRate,-20} ◀ {ViewModel.GetRefreshRateDisplay()} ▶")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode("").Height(1));
 
         if (ViewModel.IsUpdateAvailable)
         {
-            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(Theme.Warning).Height(1));
-            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(Theme.Accent).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(ThemeService.Instance.Current.Warning).Height(1));
+            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(ThemeService.Instance.Current.Accent).Height(1));
         }
         else
         {
-            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(Theme.TextDim).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
         }
 
         layout.WithChild(new TextNode("").Height(1));
-        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(Theme.TextDim).Height(1));
+        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         _settingsModal.Content = layout;
     }
@@ -122,22 +122,22 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         }
 
         var statusIcon = svc.Status == ServiceStatus.Running ? "▶" : "■";
-        var statusColor = svc.Status == ServiceStatus.Running ? Theme.Text : Theme.TextDim;
+        var statusColor = svc.Status == ServiceStatus.Running ? ThemeService.Instance.Current.Foreground : ThemeService.Instance.Current.TextDim;
         var desc = string.IsNullOrWhiteSpace(svc.Description)
             ? Strings.ServiceNoDescription
             : svc.Description;
 
-        _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(Theme.Primary);
-        _detailModal.WithFooter(Strings.ServiceDetailHints).WithFooterColor(Theme.TextDim);
+        _detailModal.WithTitle($" {svc.DisplayName} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _detailModal.WithFooter(Strings.ServiceDetailHints).WithFooterColor(ThemeService.Instance.Current.TextDim);
         _detailModal.Content = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  {Strings.ServiceDetailName}     {svc.Name}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  {Strings.ServiceDetailDisplay}  {svc.DisplayName}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  {Strings.ServiceDetailName}     {svc.Name}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  {Strings.ServiceDetailDisplay}  {svc.DisplayName}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
             .WithChild(new TextNode($"  {Strings.HeaderStatus}      {statusIcon} {svc.Status}").WithForeground(statusColor).Height(1))
-            .WithChild(new TextNode($"  {Strings.HeaderStartType}  {svc.StartType}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  {Strings.HeaderStartType}  {svc.StartType}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  {Strings.ServiceDetailDescription}").WithForeground(Theme.Primary).Height(1))
-            .WithChild(new TextNode($"  {desc}").WithForeground(Theme.Text).Height(1));
+            .WithChild(new TextNode($"  {Strings.ServiceDetailDescription}").WithForeground(ThemeService.Instance.Current.Accent).Height(1))
+            .WithChild(new TextNode($"  {desc}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
     }
 
     private ILayoutNode BuildSearchBar()
@@ -148,11 +148,11 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                 if (active)
                 {
                     return (ILayoutNode)new TextNode($" / {search}█  Esc: Exit")
-                        .WithForeground(Theme.Warning);
+                        .WithForeground(ThemeService.Instance.Current.Warning);
                 }
 
                 return new TextNode(Strings.ServicesSearchHint)
-                    .WithForeground(Theme.TextDim);
+                    .WithForeground(ThemeService.Instance.Current.TextDim);
             }).AsLayout().Height(1);
     }
 
@@ -160,7 +160,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
+                new TextNode($" {msg}").WithForeground(ThemeService.Instance.Current.StatusBarText).WithBackground(ThemeService.Instance.Current.StatusBar))
             .AsLayout().Height(1);
     }
 }

@@ -26,8 +26,8 @@ public sealed class DataListNode<T>(Func<T, string> formatter, Func<T, Color>? c
     private int _viewportHeight = 20;
     private bool _disposed;
 
-    private Color _selectedFg = Theme.SelectionText;
-    private Color _selectedBg = Theme.Selection;
+    private Color _selectedFg = ThemeService.Instance.Current.SelectionText;
+    private Color _selectedBg = ThemeService.Instance.Current.Selection;
 
     public Observable<Unit> Invalidated => _invalidated.AsObservable();
 
@@ -130,9 +130,9 @@ public sealed class DataListNode<T>(Func<T, string> formatter, Func<T, Color>? c
         _viewportHeight = bounds.Height;
         var ctx = context.CreateSubContext(bounds);
 
-        if (Theme.Background != Color.Default)
+        if (ThemeService.Instance.Current.Background != Color.Default)
         {
-            ctx.SetBackground(Theme.Background);
+            ctx.SetBackground(ThemeService.Instance.Current.Background);
             ctx.Fill(0, 0, bounds.Width, bounds.Height);
         }
 
@@ -167,14 +167,14 @@ public sealed class DataListNode<T>(Func<T, string> formatter, Func<T, Color>? c
             else if (colorSelector is not null)
             {
                 ctx.SetForeground(colorSelector(item));
-                if (Theme.Background != Color.Default)
+                if (ThemeService.Instance.Current.Background != Color.Default)
                 {
-                    ctx.SetBackground(Theme.Background);
+                    ctx.SetBackground(ThemeService.Instance.Current.Background);
                 }
             }
-            else if (Theme.Background != Color.Default)
+            else if (ThemeService.Instance.Current.Background != Color.Default)
             {
-                ctx.SetBackground(Theme.Background);
+                ctx.SetBackground(ThemeService.Instance.Current.Background);
             }
 
             ctx.WriteAt(0, row, text);
@@ -203,7 +203,7 @@ public sealed class DataListNode<T>(Func<T, string> formatter, Func<T, Color>? c
         for (var row = 0; row < height; row++)
         {
             var isThumb = row >= thumbTop && row < thumbTop + thumbSize;
-            ctx.SetForeground(isThumb ? Theme.Text : Theme.Header);
+            ctx.SetForeground(isThumb ? ThemeService.Instance.Current.Foreground : ThemeService.Instance.Current.Header);
             ctx.WriteAt(x, row, isThumb ? '█' : '░');
         }
         ctx.ResetColors();

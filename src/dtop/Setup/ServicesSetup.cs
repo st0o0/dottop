@@ -1,5 +1,6 @@
 using dtop.Plugin;
 using dtop.Services;
+using dtop.Themes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Servus.Application.Startup;
@@ -10,6 +11,9 @@ public sealed class ServicesSetup : IServiceSetupContainer
 {
     public void SetupServices(IServiceCollection services, IConfiguration configuration)
     {
+        var themeService = new ThemeService();
+        services.AddSingleton(themeService);
+
         var settingsService = new SettingsService();
         settingsService.Load();
         settingsService.ApplyAll();

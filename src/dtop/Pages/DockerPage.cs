@@ -26,7 +26,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
     {
         _detailModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -36,7 +36,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
         _settingsModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -46,7 +46,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
         _inputModal = new ModalNode()
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Primary)
+            .WithBorderColor(ThemeService.Instance.Current.Accent)
             .WithBackdrop(BackdropStyle.Solid)
             .WithBackdropColor(Color.Black)
             .WithDismissOnEscape(false)
@@ -73,7 +73,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                     .WithChild(new PanelNode()
                         .WithTitle(Strings.PanelDocker)
                         .WithBorder(BorderStyle.Rounded)
-                        .WithBorderColor(Theme.Primary)
+                        .WithBorderColor(ThemeService.Instance.Current.Accent)
                         .WithContent(content)
                         .Fill())
                     .WithChild(BuildStatusBar());
@@ -125,11 +125,11 @@ public class DockerPage : ReactivePage<DockerViewModel>
             var node = new TextNode($" {tabs[i]} ");
             if (i == activeIdx)
             {
-                node.WithForeground(Theme.SelectionText).WithBackground(Theme.Selection);
+                node.WithForeground(ThemeService.Instance.Current.SelectionText).WithBackground(ThemeService.Instance.Current.Selection);
             }
             else
             {
-                node.WithForeground(Theme.Secondary);
+                node.WithForeground(ThemeService.Instance.Current.TextDim);
             }
 
             bar.WithChild(node);
@@ -169,19 +169,19 @@ public class DockerPage : ReactivePage<DockerViewModel>
             {
                 if (item.IsGroup)
                 {
-                    return Theme.Primary;
+                    return ThemeService.Instance.Current.Accent;
                 }
 
                 if (item.Container is not null && ViewModel.IsPinned(item.Container.Id))
                 {
-                    return Theme.Accent;
+                    return ThemeService.Instance.Current.Accent;
                 }
 
                 return item.Container?.Status switch
                 {
-                    "running" => Theme.Text,
-                    "restarting" => Theme.Warning,
-                    _ => Theme.TextDim
+                    "running" => ThemeService.Instance.Current.Foreground,
+                    "restarting" => ThemeService.Instance.Current.Warning,
+                    _ => ThemeService.Instance.Current.TextDim
                 };
             });
 
@@ -192,7 +192,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
         return Layouts.Vertical()
             .WithChild(new TextNode($"     {"Name",-24} {"Image",-24} {"CPU",6} {"RAM",7}  {"Port",-14} {Strings.HeaderStatus}")
-                .WithForeground(Theme.Header).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Header).Height(1))
             .WithChild(_list.Fill());
     }
 
@@ -200,14 +200,14 @@ public class DockerPage : ReactivePage<DockerViewModel>
     {
         _networkList = new DataListNode<NetworkInfo>(
             n => $" {n.Name,-24} {n.Driver,-10} {n.Scope,-10} {n.Containers.Count,4}",
-            n => n.Containers.Count > 0 ? Theme.Text : Theme.TextDim);
+            n => n.Containers.Count > 0 ? ThemeService.Instance.Current.Foreground : ThemeService.Instance.Current.TextDim);
         _networkList.SetItems(ViewModel.Networks.Value);
         ViewModel.NetworkListNode = _networkList;
         ViewModel.GetSelectedNetwork = () => _networkList.SelectedItem;
 
         return Layouts.Vertical()
             .WithChild(new TextNode($" {"Name",-24} {"Driver",-10} {"Scope",-10} {"#",4}")
-                .WithForeground(Theme.Header).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Header).Height(1))
             .WithChild(_networkList.Fill());
     }
 
@@ -220,14 +220,14 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 var sizeStr = sizeMb >= 1024 ? $"{sizeMb / 1024:F1}GB" : $"{sizeMb:F0}MB";
                 return $" {v.Name,-30} {v.Driver,-10} {sizeStr,8} {v.MountCount,3}";
             },
-            v => v.MountCount > 0 ? Theme.Text : Theme.TextDim);
+            v => v.MountCount > 0 ? ThemeService.Instance.Current.Foreground : ThemeService.Instance.Current.TextDim);
         _volumeList.SetItems(ViewModel.Volumes.Value);
         ViewModel.VolumeListNode = _volumeList;
         ViewModel.GetSelectedVolume = () => _volumeList.SelectedItem;
 
         return Layouts.Vertical()
             .WithChild(new TextNode($" {"Name",-30} {"Driver",-10} {"Size",8} {"#",3}")
-                .WithForeground(Theme.Header).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Header).Height(1))
             .WithChild(_volumeList.Fill());
     }
 
@@ -242,14 +242,14 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 var tag = i.Tag.Length > 12 ? i.Tag[..11] + "…" : i.Tag;
                 return $" {repo,-24} {tag,-12} {sizeStr,8} {i.Created:yyyy-MM-dd}";
             },
-            i => i.ContainerCount > 0 ? Theme.Text : Theme.TextDim);
+            i => i.ContainerCount > 0 ? ThemeService.Instance.Current.Foreground : ThemeService.Instance.Current.TextDim);
         _imageList.SetItems(ViewModel.Images.Value);
         ViewModel.ImageListNode = _imageList;
         ViewModel.GetSelectedImage = () => _imageList.SelectedItem;
 
         return Layouts.Vertical()
             .WithChild(new TextNode($" {"Repository",-24} {"Tag",-12} {"Size",8} {"Created"}")
-                .WithForeground(Theme.Header).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Header).Height(1))
             .WithChild(_imageList.Fill());
     }
 
@@ -260,27 +260,27 @@ public class DockerPage : ReactivePage<DockerViewModel>
             return;
         }
 
-        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(Theme.Primary);
-        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(Theme.TextDim);
+        _settingsModal.WithTitle($" {Strings.SettingsTitle} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _settingsModal.WithFooter(Strings.HintSettingsModalKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var layout = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {Strings.SettingsRefreshRate,-20} ◀ {ViewModel.GetRefreshRateDisplay()} ▶")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode("").Height(1));
 
         if (ViewModel.IsUpdateAvailable)
         {
-            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(Theme.Warning).Height(1));
-            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(Theme.Accent).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.LatestVersionDisplay}").WithForeground(ThemeService.Instance.Current.Warning).Height(1));
+            layout.WithChild(new TextNode($"  [U] {Strings.UpdatePressU}").WithForeground(ThemeService.Instance.Current.Accent).Height(1));
         }
         else
         {
-            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(Theme.TextDim).Height(1));
+            layout.WithChild(new TextNode($"  {ViewModel.CurrentVersionDisplay}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
         }
 
         layout.WithChild(new TextNode("").Height(1));
-        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(Theme.TextDim).Height(1));
+        layout.WithChild(new TextNode($"  {ViewModel.GetSettingsFilePath()}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         _settingsModal.Content = layout;
     }
@@ -319,29 +319,29 @@ public class DockerPage : ReactivePage<DockerViewModel>
         var statusIcon = container.Status is "running" ? "▶" : "■";
         var statusColor = container.Status switch
         {
-            "running" => Theme.Success,
-            "restarting" => Theme.Warning,
-            _ => Theme.TextDim
+            "running" => ThemeService.Instance.Current.Success,
+            "restarting" => ThemeService.Instance.Current.Warning,
+            _ => ThemeService.Instance.Current.TextDim
         };
 
-        _detailModal.WithTitle($" {container.Name} ").WithTitleColor(Theme.Primary);
-        _detailModal.WithFooter(Strings.HintDockerDetailKeys).WithFooterColor(Theme.TextDim);
+        _detailModal.WithTitle($" {container.Name} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _detailModal.WithFooter(Strings.HintDockerDetailKeys).WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var infoContent = Layouts.Vertical()
-            .WithChild(new TextNode($"  ID        {container.Id}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Image     {container.Image}").WithForeground(Theme.Text).Height(1))
+            .WithChild(new TextNode($"  ID        {container.Id}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Image     {container.Image}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode($"  Status    {statusIcon} {container.State}").WithForeground(statusColor).Height(1))
-            .WithChild(new TextNode($"  Created   {container.Created:yyyy-MM-dd HH:mm}").WithForeground(Theme.TextDim).Height(1));
+            .WithChild(new TextNode($"  Created   {container.Created:yyyy-MM-dd HH:mm}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         var infoPanel = new PanelNode()
             .WithTitle(" Container ")
-            .WithTitleColor(Theme.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.Accent)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Border)
+            .WithBorderColor(ThemeService.Instance.Current.Border)
             .WithContent(infoContent);
 
-        var cpuColor = container.CpuPercent > 80 ? Theme.Error
-            : container.CpuPercent > 50 ? Theme.Warning : Theme.Graph;
+        var cpuColor = container.CpuPercent > 80 ? ThemeService.Instance.Current.Error
+            : container.CpuPercent > 50 ? ThemeService.Instance.Current.Warning : ThemeService.Instance.Current.Accent;
         var cpuGraph = new GraphNode()
             .WithStyle(GraphStyle.Blocks)
             .WithColor(cpuColor)
@@ -352,7 +352,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
             .WithTitle($" CPU {container.CpuPercent:F1}% ")
             .WithTitleColor(cpuColor)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Border)
+            .WithBorderColor(ThemeService.Instance.Current.Border)
             .WithContent(cpuGraph);
 
         var ramMb = container.MemoryUsageBytes / 1024.0 / 1024;
@@ -363,15 +363,15 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
         var ramGraph = new GraphNode()
             .WithStyle(GraphStyle.Blocks)
-            .WithColor(Theme.Graph)
+            .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
         ramGraph.SetData([Math.Clamp(ramPercent, 0, 100)]);
 
         var ramPanel = new PanelNode()
             .WithTitle($" RAM {ramStr} / {ramLimitStr} ")
-            .WithTitleColor(Theme.Text)
+            .WithTitleColor(ThemeService.Instance.Current.Foreground)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Border)
+            .WithBorderColor(ThemeService.Instance.Current.Border)
             .WithContent(ramGraph);
 
         var topRow = Layouts.Horizontal()
@@ -396,10 +396,10 @@ public class DockerPage : ReactivePage<DockerViewModel>
         {
             _logList = new DataListNode<string>(line => line, line =>
                 line.Contains("ERROR", StringComparison.OrdinalIgnoreCase) || line.Contains("ERR", StringComparison.OrdinalIgnoreCase)
-                    ? Theme.Error
+                    ? ThemeService.Instance.Current.Error
                     : line.Contains("WARN", StringComparison.OrdinalIgnoreCase)
-                        ? Theme.Warning
-                        : Theme.TextDim);
+                        ? ThemeService.Instance.Current.Warning
+                        : ThemeService.Instance.Current.TextDim);
             _logList.SetItems(logLines);
             _logList.MoveToEnd();
             ViewModel.OverlayListNode = _logList;
@@ -411,9 +411,9 @@ public class DockerPage : ReactivePage<DockerViewModel>
 
         var logPanel = new PanelNode()
             .WithTitle($" {Strings.DockerLogsHeader} ")
-            .WithTitleColor(Theme.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.Accent)
             .WithBorder(BorderStyle.Rounded)
-            .WithBorderColor(Theme.Border)
+            .WithBorderColor(ThemeService.Instance.Current.Border)
             .WithContent(_logList.Fill());
 
         _detailModal.Content = Layouts.Vertical()
@@ -428,22 +428,22 @@ public class DockerPage : ReactivePage<DockerViewModel>
             return;
         }
 
-        _detailModal.WithTitle($" Network: {network.Name} ").WithTitleColor(Theme.Primary);
-        _detailModal.WithFooter(" Esc: Close ").WithFooterColor(Theme.TextDim);
+        _detailModal.WithTitle($" Network: {network.Name} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _detailModal.WithFooter(" Esc: Close ").WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var info = Layouts.Vertical()
-            .WithChild(new TextNode($"  ID        {network.Id}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Driver    {network.Driver}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Scope     {network.Scope}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Subnet    {network.Subnet}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Internal  {network.Internal}").WithForeground(Theme.TextDim).Height(1))
-            .WithChild(new TextNode($"  IPv6      {network.IPv6}").WithForeground(Theme.TextDim).Height(1))
+            .WithChild(new TextNode($"  ID        {network.Id}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Driver    {network.Driver}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Scope     {network.Scope}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Subnet    {network.Subnet}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Internal  {network.Internal}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
+            .WithChild(new TextNode($"  IPv6      {network.IPv6}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1))
             .WithChild(new TextNode("").Height(1))
-            .WithChild(new TextNode($"  Connected Containers ({network.Containers.Count}):").WithForeground(Theme.Accent).Height(1));
+            .WithChild(new TextNode($"  Connected Containers ({network.Containers.Count}):").WithForeground(ThemeService.Instance.Current.Accent).Height(1));
 
         foreach (var c in network.Containers)
         {
-            info.WithChild(new TextNode($"    {c.Name,-24} {c.IPv4Address}").WithForeground(Theme.Text).Height(1));
+            info.WithChild(new TextNode($"    {c.Name,-24} {c.IPv4Address}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
         }
 
         _detailModal.Content = info;
@@ -456,27 +456,27 @@ public class DockerPage : ReactivePage<DockerViewModel>
             return;
         }
 
-        _detailModal.WithTitle($" Volume: {volume.Name} ").WithTitleColor(Theme.Primary);
-        _detailModal.WithFooter(" Esc: Close ").WithFooterColor(Theme.TextDim);
+        _detailModal.WithTitle($" Volume: {volume.Name} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _detailModal.WithFooter(" Esc: Close ").WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var sizeMb = volume.SizeBytes / 1024.0 / 1024;
         var sizeStr = sizeMb >= 1024 ? $"{sizeMb / 1024:F1} GB" : $"{sizeMb:F0} MB";
 
         var info = Layouts.Vertical()
-            .WithChild(new TextNode($"  Name        {volume.Name}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Driver      {volume.Driver}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Mountpoint  {volume.Mountpoint}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Size        {sizeStr}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Mounts      {volume.MountCount}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Created     {volume.Created:yyyy-MM-dd HH:mm}").WithForeground(Theme.TextDim).Height(1));
+            .WithChild(new TextNode($"  Name        {volume.Name}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Driver      {volume.Driver}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Mountpoint  {volume.Mountpoint}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Size        {sizeStr}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Mounts      {volume.MountCount}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Created     {volume.Created:yyyy-MM-dd HH:mm}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         if (volume.Labels.Count > 0)
         {
             info.WithChild(new TextNode("").Height(1));
-            info.WithChild(new TextNode("  Labels:").WithForeground(Theme.Accent).Height(1));
+            info.WithChild(new TextNode("  Labels:").WithForeground(ThemeService.Instance.Current.Accent).Height(1));
             foreach (var (k, v) in volume.Labels)
             {
-                info.WithChild(new TextNode($"    {k} = {v}").WithForeground(Theme.Text).Height(1));
+                info.WithChild(new TextNode($"    {k} = {v}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1));
             }
         }
 
@@ -490,20 +490,20 @@ public class DockerPage : ReactivePage<DockerViewModel>
             return;
         }
 
-        _detailModal.WithTitle($" Image: {image.Repository}:{image.Tag} ").WithTitleColor(Theme.Primary);
-        _detailModal.WithFooter(" Esc: Close ").WithFooterColor(Theme.TextDim);
+        _detailModal.WithTitle($" Image: {image.Repository}:{image.Tag} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _detailModal.WithFooter(" Esc: Close ").WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         var sizeMb = image.SizeBytes / 1024.0 / 1024;
         var sizeStr = sizeMb >= 1024 ? $"{sizeMb / 1024:F1} GB" : $"{sizeMb:F0} MB";
 
         var info = Layouts.Vertical()
-            .WithChild(new TextNode($"  ID          {image.Id}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Repository  {image.Repository}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Tag         {image.Tag}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Size        {sizeStr}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  OS/Arch     {image.OsArch}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Containers  {image.ContainerCount}").WithForeground(Theme.Text).Height(1))
-            .WithChild(new TextNode($"  Created     {image.Created:yyyy-MM-dd HH:mm}").WithForeground(Theme.TextDim).Height(1));
+            .WithChild(new TextNode($"  ID          {image.Id}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Repository  {image.Repository}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Tag         {image.Tag}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Size        {sizeStr}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  OS/Arch     {image.OsArch}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Containers  {image.ContainerCount}").WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
+            .WithChild(new TextNode($"  Created     {image.Created:yyyy-MM-dd HH:mm}").WithForeground(ThemeService.Instance.Current.TextDim).Height(1));
 
         _detailModal.Content = info;
     }
@@ -516,13 +516,13 @@ public class DockerPage : ReactivePage<DockerViewModel>
         }
 
         var label = ViewModel.InputPromptLabel;
-        _inputModal.WithTitle($" {label} ").WithTitleColor(Theme.Primary);
-        _inputModal.WithFooter(" Enter: Submit | Esc: Cancel ").WithFooterColor(Theme.TextDim);
+        _inputModal.WithTitle($" {label} ").WithTitleColor(ThemeService.Instance.Current.Accent);
+        _inputModal.WithFooter(" Enter: Submit | Esc: Cancel ").WithFooterColor(ThemeService.Instance.Current.TextDim);
 
         _inputModal.Content = Layouts.Vertical()
             .WithChild(new TextNode("").Height(1))
             .WithChild(new TextNode($"  {label}: {ViewModel.InputText.Value}█")
-                .WithForeground(Theme.Text).Height(1))
+                .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
             .WithChild(new TextNode("").Height(1));
     }
 
@@ -534,7 +534,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 if (active)
                 {
                     return (ILayoutNode)new TextNode($" / {search}█  Esc: Exit")
-                        .WithForeground(Theme.Warning);
+                        .WithForeground(ThemeService.Instance.Current.Warning);
                 }
 
                 var hints = ViewModel.ActiveSubTab.Value switch
@@ -547,7 +547,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 };
 
                 return new TextNode(hints)
-                    .WithForeground(Theme.TextDim);
+                    .WithForeground(ThemeService.Instance.Current.TextDim);
             }).AsLayout().Height(1);
     }
 
@@ -555,7 +555,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
     {
         return ViewModel.StatusMessage
             .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(Theme.StatusBarText).WithBackground(Theme.StatusBar))
+                new TextNode($" {msg}").WithForeground(ThemeService.Instance.Current.StatusBarText).WithBackground(ThemeService.Instance.Current.StatusBar))
             .AsLayout().Height(1);
     }
 }

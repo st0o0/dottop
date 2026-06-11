@@ -68,7 +68,7 @@ public sealed class CpuCoresNode : LayoutNode, IInvalidatingNode
                 text = text[..(bounds.Width - x)];
             }
 
-            ctx.SetForeground(Theme.Primary);
+            ctx.SetForeground(ThemeService.Instance.Current.Accent);
             ctx.WriteAt(x, row, text);
         }
         ctx.ResetColors();

@@ -72,6 +72,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
                 .WithTitle(Strings.PanelNetworkConnections)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(ThemeService.Instance.Current.Accent)
+                .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderProcess,-16} {Strings.HeaderPid,6} {"Proto",-4} {Strings.HeaderLocal,-22} {Strings.HeaderRemote,-22} {Strings.HeaderStatus}")
                         .WithForeground(ThemeService.Instance.Current.Header).Height(1))

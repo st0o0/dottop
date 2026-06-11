@@ -81,6 +81,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
                 .WithTitle(Strings.PanelProcesses)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(ThemeService.Instance.Current.Accent)
+                .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
                 .WithContent(Layouts.Vertical()
                     .WithChild(BuildHeader())
                     .WithChild(_list.Fill()))

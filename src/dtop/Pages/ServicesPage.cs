@@ -59,6 +59,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
                 .WithTitle(Strings.PanelServices)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(ThemeService.Instance.Current.Accent)
+                .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
                 .WithContent(Layouts.Vertical()
                     .WithChild(new TextNode($"   {Strings.HeaderName,-32} {Strings.HeaderStatus,-8} {Strings.HeaderStartType,-10}")
                         .WithForeground(ThemeService.Instance.Current.Header).Height(1))

@@ -340,6 +340,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -359,6 +360,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 ViewModel.CpuTotal
                     .Select<double, ILayoutNode>(pct =>
@@ -374,6 +376,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             .WithTitle(Strings.PanelRam)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -397,6 +400,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             .WithTitle(Strings.PanelGpu)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -428,6 +432,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             .WithTitle(" NET/DISK ")
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 ViewModel.Networks.CombineLatest<IReadOnlyList<NetworkSnapshot>, IReadOnlyList<DiskSnapshot>, ILayoutNode>(
                     ViewModel.Disks,
@@ -483,6 +488,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             .WithTitle(Strings.PanelProcesses)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(header)

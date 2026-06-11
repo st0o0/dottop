@@ -74,6 +74,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                         .WithTitle(Strings.PanelDocker)
                         .WithBorder(BorderStyle.Rounded)
                         .WithBorderColor(ThemeService.Instance.Current.Accent)
+                        .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
                         .WithContent(content)
                         .Fill())
                     .WithChild(BuildStatusBar());

@@ -374,6 +374,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .WithTitle(Strings.PanelActiveTime)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(ThemeService.Instance.Current.Accent)
+                .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
                 .WithContent(_diskActiveGraph!)
                 .HeightPercent(50)
                 .Fill())
@@ -381,6 +382,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .WithTitle(Strings.PanelTransferRate)
                 .WithBorder(BorderStyle.Rounded)
                 .WithBorderColor(ThemeService.Instance.Current.Accent)
+                .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
                 .WithContent(_diskTransferGraph!)
                 .Fill());
     }
@@ -452,6 +454,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithTitle(Strings.PanelCpu)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -471,6 +474,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithTitle(Strings.PanelRam)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(
@@ -494,6 +498,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithTitle(Strings.PanelDisks)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 ViewModel.Disks
                     .Select<IReadOnlyList<DiskSnapshot>, ILayoutNode>(disks =>
@@ -524,6 +529,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithTitle(Strings.PanelNetwork)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 ViewModel.Networks
                     .Select<IReadOnlyList<NetworkSnapshot>, ILayoutNode>(nets =>
@@ -553,6 +559,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithTitle(Strings.PanelGpu)
             .WithBorder(BorderStyle.Rounded)
             .WithBorderColor(ThemeService.Instance.Current.Accent)
+            .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
             .WithContent(
                 Layouts.Vertical()
                     .WithChild(

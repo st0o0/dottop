@@ -56,6 +56,7 @@ public class Strings
         set { resourceCulture = value; }
     }
 
+    public static string TabOverview => ResourceManager.GetString("TabOverview", resourceCulture) ?? "";
     public static string TabProcesses => ResourceManager.GetString("TabProcesses", resourceCulture) ?? "";
     public static string TabPerformance => ResourceManager.GetString("TabPerformance", resourceCulture) ?? "";
     public static string TabServices => ResourceManager.GetString("TabServices", resourceCulture) ?? "";

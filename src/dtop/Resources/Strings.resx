@@ -59,6 +59,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <!-- Tab bar labels -->
+  <data name="TabOverview" xml:space="preserve">
+    <value>0:Overview</value>
+  </data>
   <data name="TabProcesses" xml:space="preserve">
     <value>1:Processes</value>
   </data>

@@ -3,6 +3,7 @@ using dtop.Actors;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using dtop.Services;
 using NSubstitute;
 
 namespace dtop.Actors.Tests;
@@ -10,6 +11,7 @@ namespace dtop.Actors.Tests;
 public class CpuMonitorActorTests : IAsyncLifetime
 {
     private readonly ICpuMetrics _cpuMetrics = Substitute.For<ICpuMetrics>();
+    private readonly IMetricSink _sink = Substitute.For<IMetricSink>();
     private ActorSystem _sys = null!;
 
     public ValueTask InitializeAsync()
@@ -18,54 +20,29 @@ public class CpuMonitorActorTests : IAsyncLifetime
         return ValueTask.CompletedTask;
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        await _sys.Terminate();
-    }
+    public async ValueTask DisposeAsync() => await _sys.Terminate();
 
     [Fact]
-    public async Task StartMonitoring_ReturnsMonitoringStream()
+    public async Task Tick_Samples_AndPublishesToSink()
     {
         _cpuMetrics.ProcessorName.Returns("Test CPU");
-        _cpuMetrics.CoreCount.Returns(4);
         _cpuMetrics.Measure().Returns(new CpuMeasurement(42.0, [10, 20, 30, 40]));
+        var actor = _sys.ActorOf(CpuMonitorActor.Props(_cpuMetrics, _sink));
 
-        var actor = _sys.ActorOf(CpuMonitorActor.Props(_cpuMetrics, TimeSpan.FromMilliseconds(50)));
+        actor.Tell(new Tick(0, TimeSpan.FromMilliseconds(500)));
+        await Task.Delay(200);
 
-        var stream = await actor.Ask<MonitoringStream<CpuSnapshot>>(
-            new StartMonitoring(), TimeSpan.FromSeconds(3));
-
-        Assert.NotNull(stream);
-        Assert.NotNull(stream.Data);
-
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        await foreach (var snapshot in stream.Data.WithCancellation(cts.Token))
-        {
-            Assert.Equal("Test CPU", snapshot.Name);
-            Assert.Equal(42.0, snapshot.TotalPercent);
-            Assert.Equal(4, snapshot.CorePercents.Count);
-            break;
-        }
-
-        stream.Cancellation.Cancel();
+        _sink.Received(1).Publish(Arg.Is<CpuSnapshot>(s =>
+            s.Name == "Test CPU" && s.TotalPercent == 42.0 && s.CorePercents.Count == 4));
     }
 
     [Fact]
-    public async Task SecondStartMonitoring_CancelsPreviousStream()
+    public async Task NoTick_NoPublish()
     {
-        _cpuMetrics.Measure().Returns(new CpuMeasurement(10, [10]));
-        _cpuMetrics.ProcessorName.Returns("CPU");
+        var actor = _sys.ActorOf(CpuMonitorActor.Props(_cpuMetrics, _sink));
 
-        var actor = _sys.ActorOf(CpuMonitorActor.Props(_cpuMetrics, TimeSpan.FromMilliseconds(50)));
+        await Task.Delay(200);
 
-        var stream1 = await actor.Ask<MonitoringStream<CpuSnapshot>>(
-            new StartMonitoring(), TimeSpan.FromSeconds(3));
-        var stream2 = await actor.Ask<MonitoringStream<CpuSnapshot>>(
-            new StartMonitoring(), TimeSpan.FromSeconds(3));
-
-        Assert.True(stream1.Cancellation.IsCancellationRequested);
-        Assert.False(stream2.Cancellation.IsCancellationRequested);
-
-        stream2.Cancellation.Cancel();
+        _sink.DidNotReceive().Publish(Arg.Any<CpuSnapshot>());
     }
 }

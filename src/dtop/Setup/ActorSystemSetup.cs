@@ -59,7 +59,7 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
                         resolver.GetService<IProcessClassifier>(),
                         resolver.GetService<IProcessTreeProvider>(),
                         resolver.GetService<IServiceManager>(),
-                        interval),
+                        resolver.GetService<IMetricSink>()),
                     "monitoring-supervisor");
                 registry.Register<MonitoringSupervisor>(supervisor);
 

@@ -1,12 +1,13 @@
 using Akka.Actor;
 using dtop.Core.Messages;
 using dtop.Core.Platform;
+using dtop.Services;
 using Servus;
 using Servus.Diagnostics;
 
 namespace dtop.Actors;
 
-public sealed class MonitoringSupervisor : ReceiveActor
+public sealed class MonitoringSupervisor : TickRouter
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("Monitoring");
 
@@ -26,10 +27,10 @@ public sealed class MonitoringSupervisor : ReceiveActor
         IProcessClassifier processClassifier,
         IProcessTreeProvider processTreeProvider,
         IServiceManager serviceManager,
-        TimeSpan interval) =>
+        IMetricSink sink) =>
         Akka.Actor.Props.Create(() => new MonitoringSupervisor(
             cpuMetrics, memoryMetrics, diskMetrics, networkMetrics, gpuMetrics,
-            processClassifier, processTreeProvider, serviceManager, interval));
+            processClassifier, processTreeProvider, serviceManager, sink));
 
     public MonitoringSupervisor(
         ICpuMetrics cpuMetrics,
@@ -40,25 +41,26 @@ public sealed class MonitoringSupervisor : ReceiveActor
         IProcessClassifier processClassifier,
         IProcessTreeProvider processTreeProvider,
         IServiceManager serviceManager,
-        TimeSpan interval)
+        IMetricSink sink)
     {
-        _cpu = Context.ActorOf(CpuMonitorActor.Props(cpuMetrics, interval), "cpu-monitor");
-        _memory = Context.ActorOf(MemoryMonitorActor.Props(memoryMetrics, interval), "memory-monitor");
-        _disk = Context.ActorOf(DiskMonitorActor.Props(diskMetrics, interval), "disk-monitor");
-        _network = Context.ActorOf(NetworkMonitorActor.Props(networkMetrics, interval), "network-monitor");
-        _gpu = Context.ActorOf(GpuMonitorActor.Props(gpuMetrics, interval), "gpu-monitor");
+        _cpu = Context.ActorOf(CpuMonitorActor.Props(cpuMetrics, sink), "cpu-monitor");
+        _memory = Context.ActorOf(MemoryMonitorActor.Props(memoryMetrics, sink), "memory-monitor");
+        _disk = Context.ActorOf(DiskMonitorActor.Props(diskMetrics, sink), "disk-monitor");
+        _network = Context.ActorOf(NetworkMonitorActor.Props(networkMetrics, sink), "network-monitor");
+        _gpu = Context.ActorOf(GpuMonitorActor.Props(gpuMetrics, sink), "gpu-monitor");
 
+        // TODO(tick-pipeline): ProcessSupervisor converted in next task
         _processSupervisor = Context.ActorOf(
-            ProcessSupervisor.Props(processClassifier, processTreeProvider, serviceManager, interval),
+            ProcessSupervisor.Props(processClassifier, processTreeProvider, serviceManager, TimeSpan.FromMilliseconds(1000)),
             "process-supervisor");
 
-        // Typed monitoring start commands — forward to the right child
-        Receive<StartCpuMonitoring>(msg => _cpu.Forward(msg));
-        Receive<StartMemoryMonitoring>(msg => _memory.Forward(msg));
-        Receive<StartDiskMonitoring>(msg => _disk.Forward(msg));
-        Receive<StartNetworkMonitoring>(msg => _network.Forward(msg));
-        Receive<StartGpuMonitoring>(msg => _gpu.Forward(msg));
-        Receive<StartProcessMonitoring>(msg => _processSupervisor.Forward(msg));
+        // Self-register monitors with the TickRouter
+        Self.Tell(new RegisterMonitor(MetricKind.Cpu, _cpu, true, null));
+        Self.Tell(new RegisterMonitor(MetricKind.Memory, _memory, true, null));
+        Self.Tell(new RegisterMonitor(MetricKind.Disk, _disk, false, null));
+        Self.Tell(new RegisterMonitor(MetricKind.Network, _network, false, null));
+        Self.Tell(new RegisterMonitor(MetricKind.Gpu, _gpu, false, null));
+        Self.Tell(new RegisterMonitor(MetricKind.Process, _processSupervisor, false, null));
 
         // Process action commands
         Receive<KillProcess>(msg => _processSupervisor.Forward(msg));
@@ -74,7 +76,7 @@ public sealed class MonitoringSupervisor : ReceiveActor
         Receive<StopService>(msg => _processSupervisor.Forward(msg));
         Receive<RestartService>(msg => _processSupervisor.Forward(msg));
 
-        Trace.Info(this, "Supervisor started with interval={0}ms", interval.TotalMilliseconds);
+        Trace.Info(this, "Supervisor started");
     }
 
     protected override SupervisorStrategy SupervisorStrategy() =>

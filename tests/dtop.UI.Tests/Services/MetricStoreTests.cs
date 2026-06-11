@@ -49,4 +49,20 @@ public class MetricStoreTests
 
         Assert.NotSame(first, again);
     }
+
+    [Fact]
+    public void ConcurrentPublish_DoesNotThrow_AndKeepsHistoryConsistent()
+    {
+        var store = new MetricStore();
+
+        Parallel.For(0, 1000, i =>
+        {
+            store.Publish(new CpuSnapshot("cpu", i % 100, [1.0]));
+            store.History($"pid:{i % 10}").Push(i);
+        });
+
+        // MetricHistory capacity is 300; after 1000 pushes the ring buffer holds 300 entries.
+        Assert.Equal(300, store.CpuHistory.Snapshot().Length);
+        Assert.NotNull(store.Cpu.Value);
+    }
 }

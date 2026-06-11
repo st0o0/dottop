@@ -8,9 +8,9 @@ public interface IMetricSink
     void Publish(CpuSnapshot snapshot);
     void Publish(MemorySnapshot snapshot);
     void Publish(GpuSnapshot snapshot);
-    void Publish(List<DiskSnapshot> snapshots);
-    void Publish(List<NetworkSnapshot> snapshots);
-    void Publish(List<ProcessSnapshot> snapshots);
-    void Publish(List<ConnectionSnapshot> snapshots);
-    void Publish(List<ContainerSnapshot> snapshots);
+    void Publish(IReadOnlyList<DiskSnapshot> snapshots);
+    void Publish(IReadOnlyList<NetworkSnapshot> snapshots);
+    void Publish(IReadOnlyList<ProcessSnapshot> snapshots);
+    void Publish(IReadOnlyList<ConnectionSnapshot> snapshots);
+    void Publish(IReadOnlyList<ContainerSnapshot> snapshots);
 }

@@ -18,7 +18,7 @@ public sealed class MetricStore : IMetricSink
     public ReactiveProperty<IReadOnlyList<NetworkSnapshot>> Networks { get; } = new([]);
     public ReactiveProperty<IReadOnlyList<ProcessSnapshot>> Processes { get; } = new([]);
     public ReactiveProperty<IReadOnlyList<ConnectionSnapshot>> Connections { get; } = new([]);
-    public ReactiveProperty<List<ContainerSnapshot>?> Docker { get; } = new(null);
+    public ReactiveProperty<IReadOnlyList<ContainerSnapshot>> Docker { get; } = new([]);
 
     public MetricHistory CpuHistory { get; } = new();
     public MetricHistory MemHistory { get; } = new();
@@ -31,78 +31,119 @@ public sealed class MetricStore : IMetricSink
 
     public void Publish(CpuSnapshot snapshot)
     {
-        CpuHistory.Push(snapshot.TotalPercent);
-        Cpu.Value = snapshot;
+        lock (_gate)
+        {
+            CpuHistory.Push(snapshot.TotalPercent);
+            Cpu.Value = snapshot;
+        }
     }
 
     public void Publish(MemorySnapshot snapshot)
     {
-        MemHistory.Push(snapshot.TotalBytes > 0 ? (double)snapshot.UsedBytes / snapshot.TotalBytes * 100 : 0);
-        Memory.Value = snapshot;
+        lock (_gate)
+        {
+            MemHistory.Push(snapshot.TotalBytes > 0 ? (double)snapshot.UsedBytes / snapshot.TotalBytes * 100 : 0);
+            Memory.Value = snapshot;
+        }
     }
 
     public void Publish(GpuSnapshot snapshot)
     {
-        GpuHistory.Push(snapshot.UsagePercent);
-        Gpu.Value = snapshot;
-    }
-
-    public void Publish(List<DiskSnapshot> snapshots)
-    {
-        foreach (var d in snapshots)
+        lock (_gate)
         {
-            History($"disk:{d.Name}:active").Push(d.ActiveTimePercent);
-            History($"disk:{d.Name}:transfer").Push(d.TransferBytesPerSec);
+            GpuHistory.Push(snapshot.UsagePercent);
+            Gpu.Value = snapshot;
         }
-
-        Disks.Value = snapshots;
     }
 
-    public void Publish(List<NetworkSnapshot> snapshots) => Networks.Value = snapshots;
-
-    public void Publish(List<ProcessSnapshot> snapshots)
+    public void Publish(IReadOnlyList<DiskSnapshot> snapshots)
     {
-        foreach (var p in snapshots)
+        lock (_gate)
         {
-            History($"pid:{p.Pid}").Push(p.CpuPercent);
-        }
+            foreach (var d in snapshots)
+            {
+                HistoryCore($"disk:{d.Name}:active").Push(d.ActiveTimePercent);
+                HistoryCore($"disk:{d.Name}:transfer").Push(d.TransferBytesPerSec);
+            }
 
-        Processes.Value = snapshots;
+            Disks.Value = snapshots;
+        }
     }
 
-    public void Publish(List<ConnectionSnapshot> snapshots) => Connections.Value = snapshots;
-
-    public void Publish(List<ContainerSnapshot> snapshots)
+    public void Publish(IReadOnlyList<NetworkSnapshot> snapshots)
     {
-        foreach (var c in snapshots)
+        lock (_gate)
         {
-            History($"docker:{c.Id}:cpu").Push(c.CpuPercent);
+            Networks.Value = snapshots;
         }
-
-        Docker.Value = snapshots;
     }
 
+    public void Publish(IReadOnlyList<ProcessSnapshot> snapshots)
+    {
+        lock (_gate)
+        {
+            foreach (var p in snapshots)
+            {
+                HistoryCore($"pid:{p.Pid}").Push(p.CpuPercent);
+            }
+
+            Processes.Value = snapshots;
+        }
+    }
+
+    public void Publish(IReadOnlyList<ConnectionSnapshot> snapshots)
+    {
+        lock (_gate)
+        {
+            Connections.Value = snapshots;
+        }
+    }
+
+    public void Publish(IReadOnlyList<ContainerSnapshot> snapshots)
+    {
+        lock (_gate)
+        {
+            foreach (var c in snapshots)
+            {
+                HistoryCore($"docker:{c.Id}:cpu").Push(c.CpuPercent);
+            }
+
+            Docker.Value = snapshots;
+        }
+    }
+
+    /// <summary>
+    /// Returns the <see cref="MetricHistory"/> for the given key; creates one if it does not yet exist.
+    /// This is the deliberate read API for keyed histories (per-disk / per-PID / per-container).
+    /// Thread-safe. Entries are LRU-evicted once the store exceeds the limit supplied at construction.
+    /// </summary>
     public MetricHistory History(string key)
     {
         lock (_gate)
         {
-            if (_keyed.TryGetValue(key, out var existing))
-            {
-                _lru.Remove(key);
-                _lru.AddLast(key);
-                return existing;
-            }
-
-            if (_keyed.Count >= _keyedHistoryLimit && _lru.First is { } oldest)
-            {
-                _keyed.Remove(oldest.Value);
-                _lru.RemoveFirst();
-            }
-
-            var history = new MetricHistory();
-            _keyed[key] = history;
-            _lru.AddLast(key);
-            return history;
+            return HistoryCore(key);
         }
+    }
+
+    // Must be called under _gate.
+    private MetricHistory HistoryCore(string key)
+    {
+        if (_keyed.TryGetValue(key, out var existing))
+        {
+            _lru.Remove(key);
+            _lru.AddLast(key);
+            return existing;
+        }
+
+        if (_keyed.Count >= _keyedHistoryLimit && _lru.First is { } oldest)
+        {
+            _keyed.Remove(oldest.Value);
+            _lru.RemoveFirst();
+        }
+
+        var history = new MetricHistory();
+        _keyed[key] = history;
+        _lru.AddLast(key);
+        return history;
     }
 }

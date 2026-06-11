@@ -185,10 +185,11 @@ public class ServicesViewModel : ReactiveViewModel
             case ConsoleKey.S: _ = ActionOnSelected(); break;
             case ConsoleKey.X: _ = ActionOnSelected(ActionType.Stop); break;
             case ConsoleKey.R: _ = ActionOnSelected(ActionType.Restart); break;
-            case ConsoleKey.D1: Navigate("/"); break;
-            case ConsoleKey.D2: Navigate("/performance"); break;
-            case ConsoleKey.D4: Navigate("/network"); break;
-            case ConsoleKey.D5: Navigate("/docker"); break;
+            case ConsoleKey.D1: Navigate("/overview"); break;
+            case ConsoleKey.D2: Navigate("/"); break;
+            case ConsoleKey.D3: Navigate("/performance"); break;
+            case ConsoleKey.D5: Navigate("/network"); break;
+            case ConsoleKey.D6: Navigate("/docker"); break;
             case ConsoleKey.F10:
                 IsSettingsOpen.Value = true;
                 _settingsContentChanged.OnNext(Unit.Default);

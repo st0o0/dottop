@@ -8,4 +8,5 @@ public class AppSettings
     public string DefaultGroup { get; set; } = "all";
     public string GraphStyle { get; set; } = "blocks";
     public string Language { get; set; } = "system";
+    public int OverviewPreset { get; set; } = 0;
 }

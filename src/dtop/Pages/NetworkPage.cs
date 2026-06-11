@@ -163,9 +163,6 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
 
     private ILayoutNode BuildStatusBar()
     {
-        return ViewModel.StatusMessage
-            .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(ThemeService.Instance.Current.StatusBarText).WithBackground(ThemeService.Instance.Current.StatusBar))
-            .AsLayout().Height(1);
+        return new StatusBarNode(ViewModel.StatusMessage.AsObservable(), ViewModel.RefreshService).Height(1);
     }
 }

@@ -63,10 +63,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
                 .CombineLatest(ViewModel.ShowCpu, ViewModel.ShowMemory, ViewModel.ShowNetDisk, ViewModel.ShowProcesses,
                     (preset, _, _, _, _) => BuildGridForPreset(preset))
                 .AsLayout().Fill())
-            .WithChild(ViewModel.StatusHint
-                .Select<string, ILayoutNode>(hint =>
-                    new TextNode(hint).WithForeground(ThemeService.Instance.Current.TextDim).WithBackground(ThemeService.Instance.Current.StatusBar))
-                .AsLayout().Height(1));
+            .WithChild(new StatusBarNode(ViewModel.StatusHint.AsObservable(), ViewModel.RefreshService).Height(1));
     }
 
     public override void OnNavigatedTo()

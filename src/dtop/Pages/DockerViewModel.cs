@@ -46,8 +46,11 @@ public class DockerViewModel : ReactiveViewModel
     private readonly UpdateService _updateService;
     private readonly PinService _pinService;
     private readonly IToastService _toast;
+    private readonly IRefreshService _refreshService;
     private IActorRef? _dockerActorRef;
     private readonly List<IDisposable> _demandHandles = [];
+
+    public IRefreshService RefreshService => _refreshService;
 
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
@@ -92,7 +95,8 @@ public class DockerViewModel : ReactiveViewModel
         SettingsService settingsService,
         UpdateService updateService,
         PinService pinService,
-        IToastService toast)
+        IToastService toast,
+        IRefreshService refreshService)
     {
         _dockerActor = dockerActor;
         _store = store;
@@ -101,6 +105,7 @@ public class DockerViewModel : ReactiveViewModel
         _updateService = updateService;
         _pinService = pinService;
         _toast = toast;
+        _refreshService = refreshService;
     }
 
     public override void OnActivated()
@@ -415,6 +420,16 @@ public class DockerViewModel : ReactiveViewModel
             case ConsoleKey.F10:
                 IsSettingsOpen.Value = true;
                 _settingsContentChanged.OnNext(Unit.Default);
+                break;
+
+            case ConsoleKey.Spacebar:
+                _refreshService.IsPaused.Value = !_refreshService.IsPaused.Value;
+                break;
+            case ConsoleKey.Add or ConsoleKey.OemPlus:
+                _refreshService.SpeedUp();
+                break;
+            case ConsoleKey.Subtract or ConsoleKey.OemMinus:
+                _refreshService.SlowDown();
                 break;
 
             case ConsoleKey.Q: Shutdown(); break;

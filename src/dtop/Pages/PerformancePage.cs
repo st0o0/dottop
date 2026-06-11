@@ -110,10 +110,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
                 .WithChild(BuildRamPanel())
                 .HeightPercent(50))
             .WithChild(bottomRow.Fill())
-            .WithChild(ViewModel.StatusHint
-                .Select<string, ILayoutNode>(hint =>
-                    new TextNode(hint).WithForeground(ThemeService.Instance.Current.TextDim).WithBackground(ThemeService.Instance.Current.StatusBar))
-                .AsLayout().Height(1));
+            .WithChild(new StatusBarNode(ViewModel.StatusHint.AsObservable(), ViewModel.RefreshService).Height(1));
 
         return Layouts.Stack(mainLayout, conditionalDetail, conditionalSettings);
     }

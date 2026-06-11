@@ -90,6 +90,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
         var registry = new PluginRegistry([]);
         registry.AddBuiltInTab(new Plugin.PluginTabInfo("6:Docker", "/docker", ConsoleKey.D6));
         builder.Services.AddSingleton(registry);
+        builder.Services.AddSingleton<IRefreshService>(testRefreshService);
         builder.Services.AddSingleton<Plugin.ITickSource>(testRefreshService);
         dtop.Nodes.TabBarNode.RegisterPluginTabs(registry);
 

@@ -20,6 +20,7 @@ public class OverviewViewModel : ReactiveViewModel
     private readonly IMonitorDemand _demand;
     private readonly IGpuMetrics _gpuMetrics;
     private readonly SettingsService _settingsService;
+    private readonly IRefreshService _refreshService;
     private readonly List<IDisposable> _demandHandles = [];
 
     // ── Metrics ─────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ public class OverviewViewModel : ReactiveViewModel
     public IScrollableList? ProcessListNode { get; set; }
 
     public MetricStore Store => _store;
+    public IRefreshService RefreshService => _refreshService;
 
     private static readonly string[] PresetNames = ["Standard", "CPU Focus", "Resource Grid", "Minimal"];
 
@@ -63,12 +65,14 @@ public class OverviewViewModel : ReactiveViewModel
         MetricStore store,
         IMonitorDemand demand,
         IGpuMetrics gpuMetrics,
-        SettingsService settingsService)
+        SettingsService settingsService,
+        IRefreshService refreshService)
     {
         _store = store;
         _demand = demand;
         _gpuMetrics = gpuMetrics;
         _settingsService = settingsService;
+        _refreshService = refreshService;
 
         ActivePreset = new ReactiveProperty<int>(
             Math.Clamp(settingsService.Settings.OverviewPreset, 0, 3));
@@ -250,6 +254,16 @@ public class OverviewViewModel : ReactiveViewModel
             case ConsoleKey.F:
                 IsFilterMode.Value = true;
                 UpdateStatusHint();
+                break;
+
+            case ConsoleKey.Spacebar:
+                _refreshService.IsPaused.Value = !_refreshService.IsPaused.Value;
+                break;
+            case ConsoleKey.Add or ConsoleKey.OemPlus:
+                _refreshService.SpeedUp();
+                break;
+            case ConsoleKey.Subtract or ConsoleKey.OemMinus:
+                _refreshService.SlowDown();
                 break;
 
             case ConsoleKey.Q or ConsoleKey.Escape:

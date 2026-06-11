@@ -375,11 +375,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
 
     private ILayoutNode BuildStatusBar()
     {
-        return ViewModel.StatusMessage
-            .Select<string, ILayoutNode>(msg =>
-                new TextNode($" {msg}").WithForeground(ThemeService.Instance.Current.StatusBarText).WithBackground(ThemeService.Instance.Current.StatusBar))
-            .AsLayout()
-            .Height(1);
+        return new StatusBarNode(ViewModel.StatusMessage.AsObservable(), ViewModel.RefreshService).Height(1);
     }
 
     private static string MiniBar(double percent, int width)

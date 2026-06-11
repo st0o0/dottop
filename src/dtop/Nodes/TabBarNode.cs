@@ -46,23 +46,27 @@ public sealed class TabBarNode : LayoutNode
             return;
         }
 
-        context.Fill(0, 0, bounds.Width, 1);
+        // Create a sub-context so coordinates (0, 0) map to the node's allocated
+        // screen position, not the absolute top-left of the terminal.
+        var ctx = context.CreateSubContext(bounds);
+
+        ctx.Fill(0, 0, bounds.Width, 1);
         var x = 1;
         for (var i = 0; i < _allLabels.Count; i++)
         {
             var label = $" {_allLabels[i]} ";
             if (i == _activeIndex)
             {
-                context.SetForeground(ThemeService.Instance.Current.SelectionText);
-                context.SetBackground(ThemeService.Instance.Current.Selection);
+                ctx.SetForeground(ThemeService.Instance.Current.SelectionText);
+                ctx.SetBackground(ThemeService.Instance.Current.Selection);
             }
             else
             {
-                context.SetForeground(ThemeService.Instance.Current.TextDim);
+                ctx.SetForeground(ThemeService.Instance.Current.TextDim);
             }
 
-            context.WriteAt(x, 0, label);
-            context.ResetColors();
+            ctx.WriteAt(x, 0, label);
+            ctx.ResetColors();
             x += label.Length + 1;
         }
     }

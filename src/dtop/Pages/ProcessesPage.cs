@@ -250,14 +250,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         var ramStr = ramMb >= 1024 ? $"{ramMb / 1024.0:F1} GB" : $"{ramMb} MB";
         var cpuColor = proc.CpuPercent > 80 ? Color.BrightRed : proc.CpuPercent > 50 ? Color.BrightYellow : Color.Cyan;
 
-        var cpuGraph = new GraphNode()
+        var cpuGraph = new GraphNode(MetricHistory.From(ViewModel.GetCpuHistory(proc.Pid)))
             .WithStyle(GraphStyle.Blocks)
             .WithColor(cpuColor)
             .WithRange(0, 100);
-        foreach (var val in ViewModel.GetCpuHistory(proc.Pid))
-        {
-            cpuGraph.Push(val);
-        }
 
         var cpuPanel = new PanelNode()
             .WithTitle($" CPU {proc.CpuPercent:F1}% ")
@@ -267,11 +263,10 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
             .WithContent(cpuGraph);
 
         var ramPercent = proc.WorkingSetBytes / (double)(16L * 1024 * 1024 * 1024) * 100;
-        var ramGraph = new GraphNode()
+        var ramGraph = new GraphNode(MetricHistory.From([Math.Clamp(ramPercent, 0, 100)]))
             .WithStyle(GraphStyle.Blocks)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
-        ramGraph.Push(Math.Clamp(ramPercent, 0, 100));
 
         var ramPanel = new PanelNode()
             .WithTitle($" RAM {ramStr} ")

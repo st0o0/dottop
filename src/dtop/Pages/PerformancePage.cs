@@ -15,25 +15,47 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 {
     private ModalNode? _detailModal;
     private ModalNode? _settingsModal;
-    private GraphNode? _detailGraph;
     private GraphNode? _diskActiveGraph;
     private GraphNode? _diskTransferGraph;
     private GraphNode? _cpuGraph;
     private GraphNode? _ramGraph;
     private GraphNode? _gpuGraph;
+    private GraphNode? _cpuDetailGraph;
+    private GraphNode? _ramDetailGraph;
+    private GraphNode? _gpuDetailGraph;
     private DataListNode<NetworkSnapshot>? _networkList;
     private CpuCoresNode? _coresNode;
+
+    // History is decoupled from the graph nodes so the panel graph and its detail
+    // graph share one continuously-fed buffer per metric. Disk histories are keyed
+    // by disk name so each disk keeps its own history across selection changes.
+    private readonly MetricHistory _cpuHistory = new();
+    private readonly MetricHistory _ramHistory = new();
+    private readonly MetricHistory _gpuHistory = new();
+    private readonly Dictionary<string, MetricHistory> _diskActiveHistory = [];
+    private readonly Dictionary<string, MetricHistory> _diskTransferHistory = [];
+
+    private static MetricHistory GetOrAdd(Dictionary<string, MetricHistory> map, string key)
+    {
+        if (!map.TryGetValue(key, out var history))
+        {
+            history = new MetricHistory();
+            map[key] = history;
+        }
+
+        return history;
+    }
 
     public override ILayoutNode BuildLayout()
     {
         var graphStyle = ViewModel.GraphStyleSetting;
 
-        _cpuGraph = new GraphNode()
+        _cpuGraph = new GraphNode(_cpuHistory)
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _ramGraph = new GraphNode()
+        _ramGraph = new GraphNode(_ramHistory)
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
@@ -48,22 +70,32 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
             .WithDismissOnEscape(false)
             .WithPadding(1);
 
-        _detailGraph = new GraphNode()
+        _cpuDetailGraph = new GraphNode(_cpuHistory)
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _diskActiveGraph = new GraphNode()
+        _ramDetailGraph = new GraphNode(_ramHistory)
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
 
-        _diskTransferGraph = new GraphNode()
+        _gpuDetailGraph = new GraphNode(_gpuHistory)
+            .WithStyle(graphStyle)
+            .WithColor(Theme.Graph)
+            .WithRange(0, 100);
+
+        _diskActiveGraph = new GraphNode(new MetricHistory())
+            .WithStyle(graphStyle)
+            .WithColor(Theme.Graph)
+            .WithRange(0, 100);
+
+        _diskTransferGraph = new GraphNode(new MetricHistory())
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100_000_000);
 
-        _gpuGraph = new GraphNode()
+        _gpuGraph = new GraphNode(_gpuHistory)
             .WithStyle(graphStyle)
             .WithColor(Theme.Graph)
             .WithRange(0, 100);
@@ -113,50 +145,25 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         Observable.Interval(TimeSpan.FromMilliseconds(500))
             .Subscribe(_ =>
             {
-                _cpuGraph?.Push(ViewModel.CpuTotal.Value);
+                // Feed every metric's history continuously and independently, regardless
+                // of which (if any) detail section is open. This guarantees each graph
+                // always shows its own full history the moment it becomes visible, and
+                // makes it impossible for one metric's samples to leak into another's.
+                _cpuHistory.Push(ViewModel.CpuTotal.Value);
 
                 var total = ViewModel.RamTotal.Value;
                 var used = ViewModel.RamUsed.Value;
-                _ramGraph?.Push(total > 0 ? (double)used / total * 100 : 0);
+                _ramHistory.Push(total > 0 ? (double)used / total * 100 : 0);
 
                 if (ViewModel is { GpuAvailable: true, Gpu.Value: { } gpu })
                 {
-                    _gpuGraph?.Push(gpu.UsagePercent);
+                    _gpuHistory.Push(gpu.UsagePercent);
                 }
 
-                if (ViewModel.IsDetailOpen.Value)
+                foreach (var disk in ViewModel.Disks.Value)
                 {
-                    switch (ViewModel.DetailSection.Value)
-                    {
-                        case PerfDetailSection.Cpu or PerfDetailSection.Ram
-                            when _detailGraph is not null:
-                        {
-                            var value = ViewModel.DetailSection.Value switch
-                            {
-                                PerfDetailSection.Cpu => ViewModel.CpuTotal.Value,
-                                PerfDetailSection.Ram => total > 0 ? (double)used / total * 100 : 0,
-                                _ => 0
-                            };
-                            _detailGraph.Push(value);
-                            break;
-                        }
-                        case PerfDetailSection.Disk:
-                        {
-                            var disks = ViewModel.Disks.Value;
-                            var idx = ViewModel.DiskDetailIndex.Value;
-                            if (idx >= 0 && idx < disks.Count)
-                            {
-                                _diskActiveGraph?.Push(disks[idx].ActiveTimePercent);
-                                _diskTransferGraph?.Push(disks[idx].TransferBytesPerSec);
-                            }
-
-                            break;
-                        }
-                        case PerfDetailSection.Gpu
-                            when ViewModel.Gpu.Value is { } gpuDetail:
-                            _detailGraph?.Push(gpuDetail.UsagePercent);
-                            break;
-                    }
+                    GetOrAdd(_diskActiveHistory, disk.Name).Push(disk.ActiveTimePercent);
+                    GetOrAdd(_diskTransferHistory, disk.Name).Push(disk.TransferBytesPerSec);
                 }
             })
             .DisposeWith(Subscriptions);
@@ -205,7 +212,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
     private void UpdateDetailModal()
     {
-        if (_detailModal is null || _detailGraph is null)
+        if (_detailModal is null)
         {
             return;
         }
@@ -262,11 +269,17 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         if (section is PerfDetailSection.Cpu or PerfDetailSection.Ram or PerfDetailSection.Gpu)
         {
-            _detailGraph!.WithColor(color).WithRange(0, 100);
+            var detailGraph = section switch
+            {
+                PerfDetailSection.Cpu => _cpuDetailGraph!,
+                PerfDetailSection.Ram => _ramDetailGraph!,
+                _ => _gpuDetailGraph!,
+            };
+            detailGraph.WithColor(color).WithRange(0, 100);
             _detailModal.Content = Layouts.Vertical()
                 .WithChild(tabBar.Height(1))
                 .WithChild(info)
-                .WithChild(_detailGraph.Height(999));
+                .WithChild(detailGraph.Height(999));
         }
         else if (section == PerfDetailSection.Disk)
         {
@@ -317,6 +330,11 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
 
         var idx = Math.Clamp(ViewModel.DiskDetailIndex.Value, 0, disks.Count - 1);
         var disk = disks[idx];
+
+        // Point the disk graphs at the selected disk's own continuously-fed history,
+        // so switching disks shows that disk's full history with no carry-over.
+        _diskActiveGraph!.WithHistory(GetOrAdd(_diskActiveHistory, disk.Name));
+        _diskTransferGraph!.WithHistory(GetOrAdd(_diskTransferHistory, disk.Name));
 
         var usedGb = disk.UsedBytes / 1024.0 / 1024 / 1024;
         var totalGb = disk.TotalBytes / 1024.0 / 1024 / 1024;

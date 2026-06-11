@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using R3;
+﻿using R3;
 using Termina.Layout;
 using Termina.Rendering;
 using Termina.Terminal;
@@ -42,7 +41,7 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
     ];
 
     private readonly Subject<Unit> _invalidated = new();
-    private readonly ConcurrentQueue<double> _data = new();
+    private MetricHistory _history;
     private IDisposable? _timerSubscription;
     private readonly TimeProvider _timeProvider;
     private readonly int _intervalMs;
@@ -54,8 +53,12 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
     public Observable<Unit> Invalidated => _invalidated.AsObservable();
     public bool IsAnimating { get; private set; }
 
-    public GraphNode(int intervalMs = 500, TimeProvider? timeProvider = null)
+    /// <summary>The history this graph renders. Multiple graphs may share one history.</summary>
+    public MetricHistory History => _history;
+
+    public GraphNode(MetricHistory history, int intervalMs = 500, TimeProvider? timeProvider = null)
     {
+        _history = history;
         _intervalMs = intervalMs;
         _timeProvider = timeProvider ?? TimeProvider.System;
         Start();
@@ -97,23 +100,22 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         return this;
     }
 
+    /// <summary>
+    /// Point this graph at a different history source. Used when the same graph
+    /// node renders different entities over time (e.g. switching the selected disk),
+    /// so each entity keeps its own continuously-collected history with no mixing.
+    /// </summary>
+    public GraphNode WithHistory(MetricHistory history)
+    {
+        _history = history;
+        return this;
+    }
+
     public GraphNode WithRange(double min, double max)
     {
         _minValue = min;
         _maxValue = max;
         return this;
-    }
-
-    public void Push(double value)
-    {
-        lock (_data)
-        {
-            _data.Enqueue(value);
-            while (_data.Count > 300)
-            {
-                _data.TryDequeue(out _);
-            }
-        }
     }
 
     public override Size Measure(Size available)
@@ -133,17 +135,8 @@ public sealed class GraphNode : LayoutNode, IAnimatedNode, IInvalidatingNode
         var width = bounds.Width;
         var height = bounds.Height;
 
-        double[] data;
-        lock (_data)
-        {
-            var maxPoints = _style == GraphStyle.Braille ? width * 2 : width;
-            while (_data.Count > maxPoints)
-            {
-                _data.TryDequeue(out _);
-            }
-
-            data = _data.ToArray();
-        }
+        var maxPoints = _style == GraphStyle.Braille ? width * 2 : width;
+        var data = _history.Snapshot(maxPoints);
 
         // Key fix: create a sub-context clipped to our bounds.
         // This means all WriteAt calls inside use (0,0)-relative coordinates

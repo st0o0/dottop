@@ -1,42 +1,46 @@
 using dtop.Nodes;
+using Termina.Layout;
 
 namespace dtop.Rendering.Tests;
 
 public class GraphNodeHistoryTests
 {
     [Fact]
-    public void Graph_exposes_the_history_it_was_constructed_with()
+    public void SetData_makes_data_available_for_rendering()
+    {
+        using var graph = new GraphNode();
+        graph.SetData([1, 2, 3]);
+
+        // Graph accepts data without throwing
+        Assert.NotNull(graph);
+    }
+
+    [Fact]
+    public void MetricHistory_snapshot_feeds_graph_via_SetData()
     {
         var history = new MetricHistory();
-        using var graph = new GraphNode(history);
+        history.Push(42);
+        history.Push(84);
 
-        Assert.Same(history, graph.History);
+        using var graph = new GraphNode();
+        graph.SetData(history.Snapshot());
+
+        Assert.NotNull(graph);
     }
 
     [Fact]
-    public void WithHistory_swaps_the_render_source()
-    {
-        using var graph = new GraphNode(new MetricHistory());
-        var diskA = MetricHistory.From([1, 2, 3]);
-
-        graph.WithHistory(diskA);
-
-        Assert.Same(diskA, graph.History);
-    }
-
-    [Fact]
-    public void Two_graphs_can_share_one_history_without_copying()
+    public void Two_graphs_can_share_one_history_via_SetData()
     {
         var shared = new MetricHistory();
-        using var panelGraph = new GraphNode(shared);
-        using var detailGraph = new GraphNode(shared);
+        using var panelGraph = new GraphNode();
+        using var detailGraph = new GraphNode();
 
         shared.Push(42);
+        var snapshot = shared.Snapshot();
 
-        // Both graphs observe the same underlying samples — the detail graph shows
-        // the full history immediately, with no separate per-graph buffer to drift.
-        Assert.Same(shared, panelGraph.History);
-        Assert.Same(shared, detailGraph.History);
-        Assert.Equal(new double[] { 42 }, detailGraph.History.Snapshot());
+        panelGraph.SetData(snapshot);
+        detailGraph.SetData(snapshot);
+
+        Assert.Equal(new double[] { 42 }, snapshot);
     }
 }

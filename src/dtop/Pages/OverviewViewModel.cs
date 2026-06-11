@@ -118,6 +118,7 @@ public class OverviewViewModel : ReactiveViewModel
 
         _ = ConnectStream<CpuSnapshot>(supervisor, new StartCpuMonitoring(), ct, snapshot =>
         {
+            if (IsPaused.Value) return;
             CpuName.Value = snapshot.Name;
             CpuTotal.Value = snapshot.TotalPercent;
             CpuCores.Value = snapshot.CorePercents;
@@ -126,6 +127,7 @@ public class OverviewViewModel : ReactiveViewModel
 
         _ = ConnectStream<MemorySnapshot>(supervisor, new StartMemoryMonitoring(), ct, snapshot =>
         {
+            if (IsPaused.Value) return;
             RamTotal.Value = snapshot.TotalBytes;
             RamUsed.Value = snapshot.UsedBytes;
             if (!IsFilterMode.Value) UpdateStatusHint();
@@ -133,16 +135,19 @@ public class OverviewViewModel : ReactiveViewModel
 
         _ = ConnectStream<List<DiskSnapshot>>(supervisor, new StartDiskMonitoring(), ct, disks =>
         {
+            if (IsPaused.Value) return;
             Disks.Value = disks;
         });
 
         _ = ConnectStream<List<NetworkSnapshot>>(supervisor, new StartNetworkMonitoring(), ct, nets =>
         {
+            if (IsPaused.Value) return;
             Networks.Value = nets;
         });
 
         _ = ConnectStream<List<ProcessSnapshot>>(supervisor, new StartProcessMonitoring(), ct, processes =>
         {
+            if (IsPaused.Value) return;
             AllProcesses.Value = processes;
         });
 
@@ -150,6 +155,7 @@ public class OverviewViewModel : ReactiveViewModel
         {
             _ = ConnectStream<GpuSnapshot>(supervisor, new StartGpuMonitoring(), ct, snapshot =>
             {
+                if (IsPaused.Value) return;
                 Gpu.Value = snapshot;
             });
         }

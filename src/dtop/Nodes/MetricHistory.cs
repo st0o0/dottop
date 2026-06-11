@@ -1,11 +1,5 @@
 namespace dtop.Nodes;
 
-/// <summary>
-/// Thread-safe, bounded ring buffer of metric samples (oldest → newest).
-/// Decoupled from rendering so a single history can feed multiple
-/// <see cref="GraphNode"/> instances (e.g. a panel graph and its detail graph)
-/// without their data ever getting mixed up across metrics.
-/// </summary>
 public sealed class MetricHistory
 {
     private readonly Queue<double> _data;

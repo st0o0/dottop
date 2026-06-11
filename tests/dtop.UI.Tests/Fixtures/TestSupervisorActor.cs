@@ -1,4 +1,3 @@
-using System.Threading.Channels;
 using Akka.Actor;
 using dtop.Core.Messages;
 using dtop.Core.Models;
@@ -13,24 +12,6 @@ public sealed class TestSupervisorActor : ReceiveActor
 {
     public TestSupervisorActor()
     {
-        Receive<StartCpuMonitoring>(_ =>
-            Sender.Tell(CreateStream(TestData.Cpu)));
-
-        Receive<StartMemoryMonitoring>(_ =>
-            Sender.Tell(CreateStream(TestData.Memory)));
-
-        Receive<StartDiskMonitoring>(_ =>
-            Sender.Tell(CreateStream(TestData.Disks)));
-
-        Receive<StartNetworkMonitoring>(_ =>
-            Sender.Tell(CreateStream(TestData.Networks)));
-
-        Receive<StartGpuMonitoring>(_ =>
-            Sender.Tell(CreateStream(TestData.Gpu)));
-
-        Receive<StartProcessMonitoring>(_ =>
-            Sender.Tell(CreateStream(TestData.Processes)));
-
         Receive<GetServices>(_ =>
             Sender.Tell(TestData.Services));
 
@@ -62,9 +43,6 @@ public sealed class TestSupervisorActor : ReceiveActor
         Receive<GetProcessHandles>(_ =>
             Sender.Tell(new ProcessHandlesResult(["handle1", "handle2"])));
 
-        Receive<StartDockerMonitoring>(_ =>
-            Sender.Tell(CreateStream(TestData.Containers)));
-
         Receive<StartContainer>(msg =>
             Sender.Tell(new ActionSuccess($"Started {msg.Id}")));
 
@@ -76,20 +54,5 @@ public sealed class TestSupervisorActor : ReceiveActor
 
         Receive<GetContainerLogs>(msg =>
             Sender.Tell(new ContainerLogsResult(["Log line 1", "Log line 2"])));
-    }
-
-    private static MonitoringStream<T> CreateStream<T>(T snapshot)
-    {
-        var channel = Channel.CreateBounded<T>(new BoundedChannelOptions(1)
-        {
-            FullMode = BoundedChannelFullMode.DropOldest,
-        });
-
-        channel.Writer.TryWrite(snapshot);
-
-        var cts = new CancellationTokenSource();
-        return new MonitoringStream<T>(
-            ChannelHelper.ReadFromChannelAsync(channel.Reader, cts.Token),
-            cts);
     }
 }

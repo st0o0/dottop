@@ -11,7 +11,7 @@ public sealed class TerminaSetup : IServiceSetupContainer
 {
     public void SetupServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddTermina("/", termina =>
+        services.AddTermina("/overview", termina =>
         {
             // Core routes
             termina.ConfigureRuntime(x =>
@@ -20,6 +20,7 @@ public sealed class TerminaSetup : IServiceSetupContainer
                 x.ScrollInputMode = ScrollInputMode.AlternateScroll;
                 x.CtrlCHandlingMode = CtrlCHandlingMode.DoublePressWhenRawInput;
             });
+            termina.RegisterRoute<OverviewPage, OverviewViewModel>("/overview", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/", NavigationBehavior.PreserveState);
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance",
                 NavigationBehavior.PreserveState);

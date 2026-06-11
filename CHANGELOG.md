@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.7.0](https://github.com/st0o0/dtop/compare/v0.6.0...v0.7.0) (2026-06-11)
+
+
+### Features
+
+* add Dracula-inspired default btop theme ([0b13256](https://github.com/st0o0/dtop/commit/0b13256e56c0310fd5439db0fcf23ae0127ed52a))
+* Add dtop.Core tests to CI ([e266d36](https://github.com/st0o0/dtop/commit/e266d36e9b7f1d4aa8ec3394351d945daf5da24e))
+* add MetricStore with latest snapshots and keyed histories ([ecffe07](https://github.com/st0o0/dtop/commit/ecffe07e9ac15ea36220aee7a674e7af16ef3979))
+* add RefreshService as the single global clock ([b48b427](https://github.com/st0o0/dtop/commit/b48b427f6adb8d82b4942b629d7ed6175eb4ebdf))
+* add ThemeDefinition, BtopThemeParser, and ThemeService ([6c9494a](https://github.com/st0o0/dtop/commit/6c9494a1e20c6c8d873aa421222d0e8dc4a98f83))
+* **core:** add Tick record and MetricKind enum ([aad2704](https://github.com/st0o0/dtop/commit/aad2704062058c4a0b53e5fb5221b3916cecc487))
+* extract CpuCalculator with tests ([ce9ff08](https://github.com/st0o0/dtop/commit/ce9ff08b1262db68bcb20b4f3b8db0328ad9389c))
+* extract NetworkCalculator with tests ([c10b2dc](https://github.com/st0o0/dtop/commit/c10b2dc3b9da42f9444ee19857337c9462c6e5d9))
+* extract ProcessTreeBuilder with tests ([d391c34](https://github.com/st0o0/dtop/commit/d391c341ad2a55399a08925bb03c0802d7c2af24))
+* global pause and refresh-rate keys with status bar display ([71e5b07](https://github.com/st0o0/dtop/commit/71e5b07bdd91da61796658084b0020329da8dde8))
+* **nav:** shift tab shortcuts +1 to accommodate new Overview Tab 0 ([2d08fb7](https://github.com/st0o0/dtop/commit/2d08fb7b70fcca84b1291b0e2cdad19a006e058c))
+* **nav:** update tab shortcuts ([a0f49f7](https://github.com/st0o0/dtop/commit/a0f49f75e9f4f51c119d59cf61d294ba5a368c8b))
+* **overview:** add OverviewPage with 4 GridNode presets ([a10cd86](https://github.com/st0o0/dtop/commit/a10cd865e8578e6e7431eb6e672609a294c77aea))
+* **overview:** add OverviewViewModel with metrics + keyboard shortcuts ([d0467e7](https://github.com/st0o0/dtop/commit/d0467e78ea15075bd11fe356d67782714a7d24c8))
+* **routing:** register /overview as default route ([f4b56c7](https://github.com/st0o0/dtop/commit/f4b56c786ebd9fa7149e8752c1e5d05a6a9d0bc3))
+* **settings:** add OverviewPreset field ([493812f](https://github.com/st0o0/dtop/commit/493812f8a334d406a31c78dd14f7ebb1f10ee686))
+* **tabbar:** add Overview as Tab 0 ([70a29a7](https://github.com/st0o0/dtop/commit/70a29a7889607d86a657765065792de100f2aa2b))
+* wire RefreshService and MetricStore into DI, drop AppTickSource ([b22a694](https://github.com/st0o0/dtop/commit/b22a6942e26f41d477e9ca400f6ad7cd853d78d1))
+* wire theme colors into panel borders with rounded style ([b199002](https://github.com/st0o0/dtop/commit/b1990029871c0beaef3f206eec1f3f309a43e170))
+
+
+### Bug Fixes
+
+* CI only on PRs + manual trigger, not on push to main ([786bc60](https://github.com/st0o0/dtop/commit/786bc606713487cbc8dc600c807c45ac1d589bdf))
+* **overview:** fix Preset 2 GPU colSpan gap + Preset 0 empty row guard ([66101de](https://github.com/st0o0/dtop/commit/66101dec61b03905fa2e009987bc2b4b2f79ef24))
+* **overview:** guard stream callbacks against IsPaused ([8d0ede3](https://github.com/st0o0/dtop/commit/8d0ede3843df9167ab6cff82ad51fa8cfc736e12))
+* **overview:** wire panel visibility toggles + fix layout gaps ([aef05f4](https://github.com/st0o0/dtop/commit/aef05f4b556552fc8fff3ab2a581f3199023f485))
+* serialize MetricStore publishes, consistent read-only list types ([61dc1b2](https://github.com/st0o0/dtop/commit/61dc1b2ca7ac534e758aeb2d126e413ddf67fbb0))
+* **tabbar:** shift existing page tab indices +1 for new Overview Tab 0 ([a35e35d](https://github.com/st0o0/dtop/commit/a35e35d59de4b66a95f147c306901a762c93a208))
+* thread-safe RefreshService, read-only Interval, MetricKind extraction ([3f24005](https://github.com/st0o0/dtop/commit/3f2400533c3f85c0cce7b785429f8c65c8be0bb3))
+* update ExamplePage and GraphNode tests for ThemeService and new GraphNode API ([a184272](https://github.com/st0o0/dtop/commit/a18427241e9ce309a326460a7b1c43d5430eb2cd))
+
 ## [0.6.0](https://github.com/st0o0/dtop/compare/v0.5.0...v0.6.0) (2026-06-08)
 
 

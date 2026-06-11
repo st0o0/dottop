@@ -67,7 +67,7 @@ public class DockerPage : ReactivePage<DockerViewModel>
                 };
 
                 return Layouts.Vertical()
-                    .WithChild(new TabBarNode(4))
+                    .WithChild(new TabBarNode(5))
                     .WithChild(BuildSubTabBar(subTab))
                     .WithChild(BuildSearchBar())
                     .WithChild(new PanelNode()

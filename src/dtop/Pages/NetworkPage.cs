@@ -66,7 +66,7 @@ public class NetworkPage : ReactivePage<NetworkViewModel>
         var conditionalSettings = new ConditionalNode(ViewModel.IsSettingsOpen, _settingsModal);
 
         var mainLayout = Layouts.Vertical()
-            .WithChild(new TabBarNode(3))
+            .WithChild(new TabBarNode(4))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelNetworkConnections)

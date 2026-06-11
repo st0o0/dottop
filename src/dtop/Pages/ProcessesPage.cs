@@ -75,7 +75,7 @@ public class ProcessesPage : ReactivePage<ProcessesViewModel>
         var conditionalSettings = new ConditionalNode(ViewModel.IsSettingsOpen, _settingsModal);
 
         var mainLayout = Layouts.Vertical()
-            .WithChild(new TabBarNode(0))
+            .WithChild(new TabBarNode(1))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelProcesses)

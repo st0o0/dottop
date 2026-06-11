@@ -123,7 +123,7 @@ public class PerformancePage : ReactivePage<PerformanceViewModel>
         }
 
         var mainLayout = Layouts.Vertical()
-            .WithChild(new TabBarNode(1))
+            .WithChild(new TabBarNode(2))
             .WithChild(Layouts.Horizontal()
                 .WithChild(BuildCpuPanel())
                 .WithSpacing(1)

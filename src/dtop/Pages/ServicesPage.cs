@@ -53,7 +53,7 @@ public class ServicesPage : ReactivePage<ServicesViewModel>
         var conditionalSettings = new ConditionalNode(ViewModel.IsSettingsOpen, _settingsModal);
 
         var mainLayout = Layouts.Vertical()
-            .WithChild(new TabBarNode(2))
+            .WithChild(new TabBarNode(3))
             .WithChild(BuildSearchBar())
             .WithChild(new PanelNode()
                 .WithTitle(Strings.PanelServices)

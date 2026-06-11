@@ -12,6 +12,7 @@ public sealed class ServicesSetup : IServiceSetupContainer
     public void SetupServices(IServiceCollection services, IConfiguration configuration)
     {
         var themeService = new ThemeService();
+        themeService.LoadFromDirectory(Path.Combine(AppContext.BaseDirectory, "themes"));
         services.AddSingleton(themeService);
 
         var settingsService = new SettingsService();

@@ -16,13 +16,9 @@ public sealed class MacCpuMetrics : ICpuMetrics
     private const int CPU_STATE_NICE = 3;
     private const int CPU_STATE_MAX = 4;
 
-    private long _prevIdle;
-    private long _prevTotal;
-    private long[]? _prevCoreIdle;
-    private long[]? _prevCoreTotal;
-    private string? _cpuName;
+    private CpuCalculator.State _state;
 
-    public string ProcessorName => _cpuName ??= ReadCpuName();
+    public string ProcessorName => field ??= ReadCpuName();
     public int CoreCount => Environment.ProcessorCount;
 
     public CpuMeasurement Measure()
@@ -35,11 +31,9 @@ public sealed class MacCpuMetrics : ICpuMetrics
                 return new CpuMeasurement(0, []);
 
             var coreCount = (int)cpuCount;
-            _prevCoreIdle ??= new long[coreCount];
-            _prevCoreTotal ??= new long[coreCount];
-
-            long totalUser = 0, totalSystem = 0, totalIdle = 0, totalNice = 0;
-            var cores = new List<double>(coreCount);
+            var coreIdle = new long[coreCount];
+            var coreTotal = new long[coreCount];
+            long totalIdle = 0, totalAll = 0;
 
             unsafe
             {
@@ -52,31 +46,21 @@ public sealed class MacCpuMetrics : ICpuMetrics
                     long idle = info[offset + CPU_STATE_IDLE];
                     long nice = info[offset + CPU_STATE_NICE];
 
-                    totalUser += user; totalSystem += system;
-                    totalIdle += idle; totalNice += nice;
-
-                    var coreTotal = user + system + idle + nice;
-                    var coreIdleDelta = idle - _prevCoreIdle[i];
-                    var coreTotalDelta = coreTotal - _prevCoreTotal[i];
-                    _prevCoreIdle[i] = idle;
-                    _prevCoreTotal[i] = coreTotal;
-
-                    var pct = coreTotalDelta > 0 ? (1.0 - (double)coreIdleDelta / coreTotalDelta) * 100 : 0;
-                    cores.Add(Math.Clamp(pct, 0, 100));
+                    coreIdle[i] = idle;
+                    coreTotal[i] = user + system + idle + nice;
+                    totalIdle += idle;
+                    totalAll += coreTotal[i];
                 }
             }
 
-            // Deallocate the info array
             vm_deallocate(mach_task_self(), cpuInfo, (nint)(cpuInfoCount * sizeof(int)));
 
-            var total = totalUser + totalSystem + totalIdle + totalNice;
-            var idleDelta = totalIdle - _prevIdle;
-            var totalDelta = total - _prevTotal;
-            _prevIdle = totalIdle;
-            _prevTotal = total;
+            if (_state.CoreIdle is null)
+                _state = CpuCalculator.State.Initial(coreCount);
 
-            var totalPct = totalDelta > 0 ? (1.0 - (double)idleDelta / totalDelta) * 100 : 0;
-            return new CpuMeasurement(Math.Clamp(totalPct, 0, 100), cores);
+            var result = CpuCalculator.Calculate(totalIdle, totalAll, coreIdle, coreTotal, _state);
+            _state = result.NextState;
+            return result.Measurement;
         }
         catch (Exception ex)
         {
@@ -89,13 +73,9 @@ public sealed class MacCpuMetrics : ICpuMetrics
     {
         try
         {
-            // Use sysctl to get CPU brand string
             return RunSysctl("machdep.cpu.brand_string") ?? "CPU";
         }
-        catch
-        {
-            return "CPU";
-        }
+        catch { return "CPU"; }
     }
 
     internal static string? RunSysctl(string key)

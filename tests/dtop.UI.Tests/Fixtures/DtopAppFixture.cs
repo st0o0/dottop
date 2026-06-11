@@ -1,8 +1,10 @@
 using Akka.Hosting;
-using dtop.App;
-using dtop.App.Actors;
-using dtop.App.Pages;
-using dtop.App.Services;
+using dtop;
+using dtop.Actors;
+using dtop.Pages;
+using dtop.Services;
+using dtop.Core.Messages;
+using dtop.Core.Models;
 using dtop.Core.Platform;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -57,10 +59,22 @@ public sealed class DtopAppFixture : IAsyncDisposable
         builder.Services.AddSingleton(processTreeProvider);
         builder.Services.AddSingleton(serviceManager);
 
-        // --- IConnectionProvider (used directly by NetworkViewModel) ---
-        var connectionProvider = Substitute.For<IConnectionProvider>();
-        connectionProvider.GetConnections().Returns(TestData.Connections);
-        builder.Services.AddSingleton(connectionProvider);
+        // --- MetricStore with pre-populated test data ---
+        var metricStore = new MetricStore();
+        metricStore.Publish(TestData.Cpu);
+        metricStore.Publish(TestData.Memory);
+        metricStore.Publish((IReadOnlyList<DiskSnapshot>)TestData.Disks);
+        metricStore.Publish((IReadOnlyList<NetworkSnapshot>)TestData.Networks);
+        metricStore.Publish((IReadOnlyList<ProcessSnapshot>)TestData.Processes);
+        metricStore.Publish((IReadOnlyList<ConnectionSnapshot>)TestData.Connections);
+        metricStore.Publish((IReadOnlyList<ContainerSnapshot>)TestData.Containers);
+        builder.Services.AddSingleton(metricStore);
+        builder.Services.AddSingleton<IMetricSink>(metricStore);
+
+        // --- IMonitorDemand stub ---
+        var demandStub = Substitute.For<IMonitorDemand>();
+        demandStub.Acquire(Arg.Any<MetricKind>()).Returns(Substitute.For<IDisposable>());
+        builder.Services.AddSingleton(demandStub);
 
         // --- GPU ---
         builder.Services.AddSingleton<IGpuMetrics>(NoGpuMetrics.Instance);
@@ -72,12 +86,13 @@ public sealed class DtopAppFixture : IAsyncDisposable
         builder.Services.AddSingleton(new PinService());
 
         // --- Plugin registry with Docker tab (built-in) ---
-        var testTickSource = new AppTickSource(TimeSpan.FromSeconds(1));
+        var testRefreshService = new RefreshService(TimeSpan.FromSeconds(1));
         var registry = new PluginRegistry([]);
-        registry.AddBuiltInTab(new Plugin.PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5));
+        registry.AddBuiltInTab(new Plugin.PluginTabInfo("6:Docker", "/docker", ConsoleKey.D6));
         builder.Services.AddSingleton(registry);
-        builder.Services.AddSingleton<Plugin.ITickSource>(testTickSource);
-        App.Nodes.TabBarNode.RegisterPluginTabs(registry);
+        builder.Services.AddSingleton<IRefreshService>(testRefreshService);
+        builder.Services.AddSingleton<Plugin.ITickSource>(testRefreshService);
+        dtop.Nodes.TabBarNode.RegisterPluginTabs(registry);
 
         // --- Akka with TestSupervisorActor ---
         builder.Services.AddAkka("dtop-test", configurationBuilder =>
@@ -92,7 +107,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
                 var dockerActor = system.ActorOf(
                     Akka.Actor.Props.Create<TestSupervisorActor>(),
                     "docker-monitor");
-                registry.Register<dtop.App.Actors.DockerMonitorActor>(dockerActor);
+                registry.Register<dtop.Actors.DockerMonitorActor>(dockerActor);
             });
         });
 
@@ -100,11 +115,12 @@ public sealed class DtopAppFixture : IAsyncDisposable
         builder.Services.AddTerminaVirtualInput(Input);
         builder.Services.AddTermina("/", termina =>
         {
+            termina.RegisterRoute<dtop.Pages.OverviewPage, dtop.Pages.OverviewViewModel>("/overview", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/", NavigationBehavior.PreserveState);
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
-            termina.RegisterRoute<dtop.App.Pages.DockerPage, dtop.App.Pages.DockerViewModel>("/docker", NavigationBehavior.PreserveState);
+            termina.RegisterRoute<dtop.Pages.DockerPage, dtop.Pages.DockerViewModel>("/docker", NavigationBehavior.PreserveState);
         });
 
         _host = builder.Build();

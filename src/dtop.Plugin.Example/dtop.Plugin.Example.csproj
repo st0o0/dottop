@@ -5,7 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="..\dtop.Plugin\dtop.Plugin.csproj" />
     <ProjectReference Include="..\dtop.Core\dtop.Core.csproj" />
-    <ProjectReference Include="..\dtop.App\dtop.App.csproj" />
+    <ProjectReference Include="..\dtop\dtop.csproj" />
     <ProjectReference Include="..\..\lib\termina\src\Termina\Termina.csproj" />
   </ItemGroup>
   <ItemGroup>

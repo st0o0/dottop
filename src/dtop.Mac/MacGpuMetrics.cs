@@ -17,7 +17,11 @@ public sealed class MacGpuMetrics : IGpuMetrics
 
     public GpuSnapshot GetSnapshot()
     {
-        if (!_initialized) Initialize();
+        if (!_initialized)
+        {
+            Initialize();
+        }
+
         // macOS doesn't expose GPU utilization without root
         return new GpuSnapshot(_gpuName ?? "Apple GPU", 0, 0, _vramTotal, 0);
     }
@@ -41,13 +45,19 @@ public sealed class MacGpuMetrics : IGpuMetrics
             {
                 var trimmed = line.Trim();
                 if (trimmed.StartsWith("Chipset Model:"))
+                {
                     _gpuName = trimmed.Split(':')[1].Trim();
+                }
                 else if (trimmed.StartsWith("VRAM") && trimmed.Contains("MB"))
                 {
                     var parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     foreach (var p in parts)
+                    {
                         if (ulong.TryParse(p, out var mb))
+                        {
                             _vramTotal = mb * 1024 * 1024;
+                        }
+                    }
                 }
             }
             _gpuName ??= "Apple GPU";

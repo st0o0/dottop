@@ -19,9 +19,9 @@ public class EdgeCaseTests : IAsyncLifetime
     [Fact]
     public async Task RapidTabSwitching_DoesNotCrash()
     {
-        // Switch D1->D2->D3->D4->D5->D1 rapidly with minimal delays
+        // Switch D1->D2->D3->D4->D5->D6->D2 rapidly with minimal delays
         await _app.SendKeysAsync(20, ConsoleKey.D1, ConsoleKey.D2, ConsoleKey.D3, ConsoleKey.D4, ConsoleKey.D5,
-            ConsoleKey.D1);
+            ConsoleKey.D6, ConsoleKey.D2);
         await _app.WaitForRenderAsync(500);
 
         // App should land on Processes page and not crash
@@ -55,11 +55,11 @@ public class EdgeCaseTests : IAsyncLifetime
         ScreenAssert.Contains(_app.Terminal, "svchost");
 
         // Now navigate to Services
-        await _app.SendKeysAsync(50, ConsoleKey.D3);
-        await _app.Terminal.WaitForTextAsync("3:Services", 3000);
+        await _app.SendKeysAsync(50, ConsoleKey.D4);
+        await _app.Terminal.WaitForTextAsync("4:Services", 3000);
 
         // Come back to Processes
-        await _app.SendKeysAsync(50, ConsoleKey.D1);
+        await _app.SendKeysAsync(50, ConsoleKey.D2);
         await _app.Terminal.WaitForTextAsync("1:Processes", 3000);
         await _app.WaitForRenderAsync(500);
 
@@ -88,8 +88,8 @@ public class EdgeCaseTests : IAsyncLifetime
         _app.Terminal.DoesNotContain("Handles");
 
         // Now navigate to Services
-        await _app.SendKeysAsync(50, ConsoleKey.D3);
-        await _app.Terminal.WaitForTextAsync("3:Services");
+        await _app.SendKeysAsync(50, ConsoleKey.D4);
+        await _app.Terminal.WaitForTextAsync("4:Services");
 
         // Services page should be displayed
         ScreenAssert.Contains(_app.Terminal, "Windows Update");

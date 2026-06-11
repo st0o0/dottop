@@ -1,5 +1,5 @@
-using dtop.App.Nodes;
-using dtop.App.Themes;
+using dtop.Nodes;
+using dtop.Themes;
 using R3;
 using Termina.Extensions;
 using Termina.Layout;
@@ -20,22 +20,23 @@ public class ExamplePage : ReactivePage<ExampleViewModel>
                     .WithChild(new PanelNode()
                         .WithTitle(" Example Plugin ")
                         .WithBorder(BorderStyle.Rounded)
-                        .WithBorderColor(Theme.Primary)
+                        .WithBorderColor(ThemeService.Instance.Current.Accent)
+                        .WithTitleColor(ThemeService.Instance.Current.PanelTitle)
                         .WithContent(
                             Layouts.Vertical()
                                 .WithChild(new TextNode("").Height(1))
                                 .WithChild(new TextNode("  Hello from Example Plugin!")
-                                    .WithForeground(Theme.Primary).Height(1))
+                                    .WithForeground(ThemeService.Instance.Current.Accent).Height(1))
                                 .WithChild(new TextNode("").Height(1))
                                 .WithChild(new TextNode($"  Counter: {count}")
-                                    .WithForeground(Theme.Text).Height(1))
+                                    .WithForeground(ThemeService.Instance.Current.Foreground).Height(1))
                                 .WithChild(new TextNode("").Height(1))
                                 .WithChild(new TextNode("  Press Enter to increment the counter.")
-                                    .WithForeground(Theme.TextDim).Height(1)))
+                                    .WithForeground(ThemeService.Instance.Current.TextDim).Height(1)))
                         .Fill())
                     .WithChild(new TextNode(" Example Plugin | Enter: Increment | Q: Quit")
-                        .WithForeground(Theme.StatusBarText)
-                        .WithBackground(Theme.StatusBar)
+                        .WithForeground(ThemeService.Instance.Current.StatusBarText)
+                        .WithBackground(ThemeService.Instance.Current.StatusBar)
                         .Height(1)))
             .AsLayout();
 

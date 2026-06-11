@@ -3,6 +3,7 @@ using dtop.Services;
 using dtop.Themes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using R3;
 using Servus.Application.Startup;
 
 namespace dtop.Setup;
@@ -27,8 +28,20 @@ public sealed class ServicesSetup : IServiceSetupContainer
         _ = updateService.CheckForUpdatesAsync();
 
         var refreshInterval = TimeSpan.FromMilliseconds(settingsService.Settings.RefreshIntervalMs);
-        var tickSource = new AppTickSource(refreshInterval);
-        services.AddSingleton<ITickSource>(tickSource);
-        services.AddSingleton(tickSource);
+        var refreshService = new RefreshService(refreshInterval);
+        services.AddSingleton<IRefreshService>(refreshService);
+        services.AddSingleton<ITickSource>(refreshService);
+
+        refreshService.Interval.Subscribe(iv =>
+        {
+            settingsService.Settings.RefreshIntervalMs = (int)iv.TotalMilliseconds;
+            settingsService.Save();
+        });
+
+        var metricStore = new MetricStore();
+        services.AddSingleton(metricStore);
+        services.AddSingleton<IMetricSink>(metricStore);
+
+        services.AddSingleton<IMonitorDemand, MonitorDemandService>();
     }
 }

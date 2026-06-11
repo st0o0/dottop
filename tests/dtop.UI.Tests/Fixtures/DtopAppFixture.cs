@@ -72,11 +72,11 @@ public sealed class DtopAppFixture : IAsyncDisposable
         builder.Services.AddSingleton(new PinService());
 
         // --- Plugin registry with Docker tab (built-in) ---
-        var testTickSource = new AppTickSource(TimeSpan.FromSeconds(1));
+        var testRefreshService = new RefreshService(TimeSpan.FromSeconds(1));
         var registry = new PluginRegistry([]);
         registry.AddBuiltInTab(new Plugin.PluginTabInfo("6:Docker", "/docker", ConsoleKey.D6));
         builder.Services.AddSingleton(registry);
-        builder.Services.AddSingleton<Plugin.ITickSource>(testTickSource);
+        builder.Services.AddSingleton<Plugin.ITickSource>(testRefreshService);
         dtop.Nodes.TabBarNode.RegisterPluginTabs(registry);
 
         // --- Akka with TestSupervisorActor ---

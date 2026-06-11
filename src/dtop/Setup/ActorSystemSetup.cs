@@ -1,11 +1,14 @@
+using Akka.Actor;
 using Akka.Hosting;
 using Akka.Logger.Serilog;
 using dtop.Actors;
+using dtop.Core.Messages;
 using dtop.Core.Platform;
 using dtop.Plugin;
 using dtop.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using R3;
 using Servus;
 using Servus.Application.Startup;
 using Servus.Diagnostics;
@@ -62,6 +65,10 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
                     "monitoring-supervisor");
                 registry.Register<MonitoringSupervisor>(supervisor);
 
+                // Subscribe RefreshService ticks to drive the supervisor
+                var refresh = resolver.GetService<IRefreshService>();
+                refresh.Ticks.Subscribe(t => supervisor.Tell(t));
+
                 // Docker actor (conditional)
                 var docker = resolver.GetService<IDockerProvider>();
                 if (docker is not null)
@@ -70,6 +77,7 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
                         DockerMonitorActor.Props(docker, resolver.GetService<IMetricSink>()),
                         "docker-monitor");
                     registry.Register<DockerMonitorActor>(dockerActor);
+                    supervisor.Tell(new RegisterMonitor(MetricKind.Docker, dockerActor, AlwaysOn: false, TimeSpan.FromSeconds(3)));
                 }
 
                 // Plugin actors

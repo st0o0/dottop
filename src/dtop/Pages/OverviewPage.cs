@@ -127,61 +127,98 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
 
         if (ViewModel.GpuAvailable)
         {
-            var grid = new GridNode(3, 2)
-                .WithColumnWidths(new SizeConstraint.Percent(60), new SizeConstraint.Fill())
-                .WithRowHeights(
-                    new SizeConstraint.Percent(30),
-                    new SizeConstraint.Percent(20),
-                    new SizeConstraint.Fill());
+            bool hasMiddleRow = showMem || showNet;
 
-            if (showCpu) grid.SetCell(0, 0, BuildCpuPanel());
-            grid.SetCell(0, showCpu ? 1 : 0, BuildGpuPanel(), colSpan: showCpu ? 1 : 2);
+            GridNode grid;
+            if (hasMiddleRow)
+            {
+                grid = new GridNode(3, 2)
+                    .WithColumnWidths(new SizeConstraint.Percent(60), new SizeConstraint.Fill())
+                    .WithRowHeights(
+                        new SizeConstraint.Percent(30),
+                        new SizeConstraint.Percent(20),
+                        new SizeConstraint.Fill());
 
-            if (showMem && showNet)
-            {
-                grid.SetCell(1, 0, BuildMemoryPanel());
-                grid.SetCell(1, 1, BuildNetDiskPanel());
-            }
-            else if (showMem)
-            {
-                grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
-            }
-            else if (showNet)
-            {
-                grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
-            }
+                if (showCpu) grid.SetCell(0, 0, BuildCpuPanel());
+                grid.SetCell(0, showCpu ? 1 : 0, BuildGpuPanel(), colSpan: showCpu ? 1 : 2);
 
-            if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
+                if (showMem && showNet)
+                {
+                    grid.SetCell(1, 0, BuildMemoryPanel());
+                    grid.SetCell(1, 1, BuildNetDiskPanel());
+                }
+                else if (showMem)
+                {
+                    grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
+                }
+                else if (showNet)
+                {
+                    grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+                }
+
+                if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
+            }
+            else
+            {
+                grid = new GridNode(2, 2)
+                    .WithColumnWidths(new SizeConstraint.Percent(60), new SizeConstraint.Fill())
+                    .WithRowHeights(
+                        new SizeConstraint.Percent(30),
+                        new SizeConstraint.Fill());
+
+                if (showCpu) grid.SetCell(0, 0, BuildCpuPanel());
+                grid.SetCell(0, showCpu ? 1 : 0, BuildGpuPanel(), colSpan: showCpu ? 1 : 2);
+
+                if (showProc) grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 2);
+            }
 
             return grid;
         }
         else
         {
             // No GPU: 2-column grid, CPU spans both columns
-            var grid = new GridNode(3, 2)
-                .WithColumnWidths(new SizeConstraint.Percent(60), new SizeConstraint.Fill())
-                .WithRowHeights(
-                    new SizeConstraint.Percent(30),
-                    new SizeConstraint.Percent(20),
-                    new SizeConstraint.Fill());
+            bool hasMiddleRow = showMem || showNet;
 
-            if (showCpu) grid.SetCell(0, 0, BuildCpuPanel(), colSpan: 2);
+            GridNode grid;
+            if (hasMiddleRow)
+            {
+                grid = new GridNode(3, 2)
+                    .WithColumnWidths(new SizeConstraint.Percent(60), new SizeConstraint.Fill())
+                    .WithRowHeights(
+                        new SizeConstraint.Percent(30),
+                        new SizeConstraint.Percent(20),
+                        new SizeConstraint.Fill());
 
-            if (showMem && showNet)
-            {
-                grid.SetCell(1, 0, BuildMemoryPanel());
-                grid.SetCell(1, 1, BuildNetDiskPanel());
-            }
-            else if (showMem)
-            {
-                grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
-            }
-            else if (showNet)
-            {
-                grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
-            }
+                if (showCpu) grid.SetCell(0, 0, BuildCpuPanel(), colSpan: 2);
 
-            if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
+                if (showMem && showNet)
+                {
+                    grid.SetCell(1, 0, BuildMemoryPanel());
+                    grid.SetCell(1, 1, BuildNetDiskPanel());
+                }
+                else if (showMem)
+                {
+                    grid.SetCell(1, 0, BuildMemoryPanel(), colSpan: 2);
+                }
+                else if (showNet)
+                {
+                    grid.SetCell(1, 0, BuildNetDiskPanel(), colSpan: 2);
+                }
+
+                if (showProc) grid.SetCell(2, 0, BuildProcessPanel(), colSpan: 2);
+            }
+            else
+            {
+                grid = new GridNode(2, 2)
+                    .WithColumnWidths(new SizeConstraint.Percent(60), new SizeConstraint.Fill())
+                    .WithRowHeights(
+                        new SizeConstraint.Percent(30),
+                        new SizeConstraint.Fill());
+
+                if (showCpu) grid.SetCell(0, 0, BuildCpuPanel(), colSpan: 2);
+
+                if (showProc) grid.SetCell(1, 0, BuildProcessPanel(), colSpan: 2);
+            }
 
             return grid;
         }
@@ -221,7 +258,7 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
             var row0Col = 0;
             if (showCpu) grid.SetCell(0, row0Col++, BuildCpuPanel());
             if (showMem) grid.SetCell(0, row0Col++, BuildMemoryPanel());
-            grid.SetCell(0, row0Col, BuildGpuPanel());
+            grid.SetCell(0, row0Col, BuildGpuPanel(), colSpan: 3 - row0Col);
 
             // Row 1: Net/Disk | Processes
             if (showNet && showProc)

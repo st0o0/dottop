@@ -21,9 +21,8 @@ public sealed class TerminaSetup : IServiceSetupContainer
                 x.CtrlCHandlingMode = CtrlCHandlingMode.DoublePressWhenRawInput;
             });
             termina.RegisterRoute<OverviewPage, OverviewViewModel>("/overview", NavigationBehavior.PreserveState);
-            termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/", NavigationBehavior.PreserveState);
-            termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance",
-                NavigationBehavior.PreserveState);
+            termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/process", NavigationBehavior.PreserveState);
+            termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);
             termina.RegisterRoute<NetworkPage, NetworkViewModel>("/network", NavigationBehavior.PreserveState);
 

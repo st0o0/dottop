@@ -74,7 +74,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
         // --- Plugin registry with Docker tab (built-in) ---
         var testTickSource = new AppTickSource(TimeSpan.FromSeconds(1));
         var registry = new PluginRegistry([]);
-        registry.AddBuiltInTab(new Plugin.PluginTabInfo("5:Docker", "/docker", ConsoleKey.D5));
+        registry.AddBuiltInTab(new Plugin.PluginTabInfo("6:Docker", "/docker", ConsoleKey.D6));
         builder.Services.AddSingleton(registry);
         builder.Services.AddSingleton<Plugin.ITickSource>(testTickSource);
         dtop.Nodes.TabBarNode.RegisterPluginTabs(registry);
@@ -100,6 +100,7 @@ public sealed class DtopAppFixture : IAsyncDisposable
         builder.Services.AddTerminaVirtualInput(Input);
         builder.Services.AddTermina("/", termina =>
         {
+            termina.RegisterRoute<dtop.Pages.OverviewPage, dtop.Pages.OverviewViewModel>("/overview", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ProcessesPage, ProcessesViewModel>("/", NavigationBehavior.PreserveState);
             termina.RegisterRoute<PerformancePage, PerformanceViewModel>("/performance", NavigationBehavior.PreserveState);
             termina.RegisterRoute<ServicesPage, ServicesViewModel>("/services", NavigationBehavior.PreserveState);

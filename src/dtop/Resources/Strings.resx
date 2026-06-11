@@ -66,13 +66,13 @@
     <value>1:Processes</value>
   </data>
   <data name="TabPerformance" xml:space="preserve">
-    <value>2:Performance</value>
+    <value>3:Performance</value>
   </data>
   <data name="TabServices" xml:space="preserve">
-    <value>3:Services</value>
+    <value>4:Services</value>
   </data>
   <data name="TabNetwork" xml:space="preserve">
-    <value>4:Network</value>
+    <value>5:Network</value>
   </data>
   <!-- ProcessesPage -->
   <data name="PanelProcesses" xml:space="preserve">
@@ -410,7 +410,7 @@
   </data>
   <!-- DockerPage -->
   <data name="TabDocker" xml:space="preserve">
-    <value>5:Docker</value>
+    <value>6:Docker</value>
   </data>
   <data name="PanelDocker" xml:space="preserve">
     <value> Docker </value>

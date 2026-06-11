@@ -11,7 +11,7 @@ public class PerformancePageTests : IAsyncLifetime
     {
         _app = new DtopAppFixture();
         await _app.StartAsync();
-        await _app.SendKeysAsync(50, ConsoleKey.D2); // Navigate to Performance
+        await _app.SendKeysAsync(50, ConsoleKey.D3); // Navigate to Performance
         await _app.WaitForRenderAsync(500);
     }
 

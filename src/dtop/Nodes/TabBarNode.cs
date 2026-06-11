@@ -10,7 +10,7 @@ public sealed class TabBarNode : LayoutNode
     private static readonly string[] CoreLabels =
         [Strings.TabOverview, Strings.TabProcesses, Strings.TabPerformance, Strings.TabServices, Strings.TabNetwork];
 
-    private static readonly string[] CoreRoutes = ["/overview", "/", "/performance", "/services", "/network"];
+    private static readonly string[] CoreRoutes = ["/overview", "/process", "/performance", "/services", "/network"];
 
     private readonly int _activeIndex;
     private static List<string> _allLabels = [..CoreLabels];

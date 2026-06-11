@@ -1,8 +1,8 @@
-using System.Threading.Channels;
 using Akka.Actor;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using dtop.Services;
 using Servus;
 using Servus.Diagnostics;
 
@@ -12,59 +12,41 @@ public sealed class DockerMonitorActor : ReceiveActor
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("Docker");
 
-    private sealed record Tick;
-
-    private sealed record ContainersRefreshed(List<ContainerSnapshot> Containers);
+    private sealed record SampleCompleted(IReadOnlyList<ContainerSnapshot> Containers);
+    private sealed record SampleFailed(Exception Cause);
 
     private readonly IDockerProvider _docker;
-    private readonly TimeSpan _interval;
-    private Channel<List<ContainerSnapshot>>? _channel;
-    private ICancelable? _tickSchedule;
-    private CancellationTokenSource? _streamCts;
-    private List<ContainerSnapshot> _cached = [];
-    private bool _refreshing;
+    private readonly IMetricSink _sink;
+    private bool _sampling;
 
-    public static Props Props(IDockerProvider docker, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new DockerMonitorActor(docker, interval));
+    public static Props Props(IDockerProvider docker, IMetricSink sink) =>
+        Akka.Actor.Props.Create(() => new DockerMonitorActor(docker, sink));
 
-    public DockerMonitorActor(IDockerProvider docker, TimeSpan interval)
+    public DockerMonitorActor(IDockerProvider docker, IMetricSink sink)
     {
         _docker = docker;
-        _interval = interval;
-
-        Receive<StartDockerMonitoring>(_ => HandleStartMonitoring());
+        _sink = sink;
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null)
-            {
-                return;
-            }
-
-            // Write cached data immediately (non-blocking, like CpuMonitorActor)
-            if (_cached.Count > 0)
-            {
-                _channel.Writer.TryWrite(_cached);
-            }
-
-            // Trigger background refresh if not already running
-            if (!_refreshing)
-            {
-                _refreshing = true;
-                _docker.GetContainersAsync(_streamCts?.Token ?? CancellationToken.None)
-                    .PipeTo(Self,
-                        success: result => new ContainersRefreshed(result.ToList()),
-                        failure: _ => new ContainersRefreshed([]));
-            }
+            if (_sampling) return;
+            _sampling = true;
+            SampleAsync()
+                .PipeTo(Self,
+                    success: containers => new SampleCompleted(containers),
+                    failure: ex => new SampleFailed(ex));
         });
 
-        Receive<ContainersRefreshed>(msg =>
+        Receive<SampleCompleted>(m =>
         {
-            _refreshing = false;
-            if (msg.Containers.Count > 0)
-            {
-                _cached = msg.Containers;
-            }
+            _sampling = false;
+            _sink.Publish(m.Containers);
+        });
+
+        Receive<SampleFailed>(m =>
+        {
+            _sampling = false;
+            Trace.Warning(this, "Docker sample failed: {0}", m.Cause.Message);
         });
 
         // Actions use PipeTo to stay non-blocking
@@ -187,38 +169,14 @@ public sealed class DockerMonitorActor : ReceiveActor
         });
     }
 
-    private void HandleStartMonitoring()
+    private async Task<IReadOnlyList<ContainerSnapshot>> SampleAsync()
     {
-        CleanupPreviousStream();
-
-        _streamCts = new CancellationTokenSource();
-        _channel = Channel.CreateBounded<List<ContainerSnapshot>>(new BoundedChannelOptions(1)
-        {
-            FullMode = BoundedChannelFullMode.DropOldest
-        });
-
-        _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-            TimeSpan.Zero, _interval, Self, new Tick(), Self);
-
-        var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
-        Sender.Tell(new MonitoringStream<List<ContainerSnapshot>>(stream, _streamCts));
-        Trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
-    }
-
-    private void CleanupPreviousStream()
-    {
-        _tickSchedule?.Cancel();
-        _streamCts?.Cancel();
-        _streamCts?.Dispose();
-        _channel?.Writer.TryComplete();
-        _tickSchedule = null;
-        _streamCts = null;
-        _channel = null;
+        var result = await _docker.GetContainersAsync(CancellationToken.None);
+        return result.ToList();
     }
 
     protected override void PostStop()
     {
-        CleanupPreviousStream();
         Trace.Debug(this, "Stopped");
         base.PostStop();
     }

@@ -17,6 +17,7 @@ public sealed class MonitoringSupervisor : TickRouter
     private readonly IActorRef _network;
     private readonly IActorRef _gpu;
     private readonly IActorRef _processSupervisor;
+    private readonly IActorRef _connections;
 
     public static Props Props(
         ICpuMetrics cpuMetrics,
@@ -27,10 +28,11 @@ public sealed class MonitoringSupervisor : TickRouter
         IProcessClassifier processClassifier,
         IProcessTreeProvider processTreeProvider,
         IServiceManager serviceManager,
+        IConnectionProvider connectionProvider,
         IMetricSink sink) =>
         Akka.Actor.Props.Create(() => new MonitoringSupervisor(
             cpuMetrics, memoryMetrics, diskMetrics, networkMetrics, gpuMetrics,
-            processClassifier, processTreeProvider, serviceManager, sink));
+            processClassifier, processTreeProvider, serviceManager, connectionProvider, sink));
 
     public MonitoringSupervisor(
         ICpuMetrics cpuMetrics,
@@ -41,6 +43,7 @@ public sealed class MonitoringSupervisor : TickRouter
         IProcessClassifier processClassifier,
         IProcessTreeProvider processTreeProvider,
         IServiceManager serviceManager,
+        IConnectionProvider connectionProvider,
         IMetricSink sink)
     {
         _cpu = Context.ActorOf(CpuMonitorActor.Props(cpuMetrics, sink), "cpu-monitor");
@@ -49,10 +52,13 @@ public sealed class MonitoringSupervisor : TickRouter
         _network = Context.ActorOf(NetworkMonitorActor.Props(networkMetrics, sink), "network-monitor");
         _gpu = Context.ActorOf(GpuMonitorActor.Props(gpuMetrics, sink), "gpu-monitor");
 
-        // TODO(tick-pipeline): ProcessSupervisor converted in next task
         _processSupervisor = Context.ActorOf(
-            ProcessSupervisor.Props(processClassifier, processTreeProvider, serviceManager, TimeSpan.FromMilliseconds(1000)),
+            ProcessSupervisor.Props(processClassifier, processTreeProvider, serviceManager, sink),
             "process-supervisor");
+
+        _connections = Context.ActorOf(
+            NetworkConnectionsActor.Props(connectionProvider, sink),
+            "network-connections");
 
         // Self-register monitors with the TickRouter
         Self.Tell(new RegisterMonitor(MetricKind.Cpu, _cpu, true, null));
@@ -61,6 +67,7 @@ public sealed class MonitoringSupervisor : TickRouter
         Self.Tell(new RegisterMonitor(MetricKind.Network, _network, false, null));
         Self.Tell(new RegisterMonitor(MetricKind.Gpu, _gpu, false, null));
         Self.Tell(new RegisterMonitor(MetricKind.Process, _processSupervisor, false, null));
+        Self.Tell(new RegisterMonitor(MetricKind.NetworkConnections, _connections, false, null));
 
         // Process action commands
         Receive<KillProcess>(msg => _processSupervisor.Forward(msg));

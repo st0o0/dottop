@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using System.Threading.Channels;
 using Akka.Actor;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using dtop.Core.Platform;
+using dtop.Services;
 using Servus;
 using Servus.Diagnostics;
 
@@ -13,31 +13,20 @@ public sealed class ProcessMonitorActor : ReceiveActor
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("Process");
 
-    private sealed record Tick;
-
-    private readonly TimeSpan _interval;
-    private Channel<List<ProcessSnapshot>>? _channel;
-    private ICancelable? _tickSchedule;
-    private CancellationTokenSource? _streamCts;
+    private readonly IProcessClassifier _classifier;
+    private readonly IMetricSink _sink;
     private Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)> _previousCpu = new();
 
-    public static Props Props(IProcessClassifier classifier, TimeSpan interval) =>
-        Akka.Actor.Props.Create(() => new ProcessMonitorActor(classifier, interval));
+    public static Props Props(IProcessClassifier classifier, IProcessTreeProvider treeProvider, IMetricSink sink) =>
+        Akka.Actor.Props.Create(() => new ProcessMonitorActor(classifier, treeProvider, sink));
 
-    public ProcessMonitorActor(IProcessClassifier classifier, TimeSpan interval)
+    public ProcessMonitorActor(IProcessClassifier classifier, IProcessTreeProvider treeProvider, IMetricSink sink)
     {
-        _interval = interval;
-
-        Receive<StartProcessMonitoring>(_ => HandleStartMonitoring());
-        Receive<StartMonitoring>(_ => HandleStartMonitoring());
+        _classifier = classifier;
+        _sink = sink;
 
         Receive<Tick>(_ =>
         {
-            if (_channel is null)
-            {
-                return;
-            }
-
             var now = DateTime.UtcNow;
             var coreCount = Environment.ProcessorCount;
             var currentCpu = new Dictionary<int, (TimeSpan CpuTime, DateTime Timestamp)>();
@@ -67,7 +56,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
                             }
 
                             return new ProcessSnapshot(
-                                Pid: pid, Name: p.ProcessName, Group: classifier.Classify(p),
+                                Pid: pid, Name: p.ProcessName, Group: _classifier.Classify(p),
                                 CpuPercent: Math.Round(cpuPercent, 1),
                                 WorkingSetBytes: p.WorkingSet64,
                                 DiskBytesPerSec: 0, NetworkBytesPerSec: 0,
@@ -84,7 +73,7 @@ public sealed class ProcessMonitorActor : ReceiveActor
                     .ToList();
 
                 _previousCpu = currentCpu;
-                _channel.Writer.TryWrite(snapshots!);
+                _sink.Publish(snapshots!);
             }
             finally
             {
@@ -96,38 +85,8 @@ public sealed class ProcessMonitorActor : ReceiveActor
         });
     }
 
-    private void HandleStartMonitoring()
-    {
-        CleanupPreviousStream();
-
-        _streamCts = new CancellationTokenSource();
-        _channel = Channel.CreateBounded<List<ProcessSnapshot>>(new BoundedChannelOptions(1)
-        {
-            FullMode = BoundedChannelFullMode.DropOldest
-        });
-
-        _tickSchedule = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(
-            TimeSpan.Zero, _interval, Self, new Tick(), Self);
-
-        var stream = ChannelHelper.ReadFromChannelAsync(_channel.Reader, _streamCts.Token);
-        Sender.Tell(new MonitoringStream<List<ProcessSnapshot>>(stream, _streamCts));
-        Trace.Info(this, "Monitoring started, interval={0}ms", _interval.TotalMilliseconds);
-    }
-
-    private void CleanupPreviousStream()
-    {
-        _tickSchedule?.Cancel();
-        _streamCts?.Cancel();
-        _streamCts?.Dispose();
-        _channel?.Writer.TryComplete();
-        _tickSchedule = null;
-        _streamCts = null;
-        _channel = null;
-    }
-
     protected override void PostStop()
     {
-        CleanupPreviousStream();
         Trace.Debug(this, "Stopped");
         base.PostStop();
     }

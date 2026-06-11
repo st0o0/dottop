@@ -1,6 +1,7 @@
 using Akka.Actor;
 using dtop.Core.Messages;
 using dtop.Core.Platform;
+using dtop.Services;
 using Servus;
 using Servus.Diagnostics;
 
@@ -18,22 +19,22 @@ public sealed class ProcessSupervisor : ReceiveActor
         IProcessClassifier classifier,
         IProcessTreeProvider treeProvider,
         IServiceManager serviceManager,
-        TimeSpan interval) =>
+        IMetricSink sink) =>
         Akka.Actor.Props.Create(() => new ProcessSupervisor(
-            classifier, treeProvider, serviceManager, interval));
+            classifier, treeProvider, serviceManager, sink));
 
     public ProcessSupervisor(
         IProcessClassifier classifier,
         IProcessTreeProvider treeProvider,
         IServiceManager serviceManager,
-        TimeSpan interval)
+        IMetricSink sink)
     {
-        _processMonitor = Context.ActorOf(ProcessMonitorActor.Props(classifier, interval), "process-monitor");
+        _processMonitor = Context.ActorOf(ProcessMonitorActor.Props(classifier, treeProvider, sink), "process-monitor");
         _processAction = Context.ActorOf(ProcessActionActor.Props(treeProvider), "process-action");
         _service = Context.ActorOf(ServiceActor.Props(serviceManager), "service");
 
-        // Process monitoring
-        Receive<StartProcessMonitoring>(msg => _processMonitor.Forward(msg));
+        // Forward ticks to the process monitor
+        Receive<Tick>(msg => _processMonitor.Forward(msg));
 
         // Process actions
         Receive<KillProcess>(msg => _processAction.Forward(msg));

@@ -35,8 +35,6 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
 
             builder.WithActors((system, registry, resolver) =>
             {
-                var interval = resolver.GetService<AppTickSource>().CurrentInterval;
-
                 // Initialize disk metrics
                 var diskMetrics = resolver.GetService<IDiskMetrics>();
                 try
@@ -59,6 +57,7 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
                         resolver.GetService<IProcessClassifier>(),
                         resolver.GetService<IProcessTreeProvider>(),
                         resolver.GetService<IServiceManager>(),
+                        resolver.GetService<IConnectionProvider>(),
                         resolver.GetService<IMetricSink>()),
                     "monitoring-supervisor");
                 registry.Register<MonitoringSupervisor>(supervisor);
@@ -67,9 +66,8 @@ public sealed class ActorSystemSetup : IServiceSetupContainer
                 var docker = resolver.GetService<IDockerProvider>();
                 if (docker is not null)
                 {
-                    var dockerInterval = TimeSpan.FromSeconds(Math.Max(3, interval.TotalSeconds));
                     var dockerActor = system.ActorOf(
-                        DockerMonitorActor.Props(docker, dockerInterval),
+                        DockerMonitorActor.Props(docker, resolver.GetService<IMetricSink>()),
                         "docker-monitor");
                     registry.Register<DockerMonitorActor>(dockerActor);
                 }

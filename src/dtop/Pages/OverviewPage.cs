@@ -19,25 +19,21 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     private CpuCoresNode? _coresNode;
     private DataListNode<ProcessSnapshot>? _processList;
 
-    private readonly MetricHistory _cpuHistory = new();
-    private readonly MetricHistory _ramHistory = new();
-    private readonly MetricHistory _gpuHistory = new();
-
     public override ILayoutNode BuildLayout()
     {
         var graphStyle = ViewModel.GraphStyleSetting;
 
-        _cpuGraph = new GraphNode()
+        _cpuGraph = new GraphNode(intervalMs: 0)
             .WithStyle(graphStyle)
             .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
-        _ramGraph = new GraphNode()
+        _ramGraph = new GraphNode(intervalMs: 0)
             .WithStyle(graphStyle)
             .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
 
-        _gpuGraph = new GraphNode()
+        _gpuGraph = new GraphNode(intervalMs: 0)
             .WithStyle(graphStyle)
             .WithColor(ThemeService.Instance.Current.Accent)
             .WithRange(0, 100);
@@ -77,29 +73,24 @@ public class OverviewPage : ReactivePage<OverviewViewModel>
     {
         base.OnNavigatedTo();
 
-        Observable.Interval(TimeSpan.FromMilliseconds(500))
-            .Subscribe(_ =>
-            {
-                if (ViewModel.IsPaused.Value) return;
+        ViewModel.Store.Cpu.Subscribe(s =>
+        {
+            if (s is null) return;
+            _cpuGraph?.SetData(ViewModel.Store.CpuHistory.Snapshot());
+            _coresNode?.SetCores(s.CorePercents);
+        }).DisposeWith(Subscriptions);
 
-                _cpuHistory.Push(ViewModel.CpuTotal.Value);
-                _cpuGraph?.SetData(_cpuHistory.Snapshot());
+        ViewModel.Store.Memory.Subscribe(s =>
+        {
+            if (s is null) return;
+            _ramGraph?.SetData(ViewModel.Store.MemHistory.Snapshot());
+        }).DisposeWith(Subscriptions);
 
-                var total = ViewModel.RamTotal.Value;
-                var used = ViewModel.RamUsed.Value;
-                _ramHistory.Push(total > 0 ? (double)used / total * 100 : 0);
-                _ramGraph?.SetData(_ramHistory.Snapshot());
-
-                if (ViewModel is { GpuAvailable: true, Gpu.Value: { } gpu })
-                {
-                    _gpuHistory.Push(gpu.UsagePercent);
-                    _gpuGraph?.SetData(_gpuHistory.Snapshot());
-                }
-            })
-            .DisposeWith(Subscriptions);
-
-        ViewModel.CpuCores.Subscribe(cores => _coresNode?.SetCores(cores))
-            .DisposeWith(Subscriptions);
+        ViewModel.Store.Gpu.Subscribe(g =>
+        {
+            if (g is null) return;
+            _gpuGraph?.SetData(ViewModel.Store.GpuHistory.Snapshot());
+        }).DisposeWith(Subscriptions);
 
         Observable.Merge(
                 ViewModel.AllProcesses.Select(_ => Unit.Default),

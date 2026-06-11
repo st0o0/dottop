@@ -1,5 +1,5 @@
+using dtop.Core.Messages;
 using dtop.Core.Models;
-using dtop.Core.Platform;
 using dtop.Nodes;
 using dtop.Resources;
 using dtop.Services;
@@ -16,10 +16,12 @@ namespace dtop.Pages;
 public class NetworkViewModel : ReactiveViewModel
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("ViewModel.Network");
-    private readonly IConnectionProvider _connectionProvider;
+    private readonly MetricStore _store;
+    private readonly IMonitorDemand _demand;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
     private readonly IToastService _toast;
+    private readonly List<IDisposable> _demandHandles = [];
 
     public IScrollableList? ListNode { get; set; }
     public Func<ConnectionSnapshot?>? GetSelectedItem { get; set; }
@@ -42,12 +44,14 @@ public class NetworkViewModel : ReactiveViewModel
     private static readonly int[] RefreshOptions = [250, 500, 1000, 2000, 5000];
 
     public NetworkViewModel(
-        IConnectionProvider connectionProvider,
+        MetricStore store,
+        IMonitorDemand demand,
         SettingsService settingsService,
         UpdateService updateService,
         IToastService toast)
     {
-        _connectionProvider = connectionProvider;
+        _store = store;
+        _demand = demand;
         _settingsService = settingsService;
         _updateService = updateService;
         _toast = toast;
@@ -55,26 +59,16 @@ public class NetworkViewModel : ReactiveViewModel
 
     public override void OnActivated()
     {
-        RefreshConnections();
-        SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
-        Observable.Interval(TimeSpan.FromSeconds(2))
-            .Subscribe(_ => RefreshConnections())
-            .DisposeWith(Subscriptions);
-        Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
-    }
+        _demandHandles.Add(_demand.Acquire(MetricKind.NetworkConnections));
 
-    private void RefreshConnections()
-    {
-        try
+        _store.Connections.Subscribe(conns =>
         {
-            Connections.Value = _connectionProvider.GetConnections();
+            Connections.Value = conns.ToList();
             ApplyFilter();
-        }
-        catch (Exception ex)
-        {
-            Trace.Warning(this, "Failed to refresh connections: {0}", ex.Message);
-            _toast.Show("Error refreshing connections", new ToastOptions(Color: Color.BrightRed));
-        }
+        }).DisposeWith(Subscriptions);
+
+        SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
+        Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
     }
 
     private void ApplyFilter()
@@ -257,6 +251,13 @@ public class NetworkViewModel : ReactiveViewModel
     public string? LatestVersionDisplay => _updateService.UpdateAvailable
         ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
         : null;
+
+    public override void OnDeactivating()
+    {
+        foreach (var d in _demandHandles) d.Dispose();
+        _demandHandles.Clear();
+        base.OnDeactivating();
+    }
 
     public override void Dispose()
     {

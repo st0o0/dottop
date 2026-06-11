@@ -1,6 +1,3 @@
-using Akka.Actor;
-using Akka.Hosting;
-using dtop.Actors;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using dtop.Core.Platform;
@@ -20,13 +17,14 @@ public enum PerfDetailSection { Cpu, Ram, Disk, Network, Gpu }
 
 public class PerformanceViewModel : ReactiveViewModel
 {
-    private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
+    private readonly MetricStore _store;
+    private readonly IMonitorDemand _demand;
     private readonly IGpuMetrics _gpuMetrics;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
     private readonly PinService _pinService;
     private readonly IToastService _toast;
-    private CancellationTokenSource? _cts;
+    private readonly List<IDisposable> _demandHandles = [];
 
     public GraphStyle GraphStyleSetting { get; }
 
@@ -54,15 +52,19 @@ public class PerformanceViewModel : ReactiveViewModel
 
     private static readonly int[] RefreshOptions = [250, 500, 1000, 2000, 5000];
 
+    public MetricStore Store => _store;
+
     public PerformanceViewModel(
-        IRequiredActor<MonitoringSupervisor> supervisor,
+        MetricStore store,
+        IMonitorDemand demand,
         IGpuMetrics gpuMetrics,
         SettingsService settingsService,
         UpdateService updateService,
         PinService pinService,
         IToastService toast)
     {
-        _supervisor = supervisor;
+        _store = store;
+        _demand = demand;
         _gpuMetrics = gpuMetrics;
         _settingsService = settingsService;
         _updateService = updateService;
@@ -80,8 +82,52 @@ public class PerformanceViewModel : ReactiveViewModel
 
     public override void OnActivated()
     {
-        _cts = new CancellationTokenSource();
-        _ = InitializeAsync();
+        _demandHandles.Add(_demand.Acquire(MetricKind.Disk));
+        _demandHandles.Add(_demand.Acquire(MetricKind.Network));
+        if (_gpuMetrics.IsAvailable)
+            _demandHandles.Add(_demand.Acquire(MetricKind.Gpu));
+
+        _store.Cpu.Subscribe(s =>
+        {
+            if (s is null) return;
+            CpuName.Value = s.Name;
+            CpuTotal.Value = s.TotalPercent;
+            CpuCores.Value = s.CorePercents;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Cpu)
+                _detailContentChanged.OnNext(Unit.Default);
+        }).DisposeWith(Subscriptions);
+
+        _store.Memory.Subscribe(s =>
+        {
+            if (s is null) return;
+            RamTotal.Value = s.TotalBytes;
+            RamUsed.Value = s.UsedBytes;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Ram)
+                _detailContentChanged.OnNext(Unit.Default);
+        }).DisposeWith(Subscriptions);
+
+        _store.Disks.Subscribe(d =>
+        {
+            Disks.Value = d;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Disk)
+                _detailContentChanged.OnNext(Unit.Default);
+        }).DisposeWith(Subscriptions);
+
+        _store.Networks.Subscribe(n =>
+        {
+            Networks.Value = n;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
+                _detailContentChanged.OnNext(Unit.Default);
+        }).DisposeWith(Subscriptions);
+
+        _store.Gpu.Subscribe(g =>
+        {
+            if (g is null) return;
+            Gpu.Value = g;
+            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Gpu)
+                _detailContentChanged.OnNext(Unit.Default);
+        }).DisposeWith(Subscriptions);
+
         UpdateStatusHint();
 
         Input.OfType<IInputEvent, KeyPressed>()
@@ -94,83 +140,6 @@ public class PerformanceViewModel : ReactiveViewModel
         StatusHint.Value = IsDetailOpen.Value
             ? Strings.HintPerfDetailKeys
             : $" {Strings.PerfStatusBar}";
-    }
-
-    private async ValueTask InitializeAsync()
-    {
-        var ct = _cts!.Token;
-        var supervisor = await _supervisor.GetAsync(ct);
-
-        _ = ConnectStream<CpuSnapshot>(supervisor, new StartCpuMonitoring(), ct, snapshot =>
-        {
-            CpuName.Value = snapshot.Name;
-            CpuTotal.Value = snapshot.TotalPercent;
-            CpuCores.Value = snapshot.CorePercents;
-            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Cpu)
-            {
-                _detailContentChanged.OnNext(Unit.Default);
-            }
-        });
-
-        _ = ConnectStream<MemorySnapshot>(supervisor, new StartMemoryMonitoring(), ct, snapshot =>
-        {
-            RamTotal.Value = snapshot.TotalBytes;
-            RamUsed.Value = snapshot.UsedBytes;
-            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Ram)
-            {
-                _detailContentChanged.OnNext(Unit.Default);
-            }
-        });
-
-        _ = ConnectStream<List<DiskSnapshot>>(supervisor, new StartDiskMonitoring(), ct, disks =>
-        {
-            Disks.Value = disks;
-            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Disk)
-            {
-                _detailContentChanged.OnNext(Unit.Default);
-            }
-        });
-
-        _ = ConnectStream<List<NetworkSnapshot>>(supervisor, new StartNetworkMonitoring(), ct, nets =>
-        {
-            Networks.Value = nets;
-            if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Network)
-            {
-                _detailContentChanged.OnNext(Unit.Default);
-            }
-        });
-
-        if (_gpuMetrics.IsAvailable)
-        {
-            _ = ConnectStream<GpuSnapshot>(supervisor, new StartGpuMonitoring(), ct, snapshot =>
-            {
-                Gpu.Value = snapshot;
-                if (IsDetailOpen.Value && DetailSection.Value == PerfDetailSection.Gpu)
-                {
-                    _detailContentChanged.OnNext(Unit.Default);
-                }
-            });
-        }
-    }
-
-    private async ValueTask ConnectStream<TData>(IActorRef supervisor, object startMessage, CancellationToken ct, Action<TData> handler)
-    {
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                var stream = await supervisor.Ask<MonitoringStream<TData>>(startMessage, TimeSpan.FromSeconds(60));
-                await foreach (var item in stream.Data.WithCancellation(ct))
-                {
-                    handler(item);
-                }
-            }
-            catch (OperationCanceledException) { return; }
-            catch
-            {
-                try { await Task.Delay(2000, ct); } catch (OperationCanceledException) { return; }
-            }
-        }
     }
 
     private void HandleKey(KeyPressed key)
@@ -369,16 +338,13 @@ public class PerformanceViewModel : ReactiveViewModel
 
     public override void OnDeactivating()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = null;
+        foreach (var d in _demandHandles) d.Dispose();
+        _demandHandles.Clear();
         base.OnDeactivating();
     }
 
     public override void Dispose()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
         CpuTotal.Dispose();
         CpuCores.Dispose();
         CpuName.Dispose();

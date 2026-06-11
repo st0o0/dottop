@@ -40,12 +40,14 @@ public class DockerViewModel : ReactiveViewModel
     private readonly HashSet<string> _knownGroups = [];
 
     private readonly IRequiredActor<DockerMonitorActor> _dockerActor;
+    private readonly MetricStore _store;
+    private readonly IMonitorDemand _demand;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
     private readonly PinService _pinService;
     private readonly IToastService _toast;
     private IActorRef? _dockerActorRef;
-    private CancellationTokenSource? _cts;
+    private readonly List<IDisposable> _demandHandles = [];
 
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
@@ -85,12 +87,16 @@ public class DockerViewModel : ReactiveViewModel
 
     public DockerViewModel(
         IRequiredActor<DockerMonitorActor> dockerActor,
+        MetricStore store,
+        IMonitorDemand demand,
         SettingsService settingsService,
         UpdateService updateService,
         PinService pinService,
         IToastService toast)
     {
         _dockerActor = dockerActor;
+        _store = store;
+        _demand = demand;
         _settingsService = settingsService;
         _updateService = updateService;
         _pinService = pinService;
@@ -99,64 +105,39 @@ public class DockerViewModel : ReactiveViewModel
 
     public override void OnActivated()
     {
-        _cts = new CancellationTokenSource();
-        _ = InitializeAsync();
+        _demandHandles.Add(_demand.Acquire(MetricKind.Docker));
+
+        _store.Docker.Subscribe(containers =>
+        {
+            AllContainers.Value = containers.ToList();
+            ApplyFilter();
+
+            if (IsDetailOpen.Value && SelectedContainer.Value is { } current)
+            {
+                var updated = AllContainers.Value.FirstOrDefault(c => c.Id == current.Id);
+                if (updated is not null)
+                {
+                    SelectedContainer.Value = updated;
+                    _detailContentChanged.OnNext(Unit.Default);
+                }
+            }
+        }).DisposeWith(Subscriptions);
+
+        _ = ResolveActorAsync();
+
         SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
         Input.OfType<IInputEvent, KeyPressed>().Subscribe(HandleKey).DisposeWith(Subscriptions);
     }
 
-    private async Task InitializeAsync()
+    private async Task ResolveActorAsync()
     {
-        _dockerActorRef = await _dockerActor.GetAsync(CancellationToken.None);
-        await ConnectStreamAsync();
-    }
-
-    private async Task ConnectStreamAsync()
-    {
-        if (_dockerActorRef is null || _cts is null)
+        try
         {
-            return;
+            _dockerActorRef = await _dockerActor.GetAsync(CancellationToken.None);
         }
-
-        var ct = _cts.Token;
-
-        while (!ct.IsCancellationRequested)
+        catch (Exception ex)
         {
-            try
-            {
-                var stream = await _dockerActorRef.Ask<MonitoringStream<List<ContainerSnapshot>>>(
-                    new StartDockerMonitoring(), TimeSpan.FromSeconds(60));
-                await foreach (var containers in stream.Data.WithCancellation(ct))
-                {
-                    AllContainers.Value = containers;
-                    ApplyFilter();
-
-                    if (IsDetailOpen.Value && SelectedContainer.Value is { } current)
-                    {
-                        var updated = containers.FirstOrDefault(c => c.Id == current.Id);
-                        if (updated is not null)
-                        {
-                            SelectedContainer.Value = updated;
-                            _detailContentChanged.OnNext(Unit.Default);
-                        }
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-            catch
-            {
-                try
-                {
-                    await Task.Delay(2000, ct);
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
-            }
+            Trace.Warning(this, "Failed to resolve docker actor: {0}", ex.Message);
         }
     }
 
@@ -893,10 +874,15 @@ public class DockerViewModel : ReactiveViewModel
         ? string.Format(Strings.UpdateAvailable, _updateService.LatestVersion)
         : null;
 
+    public override void OnDeactivating()
+    {
+        foreach (var d in _demandHandles) d.Dispose();
+        _demandHandles.Clear();
+        base.OnDeactivating();
+    }
+
     public override void Dispose()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
         ActiveSubTab.Dispose();
         AllContainers.Dispose();
         FilteredContainers.Dispose();

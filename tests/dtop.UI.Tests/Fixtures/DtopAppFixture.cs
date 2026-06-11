@@ -3,6 +3,8 @@ using dtop;
 using dtop.Actors;
 using dtop.Pages;
 using dtop.Services;
+using dtop.Core.Messages;
+using dtop.Core.Models;
 using dtop.Core.Platform;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -57,10 +59,22 @@ public sealed class DtopAppFixture : IAsyncDisposable
         builder.Services.AddSingleton(processTreeProvider);
         builder.Services.AddSingleton(serviceManager);
 
-        // --- IConnectionProvider (used directly by NetworkViewModel) ---
-        var connectionProvider = Substitute.For<IConnectionProvider>();
-        connectionProvider.GetConnections().Returns(TestData.Connections);
-        builder.Services.AddSingleton(connectionProvider);
+        // --- MetricStore with pre-populated test data ---
+        var metricStore = new MetricStore();
+        metricStore.Publish(TestData.Cpu);
+        metricStore.Publish(TestData.Memory);
+        metricStore.Publish((IReadOnlyList<DiskSnapshot>)TestData.Disks);
+        metricStore.Publish((IReadOnlyList<NetworkSnapshot>)TestData.Networks);
+        metricStore.Publish((IReadOnlyList<ProcessSnapshot>)TestData.Processes);
+        metricStore.Publish((IReadOnlyList<ConnectionSnapshot>)TestData.Connections);
+        metricStore.Publish((IReadOnlyList<ContainerSnapshot>)TestData.Containers);
+        builder.Services.AddSingleton(metricStore);
+        builder.Services.AddSingleton<IMetricSink>(metricStore);
+
+        // --- IMonitorDemand stub ---
+        var demandStub = Substitute.For<IMonitorDemand>();
+        demandStub.Acquire(Arg.Any<MetricKind>()).Returns(Substitute.For<IDisposable>());
+        builder.Services.AddSingleton(demandStub);
 
         // --- GPU ---
         builder.Services.AddSingleton<IGpuMetrics>(NoGpuMetrics.Instance);

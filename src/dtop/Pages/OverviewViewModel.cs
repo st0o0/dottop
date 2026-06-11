@@ -1,6 +1,3 @@
-using Akka.Actor;
-using Akka.Hosting;
-using dtop.Actors;
 using dtop.Core.Messages;
 using dtop.Core.Models;
 using dtop.Core.Platform;
@@ -19,10 +16,11 @@ public enum OverviewSortField { CpuPercent, RamPercent, Name, Pid }
 
 public class OverviewViewModel : ReactiveViewModel
 {
-    private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
+    private readonly MetricStore _store;
+    private readonly IMonitorDemand _demand;
     private readonly IGpuMetrics _gpuMetrics;
     private readonly SettingsService _settingsService;
-    private CancellationTokenSource? _cts;
+    private readonly List<IDisposable> _demandHandles = [];
 
     // ── Metrics ─────────────────────────────────────────────────────────────
     public ReactiveProperty<double> CpuTotal { get; } = new(0);
@@ -41,7 +39,6 @@ public class OverviewViewModel : ReactiveViewModel
     // ── UI state ─────────────────────────────────────────────────────────────
     public ReactiveProperty<string> ProcessFilter { get; } = new("");
     public ReactiveProperty<bool> IsFilterMode { get; } = new(false);
-    public ReactiveProperty<bool> IsPaused { get; } = new(false);
     public ReactiveProperty<OverviewSortField> SortField { get; } = new(OverviewSortField.CpuPercent);
     public ReactiveProperty<bool> SortDescending { get; } = new(true);
     public ReactiveProperty<int> ActivePreset { get; }
@@ -58,14 +55,18 @@ public class OverviewViewModel : ReactiveViewModel
     // ListNode reference set by OverviewPage so arrow keys can scroll it
     public IScrollableList? ProcessListNode { get; set; }
 
+    public MetricStore Store => _store;
+
     private static readonly string[] PresetNames = ["Standard", "CPU Focus", "Resource Grid", "Minimal"];
 
     public OverviewViewModel(
-        IRequiredActor<MonitoringSupervisor> supervisor,
+        MetricStore store,
+        IMonitorDemand demand,
         IGpuMetrics gpuMetrics,
         SettingsService settingsService)
     {
-        _supervisor = supervisor;
+        _store = store;
+        _demand = demand;
         _gpuMetrics = gpuMetrics;
         _settingsService = settingsService;
 
@@ -83,8 +84,50 @@ public class OverviewViewModel : ReactiveViewModel
 
     public override void OnActivated()
     {
-        _cts = new CancellationTokenSource();
-        _ = InitializeAsync();
+        _demandHandles.Add(_demand.Acquire(MetricKind.Disk));
+        _demandHandles.Add(_demand.Acquire(MetricKind.Network));
+        _demandHandles.Add(_demand.Acquire(MetricKind.Process));
+        if (_gpuMetrics.IsAvailable)
+            _demandHandles.Add(_demand.Acquire(MetricKind.Gpu));
+
+        _store.Cpu.Subscribe(s =>
+        {
+            if (s is null) return;
+            CpuName.Value = s.Name;
+            CpuTotal.Value = s.TotalPercent;
+            CpuCores.Value = s.CorePercents;
+            if (!IsFilterMode.Value) UpdateStatusHint();
+        }).DisposeWith(Subscriptions);
+
+        _store.Memory.Subscribe(s =>
+        {
+            if (s is null) return;
+            RamTotal.Value = s.TotalBytes;
+            RamUsed.Value = s.UsedBytes;
+            if (!IsFilterMode.Value) UpdateStatusHint();
+        }).DisposeWith(Subscriptions);
+
+        _store.Disks.Subscribe(d =>
+        {
+            Disks.Value = d;
+        }).DisposeWith(Subscriptions);
+
+        _store.Networks.Subscribe(n =>
+        {
+            Networks.Value = n;
+        }).DisposeWith(Subscriptions);
+
+        _store.Processes.Subscribe(p =>
+        {
+            AllProcesses.Value = p;
+        }).DisposeWith(Subscriptions);
+
+        _store.Gpu.Subscribe(g =>
+        {
+            if (g is null) return;
+            Gpu.Value = g;
+        }).DisposeWith(Subscriptions);
+
         UpdateStatusHint();
 
         Input.OfType<IInputEvent, KeyPressed>()
@@ -110,77 +153,6 @@ public class OverviewViewModel : ReactiveViewModel
         var sort = $"[M] Sort: {SortField.Value}";
         var dir = SortDescending.Value ? "↓" : "↑";
         StatusHint.Value = $" {cpu}  {ram}  |  {layout}  |  [F] Filter  [P] Preset  {sort}  [R] {dir}";
-    }
-
-    private async ValueTask InitializeAsync()
-    {
-        var ct = _cts!.Token;
-        var supervisor = await _supervisor.GetAsync(ct);
-
-        _ = ConnectStream<CpuSnapshot>(supervisor, new StartCpuMonitoring(), ct, snapshot =>
-        {
-            if (IsPaused.Value) return;
-            CpuName.Value = snapshot.Name;
-            CpuTotal.Value = snapshot.TotalPercent;
-            CpuCores.Value = snapshot.CorePercents;
-            if (!IsFilterMode.Value) UpdateStatusHint();
-        });
-
-        _ = ConnectStream<MemorySnapshot>(supervisor, new StartMemoryMonitoring(), ct, snapshot =>
-        {
-            if (IsPaused.Value) return;
-            RamTotal.Value = snapshot.TotalBytes;
-            RamUsed.Value = snapshot.UsedBytes;
-            if (!IsFilterMode.Value) UpdateStatusHint();
-        });
-
-        _ = ConnectStream<List<DiskSnapshot>>(supervisor, new StartDiskMonitoring(), ct, disks =>
-        {
-            if (IsPaused.Value) return;
-            Disks.Value = disks;
-        });
-
-        _ = ConnectStream<List<NetworkSnapshot>>(supervisor, new StartNetworkMonitoring(), ct, nets =>
-        {
-            if (IsPaused.Value) return;
-            Networks.Value = nets;
-        });
-
-        _ = ConnectStream<List<ProcessSnapshot>>(supervisor, new StartProcessMonitoring(), ct, processes =>
-        {
-            if (IsPaused.Value) return;
-            AllProcesses.Value = processes;
-        });
-
-        if (_gpuMetrics.IsAvailable)
-        {
-            _ = ConnectStream<GpuSnapshot>(supervisor, new StartGpuMonitoring(), ct, snapshot =>
-            {
-                if (IsPaused.Value) return;
-                Gpu.Value = snapshot;
-            });
-        }
-    }
-
-    private async ValueTask ConnectStream<TData>(IActorRef supervisor, object startMessage,
-        CancellationToken ct, Action<TData> handler)
-    {
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                var stream = await supervisor.Ask<MonitoringStream<TData>>(startMessage, TimeSpan.FromSeconds(60));
-                await foreach (var item in stream.Data.WithCancellation(ct))
-                {
-                    handler(item);
-                }
-            }
-            catch (OperationCanceledException) { return; }
-            catch
-            {
-                try { await Task.Delay(2000, ct); } catch (OperationCanceledException) { return; }
-            }
-        }
     }
 
     public IReadOnlyList<ProcessSnapshot> GetFilteredProcesses()
@@ -280,10 +252,6 @@ public class OverviewViewModel : ReactiveViewModel
                 UpdateStatusHint();
                 break;
 
-            case ConsoleKey.Spacebar:
-                IsPaused.Value = !IsPaused.Value;
-                break;
-
             case ConsoleKey.Q or ConsoleKey.Escape:
                 Shutdown();
                 break;
@@ -322,16 +290,13 @@ public class OverviewViewModel : ReactiveViewModel
 
     public override void OnDeactivating()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = null;
+        foreach (var d in _demandHandles) d.Dispose();
+        _demandHandles.Clear();
         base.OnDeactivating();
     }
 
     public override void Dispose()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
         CpuTotal.Dispose();
         CpuCores.Dispose();
         CpuName.Dispose();
@@ -343,7 +308,6 @@ public class OverviewViewModel : ReactiveViewModel
         AllProcesses.Dispose();
         ProcessFilter.Dispose();
         IsFilterMode.Dispose();
-        IsPaused.Dispose();
         SortField.Dispose();
         SortDescending.Dispose();
         ActivePreset.Dispose();

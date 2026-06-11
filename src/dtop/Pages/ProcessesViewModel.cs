@@ -28,17 +28,14 @@ public class ProcessesViewModel : ReactiveViewModel
 {
     private static readonly TraceChannel Trace = Senf.Tracing.For("ViewModel.Processes");
     private readonly IRequiredActor<MonitoringSupervisor> _supervisor;
+    private readonly MetricStore _store;
+    private readonly IMonitorDemand _demand;
     private readonly SettingsService _settingsService;
     private readonly UpdateService _updateService;
     private readonly PinService _pinService;
     private readonly IToastService _toast;
     private IActorRef? _supervisorActor;
-    private CancellationTokenSource? _cts;
-
-    private readonly Dictionary<int, Queue<double>> _cpuHistory = new();
-    private const int CpuHistoryLength = 300;
-    private readonly Dictionary<int, Queue<double>> _ramHistory = new();
-    private const int RamHistoryLength = 300;
+    private readonly List<IDisposable> _demandHandles = [];
 
     public IScrollableList? ListNode { get; set; }
     public IScrollableList? OverlayListNode { get; set; }
@@ -71,12 +68,16 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public ProcessesViewModel(
         IRequiredActor<MonitoringSupervisor> supervisor,
+        MetricStore store,
+        IMonitorDemand demand,
         SettingsService settingsService,
         UpdateService updateService,
         PinService pinService,
         IToastService toast)
     {
         _supervisor = supervisor;
+        _store = store;
+        _demand = demand;
         _settingsService = settingsService;
         _updateService = updateService;
         _pinService = pinService;
@@ -101,8 +102,26 @@ public class ProcessesViewModel : ReactiveViewModel
             _ => null,
         };
 
-        _cts = new CancellationTokenSource();
-        _ = InitializeAsync();
+        _demandHandles.Add(_demand.Acquire(MetricKind.Process));
+
+        _store.Processes.Subscribe(processes =>
+        {
+            AllProcesses.Value = processes.ToList();
+            ApplyFilter();
+
+            if (IsOverlayOpen.Value && SelectedProcess.Value is { } current
+                                    && OverlayTabIndex.Value == 0)
+            {
+                var updated = AllProcesses.Value.FirstOrDefault(p => p.Pid == current.Pid);
+                if (updated is not null)
+                {
+                    SelectedProcess.Value = updated;
+                    _overlayContentChanged.OnNext(Unit.Default);
+                }
+            }
+        }).DisposeWith(Subscriptions);
+
+        _ = ResolveActorAsync();
 
         SearchText.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
         SelectedGroup.Subscribe(_ => ApplyFilter()).DisposeWith(Subscriptions);
@@ -115,41 +134,15 @@ public class ProcessesViewModel : ReactiveViewModel
         UpdateStatus();
     }
 
-    private async Task InitializeAsync()
+    private async Task ResolveActorAsync()
     {
         try
         {
-            var ct = _cts!.Token;
-
-            _supervisorActor = await _supervisor.GetAsync(ct);
-
-            var stream = await _supervisorActor.Ask<MonitoringStream<List<ProcessSnapshot>>>(
-                new StartProcessMonitoring(), TimeSpan.FromSeconds(60));
-            await foreach (var list in stream.Data.WithCancellation(ct))
-            {
-                AllProcesses.Value = list;
-                UpdateCpuHistory(list);
-                ApplyFilter();
-
-                if (IsOverlayOpen.Value && SelectedProcess.Value is { } current
-                                        && OverlayTabIndex.Value == 0)
-                {
-                    var updated = list.FirstOrDefault(p => p.Pid == current.Pid);
-                    if (updated is not null)
-                    {
-                        SelectedProcess.Value = updated;
-                        _overlayContentChanged.OnNext(Unit.Default);
-                    }
-                }
-            }
+            _supervisorActor = await _supervisor.GetAsync(CancellationToken.None);
         }
-        catch (OperationCanceledException)
+        catch (Exception ex)
         {
-            // noop
-        }
-        catch (Exception)
-        {
-            // noop
+            Trace.Warning(this, "Failed to resolve supervisor actor: {0}", ex.Message);
         }
     }
 
@@ -448,35 +441,9 @@ public class ProcessesViewModel : ReactiveViewModel
         }
     }
 
-    private void UpdateCpuHistory(List<ProcessSnapshot> processes)
-    {
-        var activePids = new HashSet<int>(processes.Count);
-        foreach (var proc in processes)
-        {
-            activePids.Add(proc.Pid);
-            if (!_cpuHistory.TryGetValue(proc.Pid, out var queue))
-            {
-                queue = new Queue<double>(CpuHistoryLength);
-                _cpuHistory[proc.Pid] = queue;
-            }
-
-            queue.Enqueue(proc.CpuPercent);
-            if (queue.Count > CpuHistoryLength)
-            {
-                queue.Dequeue();
-            }
-        }
-
-        var stale = _cpuHistory.Keys.Where(pid => !activePids.Contains(pid)).ToList();
-        foreach (var pid in stale)
-        {
-            _cpuHistory.Remove(pid);
-        }
-    }
-
     public IReadOnlyList<double> GetCpuHistory(int pid)
     {
-        return _cpuHistory.TryGetValue(pid, out var queue) ? queue.ToArray() : [];
+        return _store.History($"pid:{pid}").Snapshot();
     }
 
     public long GetMaxWorkingSet()
@@ -610,17 +577,13 @@ public class ProcessesViewModel : ReactiveViewModel
 
     public override void OnDeactivating()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = null;
-        _cpuHistory.Clear();
+        foreach (var d in _demandHandles) d.Dispose();
+        _demandHandles.Clear();
         base.OnDeactivating();
     }
 
     public override void Dispose()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
         AllProcesses.Dispose();
         FilteredProcesses.Dispose();
         SearchText.Dispose();
